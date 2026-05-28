@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/utils/supabase/server';
+import UserDropdown from '@/components/UserDropdown';
 
 export default async function NavBar() {
   const supabase = await createClient();
@@ -8,6 +9,7 @@ export default async function NavBar() {
 
   let isAdmin = false;
   let nickname = '';
+  let role = 'PLAYER';
   let avatarUrl: string | null = null;
 
   if (user) {
@@ -17,8 +19,9 @@ export default async function NavBar() {
       .eq('id', user.id)
       .single();
 
-    isAdmin  = profile?.role === 'ADMIN';
-    nickname = profile?.nickname ?? '';
+    role      = profile?.role ?? 'PLAYER';
+    isAdmin   = role === 'ADMIN';
+    nickname  = profile?.nickname ?? '';
     avatarUrl = profile?.avatar_url ?? null;
   }
 
@@ -26,26 +29,47 @@ export default async function NavBar() {
     <nav className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          
-          {/* Lado Izquierdo: Logo y Enlaces Principales */}
+
+          {/* Lado Izquierdo: Logo y Navegación */}
           <div className="flex space-x-8">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-black text-blue-600 tracking-tight">
-                POLLA<span className="text-gray-900 font-medium">MUNDIALISTA</span>
+              <Link href="/" className="flex items-center">
+                {/* Isotipo circular — solo móvil */}
+                <Image
+                  src="/logo.svg"
+                  alt="PollaMundialista"
+                  width={36}
+                  height={35}
+                  className="block md:hidden w-auto h-auto"
+                  style={{ width: 'auto', height: 'auto' }}
+                  unoptimized
+                  priority
+                />
+                {/* Logotipo completo — escritorio */}
+                <Image
+                  src="/titulo.svg"
+                  alt="PollaMundialista"
+                  width={160}
+                  height={47}
+                  className="hidden md:block w-auto h-auto"
+                  style={{ width: 'auto', height: 'auto' }}
+                  unoptimized
+                  priority
+                />
               </Link>
             </div>
-            
+
             <div className="hidden md:flex space-x-4 items-center">
-              <Link href="/" className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md transition-colors">
+              <Link href="/" className="text-sm font-medium text-gray-700 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
                 Inicio
               </Link>
-              <Link href="/predicciones" className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md transition-colors">
+              <Link href="/predicciones" className="text-sm font-medium text-gray-700 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
                 Predicciones
               </Link>
-              <Link href="/clasificacion" className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md transition-colors">
+              <Link href="/clasificacion" className="text-sm font-medium text-gray-700 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
                 Clasificación
               </Link>
-              <Link href="/ligas" className="text-sm font-medium text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md transition-colors">
+              <Link href="/ligas" className="text-sm font-medium text-gray-700 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
                 Ligas Privadas
               </Link>
               {isAdmin && (
@@ -56,24 +80,15 @@ export default async function NavBar() {
             </div>
           </div>
 
-          {/* Lado Derecho: Perfil del Usuario */}
+          {/* Lado Derecho: Perfil */}
           <div className="flex items-center space-x-4">
             {user ? (
-              <Link 
-                href="/perfil" 
-                className="flex items-center space-x-2 text-sm font-medium text-gray-700 hover:text-blue-600 bg-gray-50 hover:bg-gray-100 px-3 py-2 rounded-lg transition-all border border-gray-200"
-              >
-                <div className="relative w-6 h-6 rounded-full overflow-hidden bg-blue-100 border border-blue-200 flex items-center justify-center shrink-0">
-                  {avatarUrl ? (
-                    <Image src={avatarUrl} alt={nickname} fill className="object-cover" />
-                  ) : (
-                    <span className="text-blue-600 font-bold text-xs">{nickname.charAt(0).toUpperCase()}</span>
-                  )}
-                </div>
-                <span className="max-w-[100px] truncate">{nickname}</span>
-              </Link>
+              <UserDropdown avatarUrl={avatarUrl} nickname={nickname} role={role} />
             ) : (
-              <Link href="/login" className="text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-colors">
+              <Link
+                href="/login"
+                className="text-sm font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-teal hover:from-brand-cyan hover:to-brand-mint px-4 py-2 rounded-lg transition-all shadow-sm"
+              >
                 Iniciar Sesión
               </Link>
             )}

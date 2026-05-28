@@ -16,8 +16,7 @@ function generateCode(length = 6): string {
 // ─── Crear liga ───────────────────────────────────────────────
 export async function createLeagueAction(
   name: string,
-  description: string,
-  tripleRule: boolean
+  description: string
 ): Promise<{ join_code?: string; error?: string }> {
   const supabase = await createClient()
 
@@ -32,7 +31,6 @@ export async function createLeagueAction(
     .insert({
       name,
       description: description || null,
-      triple_rule_enabled: tripleRule,
       created_by: user.id,
       join_code,
     })

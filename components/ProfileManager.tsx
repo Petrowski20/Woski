@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/utils/supabase/client'
-import { signOutAction } from '@/app/(main)/perfil/actions'
 
 type Theme = 'light' | 'auto' | 'dark'
 type Lang  = 'es' | 'en'
@@ -116,6 +115,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
       .upload(path, file, { upsert: true, contentType: file.type })
 
     if (uploadError) {
+      console.error('Error de subida:', uploadError)
       toast.error('Error al subir la imagen: ' + uploadError.message)
       setIsUploading(false)
       return
@@ -161,6 +161,12 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
   }
 
   const initial = initialProfile.nickname.charAt(0).toUpperCase()
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = '/login'
+  }
 
   return (
     <>
@@ -301,14 +307,12 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
         </div>
 
         {/* ── Cerrar sesión ── */}
-        <form action={signOutAction} className="w-full">
-          <button
-            type="submit"
-            className="w-full py-3 text-sm font-semibold text-red-600 bg-white hover:bg-red-50 border border-gray-100 rounded-2xl shadow-sm transition-colors"
-          >
-            Cerrar sesión
-          </button>
-        </form>
+        <button
+          onClick={handleLogout}
+          className="w-full py-3 text-sm font-semibold text-red-600 bg-white hover:bg-red-50 border border-gray-100 rounded-2xl shadow-sm transition-colors"
+        >
+          Cerrar sesión
+        </button>
 
       </div>
 

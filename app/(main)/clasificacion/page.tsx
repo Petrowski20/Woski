@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import LeagueSelector from '@/components/LeagueSelector'
+import Link from 'next/link'
 
 export default async function ClasificacionPage() {
   const supabase = await createClient()
@@ -99,7 +100,12 @@ export default async function ClasificacionPage() {
                       {medals[row.position] ?? row.position}
                     </td>
                     <td className="px-4 py-3 font-medium text-gray-800">
-                      {row.nickname}
+                      <Link
+                        href={`/jugador/${row.profileId}`}
+                        className="hover:text-blue-600 hover:underline transition-colors"
+                      >
+                        {row.nickname}
+                      </Link>
                       {isMe && (
                         <span className="ml-2 text-xs text-blue-500 font-normal">(Tú)</span>
                       )}

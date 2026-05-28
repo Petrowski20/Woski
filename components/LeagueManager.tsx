@@ -12,7 +12,6 @@ export default function LeagueManager() {
   // Estado formulario "Crear"
   const [name, setName]               = useState('')
   const [description, setDescription] = useState('')
-  const [tripleRule, setTripleRule]   = useState(true)
   const [isCreating, setIsCreating]   = useState(false)
 
   // Estado formulario "Unirse"
@@ -25,7 +24,7 @@ export default function LeagueManager() {
     if (!name.trim()) { toast.error('El nombre es obligatorio'); return }
 
     setIsCreating(true)
-    const result = await createLeagueAction(name.trim(), description.trim(), tripleRule)
+    const result = await createLeagueAction(name.trim(), description.trim())
     setIsCreating(false)
 
     if (result.error) {
@@ -37,7 +36,6 @@ export default function LeagueManager() {
       )
       setName('')
       setDescription('')
-      setTripleRule(true)
     }
   }
 
@@ -112,21 +110,6 @@ export default function LeagueManager() {
                 className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
             </div>
-
-            <label className="flex items-start gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={tripleRule}
-                onChange={(e) => setTripleRule(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <div>
-                <span className="text-sm font-medium text-gray-700">Activar Regla del Triple</span>
-                <p className="text-xs text-gray-400 mt-0.5">
-                  +1 bonus si aciertas siendo de los pocos (≤ 15 %) que predijeron ese resultado.
-                </p>
-              </div>
-            </label>
 
             <button
               type="submit"

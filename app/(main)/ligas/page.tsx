@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import Link from 'next/link'
 import LeagueManager from '@/components/LeagueManager'
 import CopyButton from '@/components/CopyButton'
 
@@ -12,7 +13,7 @@ export default async function LigasPage() {
   // Ligas del usuario con datos completos de la liga
   const { data: rows } = await supabase
     .from('profile_leagues')
-    .select('joined_at, private_leagues(id, name, description, join_code, triple_rule_enabled, created_by)')
+    .select('joined_at, private_leagues(id, name, description, join_code, created_by)')
     .eq('profile_id', user.id)
     .order('joined_at', { ascending: false })
 
@@ -21,7 +22,6 @@ export default async function LigasPage() {
     name: string
     description: string | null
     join_code: string | null
-    triple_rule_enabled: boolean
     created_by: string | null
     joined_at: string
   }
@@ -35,6 +35,14 @@ export default async function LigasPage() {
 
   return (
     <div className="w-full max-w-3xl mx-auto">
+      {/* Botón Volver */}
+      <Link
+        href="/perfil"
+        className="inline-flex items-center text-sm font-medium text-brand-blue hover:text-brand-teal mb-6 transition-colors"
+      >
+        ← Volver a mi perfil
+      </Link>
+
       {/* Cabecera */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Mis Ligas Privadas</h1>
@@ -101,11 +109,8 @@ export default async function LigasPage() {
                     </div>
                   )}
 
-                  {/* Footer: regla triple + fecha */}
-                  <div className="flex items-center justify-between text-xs text-gray-400 pt-1 border-t border-gray-50">
-                    <span className={league.triple_rule_enabled ? 'text-amber-500 font-medium' : ''}>
-                      {league.triple_rule_enabled ? '⚡ Regla del Triple' : 'Sin regla del triple'}
-                    </span>
+                  {/* Footer: fecha */}
+                  <div className="flex items-center justify-end text-xs text-gray-400 pt-1 border-t border-gray-50">
                     <span>Desde {joinedDate}</span>
                   </div>
                 </div>

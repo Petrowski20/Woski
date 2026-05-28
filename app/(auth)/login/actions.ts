@@ -36,6 +36,15 @@ export async function signup(formData: FormData) {
     redirect('/login?error=' + encodeURIComponent('Las contraseñas no coinciden') + '&view=register')
   }
 
+  // Validación de edad mínima (16 años)
+  if (birthDate) {
+    const today = new Date()
+    const limitDate = new Date(today.getFullYear() - 16, today.getMonth(), today.getDate())
+    if (new Date(birthDate) > limitDate) {
+      redirect('/login?error=' + encodeURIComponent('Debes tener al menos 16 años para participar') + '&view=register')
+    }
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
