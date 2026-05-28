@@ -24,7 +24,7 @@ export default async function LoginPage({
           alt="PollaMundialista"
           width={280}
           height={82}
-          className="mx-auto mb-4"
+          className="mx-auto mb-4 dark:brightness-0 dark:invert"
           style={{ width: 'auto', height: 'auto' }}
           unoptimized
           priority
@@ -34,13 +34,13 @@ export default async function LoginPage({
         </p>
       </div>
 
-      <form className="flex flex-col w-full gap-4 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <form className="flex flex-col w-full gap-4 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800">
 
         {/* CAMPOS COMUNES */}
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-gray-600" htmlFor="email">Correo Electrónico</label>
           <input
-            className="rounded-lg px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm text-gray-900"
+            className="rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm"
             name="email"
             placeholder="tu@email.com"
             required
@@ -54,7 +54,7 @@ export default async function LoginPage({
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600" htmlFor="nickname">Nickname (Único)</label>
               <input
-                className="rounded-lg px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm text-gray-900"
+                className="rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm"
                 name="nickname"
                 placeholder="Ej: Petrowski"
                 required
@@ -64,7 +64,7 @@ export default async function LoginPage({
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600" htmlFor="birthDate">Fecha de Nacimiento</label>
               <input
-                className="rounded-lg px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm text-gray-900"
+                className="rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm"
                 name="birthDate"
                 type="date"
                 max={maxBirthDate}
@@ -76,7 +76,7 @@ export default async function LoginPage({
             <div className="flex flex-col gap-1">
               <label className="text-xs font-semibold text-gray-600" htmlFor="favoriteTeamId">Selección Favorita</label>
               <select
-                className="rounded-lg px-3 py-2 border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm text-gray-900"
+                className="rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm"
                 name="favoriteTeamId"
                 required
               >
@@ -94,7 +94,7 @@ export default async function LoginPage({
         <div className="flex flex-col gap-1">
           <label className="text-xs font-semibold text-gray-600" htmlFor="password">Contraseña</label>
           <input
-            className="rounded-lg px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm text-gray-900"
+            className="rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm"
             type="password"
             name="password"
             placeholder="••••••••"
@@ -106,7 +106,7 @@ export default async function LoginPage({
           <div className="flex flex-col gap-1">
             <label className="text-xs font-semibold text-gray-600" htmlFor="confirmPassword">Confirmar Contraseña</label>
             <input
-              className="rounded-lg px-3 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm text-gray-900"
+              className="rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm"
               type="password"
               name="confirmPassword"
               placeholder="••••••••"

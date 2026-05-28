@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { savePredictionAction } from '@/app/(main)/predicciones/actions';
+import { savePredictionAction } from '@/app/(main)/actions';
 
 
 export default function PredictionModal({ isOpen, onClose, match }: any) {

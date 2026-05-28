@@ -1,16 +1,7 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* Activar dark mode basado en clase .dark en <html> (next-themes) */
+@variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-brand-blue:   #05AFF2;
@@ -21,15 +12,8 @@
   --color-brand-accent: #FF9F1C;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  @apply bg-gray-50 text-gray-900 dark:bg-slate-950 dark:text-gray-100;
   font-family: Arial, Helvetica, sans-serif;
+  min-height: 100vh;
 }

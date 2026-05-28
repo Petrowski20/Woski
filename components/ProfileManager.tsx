@@ -4,10 +4,10 @@ import { useState, useRef, useEffect } from 'react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useTheme } from 'next-themes'
 import { createClient } from '@/utils/supabase/client'
 
-type Theme = 'light' | 'auto' | 'dark'
-type Lang  = 'es' | 'en'
+type Lang = 'es' | 'en'
 
 interface Profile {
   id: string
@@ -52,33 +52,30 @@ function SettingsRow({ icon, label, onClick, href }: {
 
 // ─── Componente principal ─────────────────────────────────────
 export default function ProfileManager({ initialProfile, userEmail }: Props) {
-  const fileRef  = useRef<HTMLInputElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialProfile.avatar_url)
   const [isUploading, setIsUploading] = useState(false)
 
-  const [theme, setTheme] = useState<Theme>('auto')
-  const [lang,  setLang]  = useState<Lang>('es')
+  const { theme, setTheme } = useTheme()
+  const [lang, setLang] = useState<Lang>('es')
 
-  const [showPwModal,   setShowPwModal]   = useState(false)
-  const [newPw,         setNewPw]         = useState('')
-  const [confirmPw,     setConfirmPw]     = useState('')
-  const [isChangingPw,  setIsChangingPw]  = useState(false)
+  const [showPwModal,  setShowPwModal]  = useState(false)
+  const [newPw,        setNewPw]        = useState('')
+  const [confirmPw,    setConfirmPw]    = useState('')
+  const [isChangingPw, setIsChangingPw] = useState(false)
 
-  // Recuperar preferencias de localStorage
+  // Recuperar idioma de localStorage
   useEffect(() => {
-    const t = localStorage.getItem('pm_theme') as Theme | null
-    const l = localStorage.getItem('pm_lang')  as Lang  | null
-    if (t) setTheme(t)
+    const l = localStorage.getItem('pm_lang') as Lang | null
     if (l) setLang(l)
   }, [])
 
   // ── Preferencias ──────────────────────────────────────────
-  const handleTheme = (t: Theme) => {
+  const handleTheme = (t: string) => {
     setTheme(t)
-    localStorage.setItem('pm_theme', t)
-    const labels = { light: 'Claro', auto: 'Automático', dark: 'Oscuro' }
-    toast.success(`Tema: ${labels[t]}`)
+    const labels: Record<string, string> = { light: 'Claro', system: 'Automático', dark: 'Oscuro' }
+    toast.success(`Tema: ${labels[t] ?? t}`)
   }
 
   const handleLang = (l: Lang) => {
@@ -116,7 +113,11 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
 
     if (uploadError) {
       console.error('Error de subida:', uploadError)
-      toast.error('Error al subir la imagen: ' + uploadError.message)
+      if (uploadError.message.includes('Bucket not found')) {
+        toast.error('El contenedor de imágenes no existe en la base de datos. Avisa al administrador.')
+      } else {
+        toast.error('Error al subir la imagen: ' + uploadError.message)
+      }
       setIsUploading(false)
       return
     }
@@ -272,9 +273,9 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
 
             {/* Tema */}
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-gray-600">Tema</span>
+              <span className="text-sm text-gray-600 dark:text-gray-400">Tema</span>
               <div className="flex gap-1.5">
-                {([['light', '☀️', 'Claro'], ['auto', '⚙️', 'Automático'], ['dark', '🌙', 'Oscuro']] as [Theme, string, string][]).map(
+                {([['light', '☀️', 'Claro'], ['system', '⚙️', 'Automático'], ['dark', '🌙', 'Oscuro']] as [string, string, string][]).map(
                   ([t, icon, label]) => (
                     <button
                       key={t}
@@ -283,7 +284,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
                       className={`w-9 h-9 rounded-lg text-base border transition-all flex items-center justify-center ${
                         theme === t
                           ? 'bg-blue-600 border-blue-600 shadow-sm'
-                          : 'bg-white border-gray-200 hover:border-gray-300'
+                          : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
                       {icon}

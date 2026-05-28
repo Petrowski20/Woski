@@ -2,9 +2,8 @@
 
 import React, { useState } from 'react';
 import { toast } from 'sonner';
-import { savePredictionAction } from '@/app/(main)/predicciones/actions';
+import { savePredictionAction } from '@/app/(main)/actions';
 
-// Tipos para mantener TypeScript contento
 interface Team {
   name: string;
   flag_emoji: string;
@@ -15,16 +14,38 @@ interface MatchCardProps {
   home: Team;
   away: Team;
   group: string;
-  date: string; // Fecha formateada (ej. "11 jun, 21:00")
-  status: 'PENDING' | 'PREDICTED' | 'FINISHED'; // El estado de la predicción
-  pointsEarned?: number; // Puntos obtenidos si el partido terminó
-  homePrediction?: number; // Predicción del usuario
+  matchStage: string;
+  date: string;
+  status: 'PENDING' | 'PREDICTED' | 'FINISHED';
+  pointsEarned?: number;
+  homePrediction?: number;
   awayPrediction?: number;
-  homeRealResult?: number; // Resultado oficial
+  homeRealResult?: number;
   awayRealResult?: number;
-  mode: 'modal' | 'inline'; // 'modal' para Inicio, 'inline' para Predicciones
-  isLocked?: boolean; // True si falta menos de 1 hora
-  onOpenModal?: (matchId: number) => void; // Función para abrir el modal en Inicio
+  isLocked?: boolean;
+}
+
+function formatStageLabel(matchStage: string, group: string, isFinished: boolean): string {
+  if (isFinished) return 'FINALIZADO';
+  const map: Record<string, string> = {
+    GROUP:        `GRUPO ${group}`,
+    ROUND_OF_16:  'OCTAVOS',
+    QUARTER_FINAL:'CUARTOS',
+    SEMI_FINAL:   'SEMIFINAL',
+    THIRD_PLACE:  '3.er PUESTO',
+    FINAL:        'GRAN FINAL',
+  };
+  return map[matchStage] ?? matchStage;
+}
+
+function PointsBadge({ pts }: { pts: number }) {
+  if (pts === 0)
+    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/25 text-red-300 border border-red-500/30">0 pts</span>;
+  if (pts === 1)
+    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-500/25 text-orange-300 border border-orange-500/30">+1 pt</span>;
+  if (pts === 2)
+    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/25 text-yellow-300 border border-yellow-500/30">+2 pts</span>;
+  return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/25 text-emerald-300 border border-emerald-400/30">+{pts} pts</span>;
 }
 
 export default function MatchCard({
@@ -32,6 +53,7 @@ export default function MatchCard({
   home,
   away,
   group,
+  matchStage,
   date,
   status,
   pointsEarned = 0,
@@ -39,139 +61,171 @@ export default function MatchCard({
   awayPrediction,
   homeRealResult,
   awayRealResult,
-  mode,
   isLocked = false,
-  onOpenModal
 }: MatchCardProps) {
-  const [localHome, setLocalHome] = useState(homePrediction?.toString() || '');
-  const [localAway, setLocalAway] = useState(awayPrediction?.toString() || '');
+  const initHome = homePrediction?.toString() ?? '';
+  const initAway = awayPrediction?.toString() ?? '';
+
+  const [localHome, setLocalHome] = useState(initHome);
+  const [localAway, setLocalAway] = useState(initAway);
+  // Track saved baseline so hasChanged resets after save without full re-render
+  const [savedHome, setSavedHome] = useState(initHome);
+  const [savedAway, setSavedAway] = useState(initAway);
   const [isSaving, setIsSaving] = useState(false);
-  // 1. LÓGICA DEL SEMÁFORO (Tailwind dinámico)
-  let cardStyle = "bg-white border-gray-100 hover:shadow-md"; // Por defecto: ⚪ Pendiente
-  let pointsBadge = null;
 
-  if (status === 'PREDICTED') {
-    cardStyle = "bg-blue-50 border-blue-200"; // 🔵 Pronosticado
-  } else if (status === 'FINISHED') {
-    if (pointsEarned === 0) {
-      cardStyle = "bg-red-50 border-red-200"; // 🔴 Fallo total
-      pointsBadge = <span className="text-red-600 font-bold text-xs bg-white px-2 py-1 rounded shadow-sm border border-red-100">0 Pts</span>;
-    } else if (pointsEarned === 1) {
-      cardStyle = "bg-orange-50 border-orange-200"; // 🟠 Acertó ganador
-      pointsBadge = <span className="text-orange-600 font-bold text-xs bg-white px-2 py-1 rounded shadow-sm border border-orange-100">+1 Pt</span>;
-    } else if (pointsEarned === 2) {
-      cardStyle = "bg-yellow-50 border-yellow-300"; // 🟡 Ganador + Diferencia
-      pointsBadge = <span className="text-yellow-600 font-bold text-xs bg-white px-2 py-1 rounded shadow-sm border border-yellow-200">+2 Pts</span>;
-    } else if (pointsEarned >= 3) {
-      cardStyle = "bg-green-50 border-green-200"; // 🟢 Pleno exacto
-      pointsBadge = <span className="text-green-600 font-bold text-xs bg-white px-2 py-1 rounded shadow-sm border border-green-100">+{pointsEarned} Pts</span>;
+  const isFinished = status === 'FINISHED';
+  const hasChanged = localHome !== savedHome || localAway !== savedAway;
+  const centerLabel = formatStageLabel(matchStage, group, isFinished);
+
+  const handleSave = async () => {
+    if (localHome === '' || localAway === '') {
+      toast.error('Rellena ambos goles');
+      return;
     }
-  }
-
-  // 2. RENDERIZADO DEL INPUT INLINE (Para la pestaña de predicciones)
-  const renderInlineInputs = () => {
-    if (status === 'FINISHED') {
-      return (
-        <div className="flex flex-col items-center justify-center gap-1">
-          <div className="flex items-center gap-2 font-bold text-lg text-gray-800">
-            <span>{homePrediction}</span><span className="text-gray-400">-</span><span>{awayPrediction}</span>
-          </div>
-          <span className="text-[10px] text-gray-400 uppercase tracking-wider">
-            Real: {homeRealResult} - {awayRealResult}
-          </span>
-        </div>
-      );
+    setIsSaving(true);
+    const res = await savePredictionAction(id, parseInt(localHome), parseInt(localAway));
+    setIsSaving(false);
+    if (res.error) {
+      toast.error('Error: ' + res.error);
+    } else {
+      toast.success('¡Predicción guardada! ⚽');
+      setSavedHome(localHome);
+      setSavedAway(localAway);
     }
-
-    const handleInlineSave = async () => {
-      if (localHome === '' || localAway === '') return toast.error('Rellena ambos goles');
-      setIsSaving(true);
-      const res = await savePredictionAction(id, parseInt(localHome), parseInt(localAway));
-      setIsSaving(false);
-
-      if (res.error) toast.error('Error: ' + res.error);
-      else toast.success('¡Guardado!');
-    };
-
-    const hasChanged = localHome !== (homePrediction?.toString() || '') ||
-                       localAway !== (awayPrediction?.toString() || '');
-
-    return (
-      <div className="flex flex-col items-end gap-2">
-        <div className="flex items-center gap-2">
-          <input
-            type="number" min="0" value={localHome} disabled={isLocked || isSaving}
-            onChange={(e) => setLocalHome(e.target.value)}
-            className="w-10 h-10 text-center font-bold text-gray-700 bg-white border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
-          />
-          <span className="text-gray-400 font-medium">-</span>
-          <input
-            type="number" min="0" value={localAway} disabled={isLocked || isSaving}
-            onChange={(e) => setLocalAway(e.target.value)}
-            className="w-10 h-10 text-center font-bold text-gray-700 bg-white border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-gray-100"
-          />
-        </div>
-        {hasChanged && !isLocked && (
-          <button
-            onClick={handleInlineSave} disabled={isSaving}
-            className="text-xs bg-blue-600 text-white px-3 py-1.5 rounded flex items-center gap-1 hover:bg-blue-700 transition-colors"
-          >
-            {isSaving ? '⏳' : '💾 Guardar'}
-          </button>
-        )}
-      </div>
-    );
   };
 
-  // 3. RENDERIZADO PRINCIPAL
   return (
-    <div className={`rounded-xl shadow-sm border p-4 transition-all flex flex-col relative ${cardStyle}`}>
-      
-      {/* Candado si está bloqueado */}
-      {isLocked && status !== 'FINISHED' && (
-        <div className="absolute top-4 right-4 text-gray-400 text-sm" title="Partido bloqueado (menos de 1h)">
-          🔒
-        </div>
-      )}
+    <div className="bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-xl shadow-lg border border-emerald-700 overflow-hidden">
 
-      {/* Cabecera */}
-      <div className="flex justify-between items-center mb-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-        <span>Grupo {group}</span>
-        <span>{date}</span>
+      {/* ── Header ───────────────────────────────────────── */}
+      <div className="bg-black/20 px-4 py-1.5 grid grid-cols-3 items-center gap-2">
+        <span className="text-[9px] text-emerald-300/60 uppercase tracking-widest truncate">
+          Árbitro: Por asignar
+        </span>
+        <span className="text-[11px] text-white font-bold uppercase tracking-widest text-center whitespace-nowrap">
+          {centerLabel}
+        </span>
+        <span className="text-[9px] text-emerald-300/60 uppercase tracking-widest text-right truncate">
+          Estadio: TBD
+        </span>
       </div>
 
-      <div className="flex items-center justify-between">
-        {/* Lado izquierdo: Equipos */}
-        <div className="flex flex-col gap-3 flex-1">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{home.flag_emoji}</span>
-            <span className="font-medium text-gray-900">{home.name}</span>
+      {/* ── Body: Equipo · Marcador · Equipo ─────────────── */}
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center px-4 py-5 gap-3">
+
+        {/* Local */}
+        <div className="flex flex-col items-center gap-2 min-w-0">
+          <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-3xl border border-white/20 shadow-inner">
+            {home.flag_emoji}
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{away.flag_emoji}</span>
-            <span className="font-medium text-gray-900">{away.name}</span>
-          </div>
+          <span className="text-xs font-semibold text-white/90 text-center leading-tight max-w-[80px] line-clamp-2">
+            {home.name}
+          </span>
         </div>
 
-        {/* Lado derecho: Interacción o Badge */}
-        <div className="flex flex-col items-end justify-center">
-          {mode === 'inline' && renderInlineInputs()}
-          {pointsBadge && <div className="mt-2">{pointsBadge}</div>}
+        {/* Marcador central */}
+        <div className="flex-shrink-0">
+          {isFinished ? (
+            /* Resultado oficial */
+            <div className="flex flex-col items-center gap-1">
+              <div className="bg-white rounded-xl shadow-inner px-4 py-2 flex items-center gap-2">
+                <span className="text-3xl font-black text-slate-900 w-8 text-center tabular-nums">
+                  {homeRealResult ?? '?'}
+                </span>
+                <span className="text-slate-400 font-black text-2xl">-</span>
+                <span className="text-3xl font-black text-slate-900 w-8 text-center tabular-nums">
+                  {awayRealResult ?? '?'}
+                </span>
+              </div>
+              {homePrediction !== undefined && (
+                <span className="text-[10px] text-emerald-300/70 tracking-wide">
+                  Tu pred: {homePrediction}-{awayPrediction}
+                </span>
+              )}
+              <PointsBadge pts={pointsEarned} />
+            </div>
+          ) : isLocked ? (
+            /* Bloqueado */
+            <div className="flex flex-col items-center gap-1">
+              <div className="bg-white/10 rounded-xl px-4 py-2 flex items-center gap-2 border border-white/20">
+                <span className="text-2xl font-black text-white/60 w-7 text-center tabular-nums">
+                  {savedHome || '?'}
+                </span>
+                <span className="text-white/40 font-black text-xl">-</span>
+                <span className="text-2xl font-black text-white/60 w-7 text-center tabular-nums">
+                  {savedAway || '?'}
+                </span>
+              </div>
+              <span className="text-[10px] text-emerald-300/60 tracking-wider">🔒 Bloqueado</span>
+            </div>
+          ) : (
+            /* Inputs editables */
+            <div className="bg-white rounded-xl shadow-inner px-2 py-2 flex items-center gap-1">
+              <input
+                type="number"
+                min="0"
+                max="99"
+                value={localHome}
+                onChange={(e) => setLocalHome(e.target.value)}
+                disabled={isSaving}
+                placeholder="–"
+                className="w-12 h-12 text-2xl font-black text-center text-slate-900 bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-slate-400 font-black text-xl px-0.5">-</span>
+              <input
+                type="number"
+                min="0"
+                max="99"
+                value={localAway}
+                onChange={(e) => setLocalAway(e.target.value)}
+                disabled={isSaving}
+                placeholder="–"
+                className="w-12 h-12 text-2xl font-black text-center text-slate-900 bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Visitante */}
+        <div className="flex flex-col items-center gap-2 min-w-0">
+          <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-3xl border border-white/20 shadow-inner">
+            {away.flag_emoji}
+          </div>
+          <span className="text-xs font-semibold text-white/90 text-center leading-tight max-w-[80px] line-clamp-2">
+            {away.name}
+          </span>
         </div>
       </div>
-      
-      {/* Pie de tarjeta para el modo Modal (Pantalla Inicio) */}
-      {mode === 'modal' && status !== 'FINISHED' && (
-        <div className="mt-5 pt-4 border-t border-gray-100/50">
-          <button 
-            onClick={() => onOpenModal && onOpenModal(id)}
-            disabled={isLocked}
-            className="w-full text-center text-sm font-medium transition-colors disabled:text-gray-400 disabled:cursor-not-allowed text-blue-600 hover:text-blue-800"
-          >
-            {isLocked ? 'Cerrado para votar' : (status === 'PREDICTED' ? 'Editar predicción ✏️' : 'Añadir predicción +')}
-          </button>
-        </div>
-      )}
+
+      {/* ── Footer ───────────────────────────────────────── */}
+      <div className="bg-black/20 px-4 py-2 flex items-center justify-between">
+        <span className="text-[10px] text-emerald-300/60 tracking-wide">{date}</span>
+
+        {!isFinished && !isLocked && (
+          hasChanged ? (
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="text-[11px] font-bold bg-emerald-400 hover:bg-emerald-300 text-emerald-950 px-3 py-1 rounded-full transition-colors disabled:opacity-60 flex items-center gap-1"
+            >
+              {isSaving ? '⏳ Guardando…' : '💾 Guardar'}
+            </button>
+          ) : savedHome !== '' ? (
+            <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+              ✓ Guardado
+            </span>
+          ) : (
+            <span className="text-[11px] text-emerald-300/50 italic">Sin predicción</span>
+          )
+        )}
+
+        {isFinished && (
+          <span className="text-[10px] text-emerald-300/60">Partido finalizado</span>
+        )}
+        {!isFinished && isLocked && (
+          <span className="text-[10px] text-emerald-300/50">Predicciones cerradas</span>
+        )}
+      </div>
 
     </div>
   );

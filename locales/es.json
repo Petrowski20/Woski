@@ -1,0 +1,19 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "ranking": "Clasificación",
+    "leagues": "Ligas Privadas"
+  },
+  "auth": {
+    "login": "Iniciar Sesión",
+    "register": "Crear Cuenta",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "nickname": "Nickname (Único)",
+    "birthDate": "Fecha de Nacimiento",
+    "favoriteTeam": "Selección Favorita",
+    "noAccount": "¿No tienes cuenta? Regístrate aquí",
+    "hasAccount": "¿Ya tienes cuenta? Inicia sesión"
+  }
+}

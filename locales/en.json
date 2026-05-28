@@ -1,0 +1,19 @@
+{
+  "nav": {
+    "home": "Home",
+    "ranking": "Standings",
+    "leagues": "Private Leagues"
+  },
+  "auth": {
+    "login": "Sign In",
+    "register": "Create Account",
+    "email": "Email Address",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "nickname": "Nickname (Unique)",
+    "birthDate": "Date of Birth",
+    "favoriteTeam": "Favorite National Team",
+    "noAccount": "Don't have an account? Sign up here",
+    "hasAccount": "Already have an account? Sign in"
+  }
+}
