@@ -95,17 +95,17 @@ export default function MatchCard({
   };
 
   return (
-    <div className="bg-gradient-to-b from-emerald-800 to-emerald-950 rounded-xl shadow-lg border border-emerald-700 overflow-hidden">
+    <div className="bg-gradient-to-b from-[#FFD6D1] to-[#F9ECE5] dark:from-slate-800 dark:to-slate-900 rounded-xl shadow-md overflow-hidden relative border border-[#FFD6D1] dark:border-slate-700 text-gray-900 dark:text-white">
 
       {/* ── Header ───────────────────────────────────────── */}
-      <div className="bg-black/20 px-4 py-1.5 grid grid-cols-3 items-center gap-2">
-        <span className="text-[9px] text-emerald-300/60 uppercase tracking-widest truncate">
+      <div className="bg-white/40 dark:bg-black/20 px-4 py-1.5 grid grid-cols-3 items-center gap-2">
+        <span className="text-[10px] text-red-900/70 dark:text-slate-300 uppercase font-bold tracking-wider truncate">
           Árbitro: Por asignar
         </span>
-        <span className="text-[11px] text-white font-bold uppercase tracking-widest text-center whitespace-nowrap">
+        <span className="text-[11px] text-gray-900 dark:text-white font-bold uppercase tracking-widest text-center whitespace-nowrap">
           {centerLabel}
         </span>
-        <span className="text-[9px] text-emerald-300/60 uppercase tracking-widest text-right truncate">
+        <span className="text-[10px] text-red-900/70 dark:text-slate-300 uppercase font-bold tracking-wider text-right truncate">
           Estadio: TBD
         </span>
       </div>
@@ -115,10 +115,10 @@ export default function MatchCard({
 
         {/* Local */}
         <div className="flex flex-col items-center gap-2 min-w-0">
-          <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-3xl border border-white/20 shadow-inner">
+          <div className="w-14 h-14 bg-white/60 dark:bg-white/10 rounded-full flex items-center justify-center text-3xl border border-white dark:border-white/20 shadow-inner">
             {home.flag_emoji}
           </div>
-          <span className="text-xs font-semibold text-white/90 text-center leading-tight max-w-[80px] line-clamp-2">
+          <span className="text-xs font-semibold text-gray-800 dark:text-white/90 text-center leading-tight max-w-[80px] line-clamp-2">
             {home.name}
           </span>
         </div>
@@ -138,7 +138,7 @@ export default function MatchCard({
                 </span>
               </div>
               {homePrediction !== undefined && (
-                <span className="text-[10px] text-emerald-300/70 tracking-wide">
+                <span className="text-[10px] text-gray-500 dark:text-emerald-300/70 tracking-wide">
                   Tu pred: {homePrediction}-{awayPrediction}
                 </span>
               )}
@@ -147,20 +147,20 @@ export default function MatchCard({
           ) : isLocked ? (
             /* Bloqueado */
             <div className="flex flex-col items-center gap-1">
-              <div className="bg-white/10 rounded-xl px-4 py-2 flex items-center gap-2 border border-white/20">
-                <span className="text-2xl font-black text-white/60 w-7 text-center tabular-nums">
+              <div className="bg-white/50 dark:bg-white/10 rounded-xl px-4 py-2 flex items-center gap-2 border border-gray-200 dark:border-white/20">
+                <span className="text-2xl font-black text-gray-500 dark:text-white/60 w-7 text-center tabular-nums">
                   {savedHome || '?'}
                 </span>
-                <span className="text-white/40 font-black text-xl">-</span>
-                <span className="text-2xl font-black text-white/60 w-7 text-center tabular-nums">
+                <span className="text-gray-400 dark:text-white/40 font-black text-xl">-</span>
+                <span className="text-2xl font-black text-gray-500 dark:text-white/60 w-7 text-center tabular-nums">
                   {savedAway || '?'}
                 </span>
               </div>
-              <span className="text-[10px] text-emerald-300/60 tracking-wider">🔒 Bloqueado</span>
+              <span className="text-[10px] text-gray-500 dark:text-emerald-300/60 tracking-wider">🔒 Bloqueado</span>
             </div>
           ) : (
             /* Inputs editables */
-            <div className="bg-white rounded-xl shadow-inner px-2 py-2 flex items-center gap-1">
+            <div className="bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-white/50 dark:border-slate-800 px-2 py-2 flex items-center gap-1">
               <input
                 type="number"
                 min="0"
@@ -169,9 +169,9 @@ export default function MatchCard({
                 onChange={(e) => setLocalHome(e.target.value)}
                 disabled={isSaving}
                 placeholder="–"
-                className="w-12 h-12 text-2xl font-black text-center text-slate-900 bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-12 h-12 text-2xl font-black text-center text-slate-900 dark:text-white bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
-              <span className="text-slate-400 font-black text-xl px-0.5">-</span>
+              <span className="text-slate-400 dark:text-slate-500 font-black text-xl px-0.5">-</span>
               <input
                 type="number"
                 min="0"
@@ -180,7 +180,7 @@ export default function MatchCard({
                 onChange={(e) => setLocalAway(e.target.value)}
                 disabled={isSaving}
                 placeholder="–"
-                className="w-12 h-12 text-2xl font-black text-center text-slate-900 bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-12 h-12 text-2xl font-black text-center text-slate-900 dark:text-white bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
             </div>
           )}
@@ -188,18 +188,18 @@ export default function MatchCard({
 
         {/* Visitante */}
         <div className="flex flex-col items-center gap-2 min-w-0">
-          <div className="w-14 h-14 bg-white/10 rounded-full flex items-center justify-center text-3xl border border-white/20 shadow-inner">
+          <div className="w-14 h-14 bg-white/60 dark:bg-white/10 rounded-full flex items-center justify-center text-3xl border border-white dark:border-white/20 shadow-inner">
             {away.flag_emoji}
           </div>
-          <span className="text-xs font-semibold text-white/90 text-center leading-tight max-w-[80px] line-clamp-2">
+          <span className="text-xs font-semibold text-gray-800 dark:text-white/90 text-center leading-tight max-w-[80px] line-clamp-2">
             {away.name}
           </span>
         </div>
       </div>
 
       {/* ── Footer ───────────────────────────────────────── */}
-      <div className="bg-black/20 px-4 py-2 flex items-center justify-between">
-        <span className="text-[10px] text-emerald-300/60 tracking-wide">{date}</span>
+      <div className="bg-white/40 dark:bg-black/20 px-4 py-2 flex items-center justify-between">
+        <span className="text-[10px] text-gray-600 dark:text-emerald-300/60 tracking-wide">{date}</span>
 
         {!isFinished && !isLocked && (
           hasChanged ? (
@@ -211,19 +211,19 @@ export default function MatchCard({
               {isSaving ? '⏳ Guardando…' : '💾 Guardar'}
             </button>
           ) : savedHome !== '' ? (
-            <span className="text-[11px] text-emerald-400 font-semibold flex items-center gap-1">
+            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
               ✓ Guardado
             </span>
           ) : (
-            <span className="text-[11px] text-emerald-300/50 italic">Sin predicción</span>
+            <span className="text-[11px] text-gray-400 dark:text-emerald-300/50 italic">Sin predicción</span>
           )
         )}
 
         {isFinished && (
-          <span className="text-[10px] text-emerald-300/60">Partido finalizado</span>
+          <span className="text-[10px] text-gray-500 dark:text-emerald-300/60">Partido finalizado</span>
         )}
         {!isFinished && isLocked && (
-          <span className="text-[10px] text-emerald-300/50">Predicciones cerradas</span>
+          <span className="text-[10px] text-gray-400 dark:text-emerald-300/50">Predicciones cerradas</span>
         )}
       </div>
 
