@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { savePredictionAction } from '@/app/(main)/actions';
+import { getFlagUrl } from '@/utils/getFlagUrl';
 
 
 export default function PredictionModal({ isOpen, onClose, match }: any) {
@@ -60,13 +61,16 @@ export default function PredictionModal({ isOpen, onClose, match }: any) {
             
             {/* Equipo Local */}
             <div className="flex flex-col items-center flex-1">
-              <span className="text-4xl mb-2">{match.home_team.flag_emoji}</span>
+              <img src={getFlagUrl(match.home_team.flag_emoji)} alt={match.home_team.name} className="w-16 h-11 object-cover rounded-sm shadow-sm mb-2" />
               <span className="text-sm font-semibold text-gray-700 truncate w-full text-center">{match.home_team.name}</span>
               <input
                 type="number"
-                min="0"
+                min={0}
+                max={99}
                 value={homeGoals}
                 onChange={(e) => setHomeGoals(e.target.value)}
+                onKeyDown={(e) => { if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault(); }}
+                onInput={(e) => { if (e.currentTarget.value.length > 2) e.currentTarget.value = e.currentTarget.value.slice(0, 2); }}
                 className="mt-3 w-16 h-16 text-center text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="-"
                 autoFocus
@@ -77,13 +81,16 @@ export default function PredictionModal({ isOpen, onClose, match }: any) {
 
             {/* Equipo Visitante */}
             <div className="flex flex-col items-center flex-1">
-              <span className="text-4xl mb-2">{match.away_team.flag_emoji}</span>
+              <img src={getFlagUrl(match.away_team.flag_emoji)} alt={match.away_team.name} className="w-16 h-11 object-cover rounded-sm shadow-sm mb-2" />
               <span className="text-sm font-semibold text-gray-700 truncate w-full text-center">{match.away_team.name}</span>
               <input
                 type="number"
-                min="0"
+                min={0}
+                max={99}
                 value={awayGoals}
                 onChange={(e) => setAwayGoals(e.target.value)}
+                onKeyDown={(e) => { if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault(); }}
+                onInput={(e) => { if (e.currentTarget.value.length > 2) e.currentTarget.value = e.currentTarget.value.slice(0, 2); }}
                 className="mt-3 w-16 h-16 text-center text-2xl font-bold text-gray-900 bg-gray-50 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                 placeholder="-"
               />

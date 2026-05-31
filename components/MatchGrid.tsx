@@ -32,6 +32,8 @@ export default function MatchGrid({ matches }: { matches: any[] }) {
             homeRealResult={match.home_goals}
             awayRealResult={match.away_goals}
             pointsEarned={match.myPred?.points_earned ?? 0}
+            stadium={match.stadium}
+            referee={match.referee}
           />
         );
       })}

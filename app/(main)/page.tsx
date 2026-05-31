@@ -11,7 +11,7 @@ export default async function HomePage() {
     supabase
       .from('matches')
       .select(`
-        id, match_date, stage, group_letter, status, home_goals, away_goals,
+        id, match_date, stage, group_letter, status, home_goals, away_goals, stadium, referee,
         home_team:teams!home_team_id (name, flag_emoji),
         away_team:teams!away_team_id (name, flag_emoji)
       `)
@@ -77,6 +77,12 @@ export default async function HomePage() {
     myPred: userPredictions[match.id] || null,
   })) || [];
 
+  // 4. Estadísticas del widget de progreso
+  const totalMatches = matches?.length ?? 0;
+  const predictedMatches = predictions?.length ?? 0;
+  const faltan = Math.max(0, totalMatches - predictedMatches);
+  const progressPercentage = totalMatches > 0 ? Math.round((predictedMatches / totalMatches) * 100) : 0;
+
   return (
     <div className="w-full">
       {/* Contenedor principal dividido en 12 columnas en escritorio */}
@@ -100,17 +106,21 @@ export default async function HomePage() {
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 p-5">
             <h2 className="font-bold text-gray-900 dark:text-white border-b border-gray-100 dark:border-slate-800 pb-3 mb-4 flex items-center justify-between">
               <span>Tus Predicciones</span>
-              <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-full">Faltan 12</span>
+              {faltan === 0 && totalMatches > 0 ? (
+                <span className="bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 text-xs px-2 py-1 rounded-full">¡Completado!</span>
+              ) : (
+                <span className="bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 text-xs px-2 py-1 rounded-full">Faltan {faltan}</span>
+              )}
             </h2>
 
             <div className="flex flex-col gap-3">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500 dark:text-gray-400">Completadas</span>
-                <span className="font-semibold text-gray-900 dark:text-white">0 / 12</span>
+                <span className="font-semibold text-gray-900 dark:text-white">{predictedMatches} / {totalMatches}</span>
               </div>
               {/* Barra de progreso visual */}
               <div className="w-full bg-gray-100 dark:bg-slate-800 rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: '0%' }}></div>
+                <div className="bg-blue-600 h-2 rounded-full transition-all duration-500" style={{ width: `${progressPercentage}%` }}></div>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                 💡 Recuerda que puedes editar hasta 1 hora antes del pitido inicial.

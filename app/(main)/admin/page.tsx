@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import AdminMatchManager from '@/components/AdminMatchManager'
-import type { AdminMatch } from '@/components/AdminMatchManager'
+import type { AdminMatch, TeamOption } from '@/components/AdminMatchManager'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -17,14 +17,20 @@ export default async function AdminPage() {
 
   if (profile?.role !== 'ADMIN') redirect('/')
 
-  const { data: matches, error } = await supabase
-    .from('matches')
-    .select(`
-      id, match_date, stage, group_letter, matchday, status, home_goals, away_goals,
-      home_team:teams!home_team_id (name, flag_emoji),
-      away_team:teams!away_team_id (name, flag_emoji)
-    `)
-    .order('match_date', { ascending: true })
+  const [{ data: matches, error }, { data: teams }] = await Promise.all([
+    supabase
+      .from('matches')
+      .select(`
+        id, match_date, stage, group_letter, matchday, status, home_goals, away_goals,
+        home_team:teams!home_team_id (name, flag_emoji),
+        away_team:teams!away_team_id (name, flag_emoji)
+      `)
+      .order('match_date', { ascending: true }),
+    supabase
+      .from('teams')
+      .select('id, name, flag_emoji')
+      .order('name'),
+  ])
 
   if (error) {
     return (
@@ -36,7 +42,10 @@ export default async function AdminPage() {
 
   return (
     <div className="w-full">
-      <AdminMatchManager initialMatches={(matches ?? []) as unknown as AdminMatch[]} />
+      <AdminMatchManager
+        initialMatches={(matches ?? []) as unknown as AdminMatch[]}
+        teams={(teams ?? []) as TeamOption[]}
+      />
     </div>
   )
 }

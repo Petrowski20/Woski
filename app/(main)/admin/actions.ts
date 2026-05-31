@@ -31,6 +31,56 @@ export async function syncMatchesAction(): Promise<{ success: boolean; message: 
   return { success: true, message: 'Sincronización completada. Los partidos están al día.' }
 }
 
+export async function createMatchAction(
+  formData: FormData
+): Promise<{ success?: true; error?: string }> {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No estás autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado: se requiere rol ADMIN' }
+
+  const home_team_id = Number(formData.get('home_team_id'))
+  const away_team_id = Number(formData.get('away_team_id'))
+  const match_date = formData.get('match_date') as string
+  const stage = formData.get('stage') as string
+  const group_letter = (formData.get('group_letter') as string) || null
+  const stadium = (formData.get('stadium') as string) || null
+  const referee = (formData.get('referee') as string) || null
+
+  if (!home_team_id || !away_team_id || !match_date || !stage) {
+    return { error: 'Faltan campos obligatorios' }
+  }
+  if (home_team_id === away_team_id) {
+    return { error: 'El equipo local y visitante no pueden ser el mismo' }
+  }
+
+  const { error: insertError } = await supabase.from('matches').insert({
+    home_team_id,
+    away_team_id,
+    match_date,
+    stage,
+    group_letter: stage === 'GROUP' ? group_letter : null,
+    stadium,
+    referee,
+    status: 'PENDING',
+  })
+
+  if (insertError) return { error: insertError.message }
+
+  revalidatePath('/admin')
+  revalidatePath('/')
+
+  return { success: true }
+}
+
 export async function saveMatchResultAction(
   matchId: number,
   homeGoals: number,

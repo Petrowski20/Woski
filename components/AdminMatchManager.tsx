@@ -2,9 +2,12 @@
 
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { syncMatchesAction, saveMatchResultAction } from '@/app/(main)/admin/actions'
+import { saveMatchResultAction, createMatchAction } from '@/app/(main)/admin/actions'
+import { getFlagUrl } from '@/utils/getFlagUrl'
 
 interface Team { name: string; flag_emoji: string }
+
+export interface TeamOption { id: number; name: string; flag_emoji: string }
 
 export interface AdminMatch {
   id: number
@@ -27,6 +30,222 @@ const STAGE_LABELS: Record<string, string> = {
   SEMI_FINAL: 'Semis',
   THIRD_PLACE: '3er Puesto',
   FINAL: 'Final',
+}
+
+const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']
+
+const fieldClass =
+  'w-full rounded-xl border px-3 py-2 text-sm ' +
+  'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 ' +
+  'text-gray-900 dark:text-gray-100 ' +
+  'focus:outline-none focus:ring-2 focus:ring-brand-blue focus:border-transparent transition-colors'
+
+function AddMatchModal({ teams, onClose }: { teams: TeamOption[]; onClose: () => void }) {
+  const [homeTeamId, setHomeTeamId] = useState('')
+  const [awayTeamId, setAwayTeamId] = useState('')
+  const [matchDate, setMatchDate] = useState('')
+  const [stage, setStage] = useState('GROUP')
+  const [groupLetter, setGroupLetter] = useState('A')
+  const [stadium, setStadium] = useState('')
+  const [referee, setReferee] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!homeTeamId || !awayTeamId || !matchDate) {
+      toast.error('Completa todos los campos obligatorios')
+      return
+    }
+    if (homeTeamId === awayTeamId) {
+      toast.error('El equipo local y visitante no pueden ser el mismo')
+      return
+    }
+
+    const fd = new FormData()
+    fd.set('home_team_id', homeTeamId)
+    fd.set('away_team_id', awayTeamId)
+    fd.set('match_date', matchDate)
+    fd.set('stage', stage)
+    if (stage === 'GROUP') fd.set('group_letter', groupLetter)
+    fd.set('stadium', stadium)
+    fd.set('referee', referee)
+
+    setIsSubmitting(true)
+    const result = await createMatchAction(fd)
+    setIsSubmitting(false)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success('Partido creado correctamente ✅')
+      onClose()
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Cabecera */}
+        <div className="bg-gray-50 dark:bg-slate-800/60 px-5 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+          <h3 className="font-bold text-gray-800 dark:text-gray-100">Añadir Partido</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold px-2 leading-none"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Formulario */}
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+          {/* Equipos */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                Equipo Local *
+              </label>
+              <select
+                value={homeTeamId}
+                onChange={(e) => setHomeTeamId(e.target.value)}
+                required
+                className={fieldClass}
+              >
+                <option value="">Seleccionar…</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.flag_emoji} {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                Equipo Visitante *
+              </label>
+              <select
+                value={awayTeamId}
+                onChange={(e) => setAwayTeamId(e.target.value)}
+                required
+                className={fieldClass}
+              >
+                <option value="">Seleccionar…</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.flag_emoji} {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Fecha y Hora */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+              Fecha y Hora *
+            </label>
+            <input
+              type="datetime-local"
+              value={matchDate}
+              onChange={(e) => setMatchDate(e.target.value)}
+              required
+              className={fieldClass}
+            />
+          </div>
+
+          {/* Fase + Grupo */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                Fase *
+              </label>
+              <select
+                value={stage}
+                onChange={(e) => setStage(e.target.value)}
+                required
+                className={fieldClass}
+              >
+                {Object.entries(STAGE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label
+                className={`block text-xs font-semibold mb-1 transition-colors ${
+                  stage === 'GROUP'
+                    ? 'text-gray-500 dark:text-gray-400'
+                    : 'text-gray-300 dark:text-slate-600'
+                }`}
+              >
+                Grupo {stage === 'GROUP' ? '*' : '(N/A)'}
+              </label>
+              <select
+                value={groupLetter}
+                onChange={(e) => setGroupLetter(e.target.value)}
+                disabled={stage !== 'GROUP'}
+                className={`${fieldClass} ${stage !== 'GROUP' ? 'opacity-40 cursor-not-allowed' : ''}`}
+              >
+                {GROUPS.map((g) => (
+                  <option key={g} value={g}>
+                    Grupo {g}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Estadio + Árbitro */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                Estadio
+              </label>
+              <input
+                type="text"
+                value={stadium}
+                onChange={(e) => setStadium(e.target.value)}
+                placeholder="Ej. Lusail Stadium"
+                className={fieldClass}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">
+                Árbitro
+              </label>
+              <input
+                type="text"
+                value={referee}
+                onChange={(e) => setReferee(e.target.value)}
+                placeholder="Nombre del árbitro"
+                className={fieldClass}
+              />
+            </div>
+          </div>
+
+          {/* Acciones */}
+          <div className="flex gap-3 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-gray-400 font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-brand-blue to-brand-teal text-white font-semibold hover:opacity-90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait shadow-sm"
+            >
+              {isSubmitting ? 'Creando…' : 'Crear Partido'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
 }
 
 function MatchRow({ match }: { match: AdminMatch }) {
@@ -53,7 +272,7 @@ function MatchRow({ match }: { match: AdminMatch }) {
       toast.error(result.error)
     } else {
       toast.success(
-        `⚽ Puntos calculados: ${match.home_team?.flag_emoji ?? ''} ${home} – ${away} ${match.away_team?.flag_emoji ?? ''}`
+        `⚽ Puntos calculados: ${match.home_team?.name ?? ''} ${home} – ${away} ${match.away_team?.name ?? ''}`
       )
     }
   }
@@ -82,7 +301,9 @@ function MatchRow({ match }: { match: AdminMatch }) {
       {/* Partido */}
       <td className="px-4 py-3">
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-lg leading-none">{match.home_team?.flag_emoji}</span>
+          {match.home_team?.flag_emoji && (
+            <img src={getFlagUrl(match.home_team.flag_emoji)} alt={match.home_team.name} className="w-6 h-4 object-cover rounded-sm shadow-sm flex-shrink-0" />
+          )}
           <span className="font-semibold text-gray-900 dark:text-gray-100 hidden sm:inline">
             {match.home_team?.name}
           </span>
@@ -90,7 +311,9 @@ function MatchRow({ match }: { match: AdminMatch }) {
           <span className="font-semibold text-gray-900 dark:text-gray-100 hidden sm:inline">
             {match.away_team?.name}
           </span>
-          <span className="text-lg leading-none">{match.away_team?.flag_emoji}</span>
+          {match.away_team?.flag_emoji && (
+            <img src={getFlagUrl(match.away_team.flag_emoji)} alt={match.away_team.name} className="w-6 h-4 object-cover rounded-sm shadow-sm flex-shrink-0" />
+          )}
         </div>
         <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
           {STAGE_LABELS[match.stage] ?? match.stage}
@@ -127,10 +350,12 @@ function MatchRow({ match }: { match: AdminMatch }) {
         <div className="flex items-center justify-center gap-2">
           <input
             type="number"
-            min="0"
-            max="30"
+            min={0}
+            max={99}
             value={homeGoals}
             onChange={(e) => setHomeGoals(e.target.value)}
+            onKeyDown={(e) => { if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault(); }}
+            onInput={(e) => { if (e.currentTarget.value.length > 2) e.currentTarget.value = e.currentTarget.value.slice(0, 2); }}
             disabled={isSubmitting}
             placeholder="—"
             className={inputBase}
@@ -138,10 +363,12 @@ function MatchRow({ match }: { match: AdminMatch }) {
           <span className="text-gray-300 dark:text-slate-600 font-bold text-sm select-none">–</span>
           <input
             type="number"
-            min="0"
-            max="30"
+            min={0}
+            max={99}
             value={awayGoals}
             onChange={(e) => setAwayGoals(e.target.value)}
+            onKeyDown={(e) => { if (['e', 'E', '+', '-', '.', ','].includes(e.key)) e.preventDefault(); }}
+            onInput={(e) => { if (e.currentTarget.value.length > 2) e.currentTarget.value = e.currentTarget.value.slice(0, 2); }}
             disabled={isSubmitting}
             placeholder="—"
             className={inputBase}
@@ -169,25 +396,17 @@ function MatchRow({ match }: { match: AdminMatch }) {
   )
 }
 
-export default function AdminMatchManager({ initialMatches }: { initialMatches: AdminMatch[] }) {
-  const [isSyncing, setIsSyncing] = useState(false)
+export default function AdminMatchManager({
+  initialMatches,
+  teams,
+}: {
+  initialMatches: AdminMatch[]
+  teams: TeamOption[]
+}) {
+  const [showAddModal, setShowAddModal] = useState(false)
 
   const pending  = initialMatches.filter(m => m.status !== 'FINISHED' && m.status !== 'CANCELLED').length
   const finished = initialMatches.filter(m => m.status === 'FINISHED').length
-
-  const handleSync = async () => {
-    setIsSyncing(true)
-    const toastId = toast.loading('Sincronizando partidos desde la API…')
-    const result = await syncMatchesAction()
-    toast.dismiss(toastId)
-    setIsSyncing(false)
-
-    if (result.success) {
-      toast.success(result.message)
-    } else {
-      toast.error(result.message)
-    }
-  }
 
   return (
     <div className="w-full space-y-6">
@@ -215,14 +434,13 @@ export default function AdminMatchManager({ initialMatches }: { initialMatches: 
             <p className="text-xs text-emerald-600 dark:text-emerald-500">Finalizados</p>
           </div>
 
-          {/* Botón Sincronizar */}
+          {/* Botón Añadir Partido */}
           <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-brand-blue to-brand-teal text-white hover:opacity-90 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-wait shadow-sm"
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-brand-blue to-brand-teal text-white hover:opacity-90 transition-all active:scale-95 shadow-sm"
           >
-            <span className={isSyncing ? 'animate-spin inline-block' : 'inline-block'}>🔄</span>
-            {isSyncing ? 'Sincronizando…' : 'Sincronizar desde API'}
+            <span>➕</span>
+            Añadir Partido
           </button>
         </div>
       </div>
@@ -255,6 +473,14 @@ export default function AdminMatchManager({ initialMatches }: { initialMatches: 
           </tbody>
         </table>
       </div>
+
+      {/* Modal */}
+      {showAddModal && (
+        <AddMatchModal
+          teams={teams}
+          onClose={() => setShowAddModal(false)}
+        />
+      )}
     </div>
   )
 }
