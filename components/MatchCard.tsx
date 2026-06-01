@@ -43,12 +43,12 @@ function formatStageLabel(matchStage: string, group: string, isFinished: boolean
 
 function PointsBadge({ pts }: { pts: number }) {
   if (pts === 0)
-    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/25 text-red-300 border border-red-500/30">0 pts</span>;
+    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200 dark:bg-red-500/25 dark:text-red-300 dark:border-red-500/30">0 pts</span>;
   if (pts === 1)
-    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-orange-500/25 text-orange-300 border border-orange-500/30">+1 pt</span>;
+    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-orange-500/25 dark:text-orange-300 dark:border-orange-500/30">+1 pt</span>;
   if (pts === 2)
-    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-yellow-500/25 text-yellow-300 border border-yellow-500/30">+2 pts</span>;
-  return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-400/25 text-emerald-300 border border-emerald-400/30">+{pts} pts</span>;
+    return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200 dark:bg-yellow-500/25 dark:text-yellow-300 dark:border-yellow-500/30">+2 pts</span>;
+  return <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 dark:bg-emerald-400/25 dark:text-emerald-300 dark:border-emerald-400/30">+{pts} pts</span>;
 }
 
 export default function MatchCard({

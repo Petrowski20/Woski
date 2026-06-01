@@ -14,7 +14,7 @@ export default function Footer() {
         
         <nav className="flex flex-wrap justify-center gap-4">
           <a 
-            href="https://digitalhub.fifa.com/m/6a56e08873fb2a94/original/FIFA-World-Cup-2026-Match-Schedule.pdf" 
+            href="https://www.fifa.com/es/tournaments/mens/worldcup/canadamexicousa2026/scores-fixtures?country=ES&wtw-filter=ALL" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1"
