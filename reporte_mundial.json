@@ -1,0 +1,292 @@
+{
+  "exported_at": "2026-06-01T18:14:57.478Z",
+  "profiles": [
+    {
+      "id": "97cd0ac6-2fcf-4362-a70a-15f61ef1ef3b",
+      "nickname": "Polla Van Pollez",
+      "total_points": 7,
+      "role": "ADMIN",
+      "city": null,
+      "created_at": "2026-05-29T15:51:01.195019+00:00"
+    },
+    {
+      "id": "0ec097f9-56fc-49bc-b0e0-3e73e4e91861",
+      "nickname": "Basileus",
+      "total_points": 6,
+      "role": "USER",
+      "city": null,
+      "created_at": "2026-05-31T20:08:10.645637+00:00"
+    },
+    {
+      "id": "bd08c3d4-ea39-4117-99c1-be55a3114775",
+      "nickname": "perro sanchez embustero",
+      "total_points": 0,
+      "role": "USER",
+      "city": null,
+      "created_at": "2026-06-01T15:44:46.435166+00:00"
+    }
+  ],
+  "matches": [
+    {
+      "id": 8,
+      "match_date": "2026-05-30T16:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "A",
+      "status": "FINISHED",
+      "home_goals": 12,
+      "away_goals": 2,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Alemania",
+        "flag_emoji": "🇩🇪"
+      },
+      "away_team": {
+        "name": "Arabia Saudita",
+        "flag_emoji": "🇸🇦"
+      }
+    },
+    {
+      "id": 9,
+      "match_date": "2026-06-11T14:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "A",
+      "status": "FINISHED",
+      "home_goals": 2,
+      "away_goals": 9,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Argelia",
+        "flag_emoji": "🇩🇿"
+      },
+      "away_team": {
+        "name": "Argentina",
+        "flag_emoji": "🇦🇷"
+      }
+    },
+    {
+      "id": 10,
+      "match_date": "2026-06-12T12:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "B",
+      "status": "FINISHED",
+      "home_goals": 12,
+      "away_goals": 1,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Australia",
+        "flag_emoji": "🇦🇺"
+      },
+      "away_team": {
+        "name": "Austria",
+        "flag_emoji": "🇦🇹"
+      }
+    },
+    {
+      "id": 11,
+      "match_date": "2026-06-12T16:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "B",
+      "status": "FINISHED",
+      "home_goals": 2,
+      "away_goals": 2,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Bélgica",
+        "flag_emoji": "🇧🇪"
+      },
+      "away_team": {
+        "name": "Bosnia y Herzegovina",
+        "flag_emoji": "🇧🇦"
+      }
+    },
+    {
+      "id": 12,
+      "match_date": "2026-06-13T12:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "C",
+      "status": "FINISHED",
+      "home_goals": 3,
+      "away_goals": 2,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Brasil",
+        "flag_emoji": "🇧🇷"
+      },
+      "away_team": {
+        "name": "Islas de Cabo Verde",
+        "flag_emoji": "🇨🇻"
+      }
+    },
+    {
+      "id": 13,
+      "match_date": "2026-06-13T16:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "C",
+      "status": "PENDING",
+      "home_goals": null,
+      "away_goals": null,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Canadá",
+        "flag_emoji": "🇨🇦"
+      },
+      "away_team": {
+        "name": "Colombia",
+        "flag_emoji": "🇨🇴"
+      }
+    },
+    {
+      "id": 14,
+      "match_date": "2026-06-14T14:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "D",
+      "status": "PENDING",
+      "home_goals": null,
+      "away_goals": null,
+      "stadium": "Estadio por definir",
+      "referee": "Árbitro por asignar",
+      "home_team": {
+        "name": "Corea del Sur",
+        "flag_emoji": "🇰🇷"
+      },
+      "away_team": {
+        "name": "Costa de Marfil",
+        "flag_emoji": "🇨🇮"
+      }
+    },
+    {
+      "id": 18,
+      "match_date": "2026-06-14T18:30:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "A",
+      "status": "PENDING",
+      "home_goals": null,
+      "away_goals": null,
+      "stadium": "Estadio Da Luz",
+      "referee": "Pierluigi Collina",
+      "home_team": {
+        "name": "México",
+        "flag_emoji": "🇲🇽"
+      },
+      "away_team": {
+        "name": "Sudáfrica",
+        "flag_emoji": "🇿🇦"
+      }
+    },
+    {
+      "id": 19,
+      "match_date": "2026-06-17T18:00:00+00:00",
+      "stage": "GROUP",
+      "group_letter": "A",
+      "status": "FINISHED",
+      "home_goals": 0,
+      "away_goals": 0,
+      "stadium": null,
+      "referee": null,
+      "home_team": {
+        "name": "Arabia Saudita",
+        "flag_emoji": "🇸🇦"
+      },
+      "away_team": {
+        "name": "Alemania",
+        "flag_emoji": "🇩🇪"
+      }
+    }
+  ],
+  "predictions": [
+    {
+      "profile_id": "0ec097f9-56fc-49bc-b0e0-3e73e4e91861",
+      "match_id": 9,
+      "pred_home_goals": 2,
+      "pred_away_goals": 9,
+      "points_earned": 3,
+      "updated_at": "2026-05-31T20:08:48.87+00:00"
+    },
+    {
+      "profile_id": "97cd0ac6-2fcf-4362-a70a-15f61ef1ef3b",
+      "match_id": 9,
+      "pred_home_goals": 0,
+      "pred_away_goals": 7,
+      "points_earned": 2,
+      "updated_at": "2026-05-31T20:09:27.326+00:00"
+    },
+    {
+      "profile_id": "0ec097f9-56fc-49bc-b0e0-3e73e4e91861",
+      "match_id": 10,
+      "pred_home_goals": 78,
+      "pred_away_goals": 1,
+      "points_earned": 1,
+      "updated_at": "2026-05-31T20:08:56.39+00:00"
+    },
+    {
+      "profile_id": "97cd0ac6-2fcf-4362-a70a-15f61ef1ef3b",
+      "match_id": 10,
+      "pred_home_goals": 12,
+      "pred_away_goals": 1,
+      "points_earned": 3,
+      "updated_at": "2026-05-31T20:10:21.249+00:00"
+    },
+    {
+      "profile_id": "0ec097f9-56fc-49bc-b0e0-3e73e4e91861",
+      "match_id": 11,
+      "pred_home_goals": 1,
+      "pred_away_goals": 1,
+      "points_earned": 2,
+      "updated_at": "2026-05-31T20:10:59.479+00:00"
+    },
+    {
+      "profile_id": "97cd0ac6-2fcf-4362-a70a-15f61ef1ef3b",
+      "match_id": 11,
+      "pred_home_goals": 1,
+      "pred_away_goals": 0,
+      "points_earned": 0,
+      "updated_at": "2026-05-31T20:11:18.21+00:00"
+    },
+    {
+      "profile_id": "0ec097f9-56fc-49bc-b0e0-3e73e4e91861",
+      "match_id": 12,
+      "pred_home_goals": 16,
+      "pred_away_goals": 17,
+      "points_earned": 0,
+      "updated_at": "2026-05-31T20:09:12.302+00:00"
+    },
+    {
+      "profile_id": "97cd0ac6-2fcf-4362-a70a-15f61ef1ef3b",
+      "match_id": 12,
+      "pred_home_goals": 2,
+      "pred_away_goals": 1,
+      "points_earned": 2,
+      "updated_at": "2026-05-31T20:14:50.794+00:00"
+    },
+    {
+      "profile_id": "bd08c3d4-ea39-4117-99c1-be55a3114775",
+      "match_id": 13,
+      "pred_home_goals": 0,
+      "pred_away_goals": 1,
+      "points_earned": 0,
+      "updated_at": "2026-06-01T15:45:36.287+00:00"
+    },
+    {
+      "profile_id": "bd08c3d4-ea39-4117-99c1-be55a3114775",
+      "match_id": 14,
+      "pred_home_goals": 2,
+      "pred_away_goals": 0,
+      "points_earned": 0,
+      "updated_at": "2026-06-01T15:45:35.74+00:00"
+    },
+    {
+      "profile_id": "bd08c3d4-ea39-4117-99c1-be55a3114775",
+      "match_id": 18,
+      "pred_home_goals": 1,
+      "pred_away_goals": 2,
+      "points_earned": 0,
+      "updated_at": "2026-06-01T15:45:35.028+00:00"
+    }
+  ]
+}

@@ -1,8 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
+import { getFlagUrl } from '@/utils/getFlagUrl'
 
 interface Team {
   name: string
-  flag_emoji: string
+  iso_code: string
+  flag_emoji: string | null
 }
 
 interface Match {
@@ -23,7 +25,8 @@ interface Prediction {
 interface TeamStanding {
   id: number
   name: string
-  flag: string
+  flag: string | null
+  isoCode: string
   pts: number
   pj: number
   pg: number
@@ -43,13 +46,15 @@ function calcStandings(
   for (const m of matches) {
     if (!standings.has(m.home_team_id)) {
       standings.set(m.home_team_id, {
-        id: m.home_team_id, name: m.home_team.name, flag: m.home_team.flag_emoji,
+        id: m.home_team_id, name: m.home_team.name,
+        flag: m.home_team.flag_emoji, isoCode: m.home_team.iso_code,
         pts: 0, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0,
       })
     }
     if (!standings.has(m.away_team_id)) {
       standings.set(m.away_team_id, {
-        id: m.away_team_id, name: m.away_team.name, flag: m.away_team.flag_emoji,
+        id: m.away_team_id, name: m.away_team.name,
+        flag: m.away_team.flag_emoji, isoCode: m.away_team.iso_code,
         pts: 0, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0,
       })
     }
@@ -90,8 +95,8 @@ export default async function SupuestosPage() {
       .from('matches')
       .select(`
         id, group_letter, home_team_id, away_team_id,
-        home_team:teams!home_team_id (name, flag_emoji),
-        away_team:teams!away_team_id (name, flag_emoji)
+        home_team:teams!home_team_id (name, iso_code, flag_emoji),
+        away_team:teams!away_team_id (name, iso_code, flag_emoji)
       `)
       .eq('stage', 'GROUP')
       .order('group_letter', { ascending: true }),
@@ -198,9 +203,13 @@ export default async function SupuestosPage() {
                       className={`border-b border-gray-50 dark:border-slate-800/50 last:border-0 transition-colors ${rowClass}`}
                     >
                       <td className="px-3 py-2.5">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="shrink-0">{team.flag}</span>
-                          <span className="font-medium text-gray-800 dark:text-gray-200 truncate">{team.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <img
+                            src={getFlagUrl(team.flag ?? '')}
+                            alt={team.name}
+                            title={team.name}
+                            className="w-7 h-7 rounded-full object-cover shrink-0 border border-gray-200/60 dark:border-slate-700"
+                          />
                           {isBestThird && (
                             <span className="shrink-0 text-[10px] font-semibold text-lime-700 dark:text-lime-400 bg-lime-100 dark:bg-lime-900/40 px-1 py-0.5 rounded leading-none">
                               Mejor 3º
@@ -208,16 +217,16 @@ export default async function SupuestosPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">{team.pj}</td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">{team.pg}</td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">{team.pe}</td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">{team.pp}</td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">{team.gf}</td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">{team.gc}</td>
-                      <td className="px-1.5 py-2.5 text-center text-gray-500 dark:text-gray-400">
+                      <td className="px-1.5 py-2.5 w-7 shrink-0 text-center text-gray-500 dark:text-gray-400">{team.pj}</td>
+                      <td className="px-1.5 py-2.5 w-7 shrink-0 text-center text-gray-500 dark:text-gray-400">{team.pg}</td>
+                      <td className="px-1.5 py-2.5 w-7 shrink-0 text-center text-gray-500 dark:text-gray-400">{team.pe}</td>
+                      <td className="px-1.5 py-2.5 w-7 shrink-0 text-center text-gray-500 dark:text-gray-400">{team.pp}</td>
+                      <td className="px-1.5 py-2.5 w-7 shrink-0 text-center text-gray-500 dark:text-gray-400">{team.gf}</td>
+                      <td className="px-1.5 py-2.5 w-7 shrink-0 text-center text-gray-500 dark:text-gray-400">{team.gc}</td>
+                      <td className="px-1.5 py-2.5 w-9 shrink-0 text-center text-gray-500 dark:text-gray-400">
                         {team.dg > 0 ? `+${team.dg}` : team.dg}
                       </td>
-                      <td className="px-2 py-2.5 text-center font-bold text-blue-600 dark:text-blue-400">
+                      <td className="px-2 py-2.5 w-10 shrink-0 text-center font-bold text-blue-600 dark:text-blue-400">
                         {team.pts}
                       </td>
                     </tr>

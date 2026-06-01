@@ -186,7 +186,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
           >
             <div className="relative w-24 h-24 rounded-full overflow-hidden bg-blue-100 border-4 border-white shadow-lg flex items-center justify-center">
               {avatarUrl ? (
-                <Image src={avatarUrl} alt="Avatar" fill className="object-cover" />
+                <Image src={avatarUrl} alt="Avatar" fill sizes="96px" className="object-cover" />
               ) : (
                 <span className="text-4xl font-black text-blue-600">{initial}</span>
               )}

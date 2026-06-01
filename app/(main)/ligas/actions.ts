@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
 // Caracteres sin ambigüedad visual (sin 0/O, 1/I, 8/B)
@@ -94,4 +95,37 @@ export async function joinLeagueAction(
   revalidatePath('/clasificacion')
 
   return { leagueName: league.name }
+}
+
+// ─── Abandonar liga ───────────────────────────────────────────
+export async function leaveLeagueAction(
+  leagueId: number
+): Promise<{ error?: string }> {
+  // Autenticación con cliente normal (respeta cookies de sesión)
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No estás autenticado' }
+
+  // Cliente admin para saltarse RLS (profile_leagues no tiene política DELETE)
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { error } = await supabaseAdmin
+    .from('profile_leagues')
+    .delete()
+    .eq('profile_id', user.id)
+    .eq('league_id', leagueId)
+
+  if (error) {
+    console.error('[leaveLeagueAction]', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/ligas')
+  revalidatePath('/clasificacion')
+
+  return {}
 }

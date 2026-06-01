@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import LeagueManager from '@/components/LeagueManager'
 import CopyButton from '@/components/CopyButton'
+import LeaveLeagueButton from '@/components/LeaveLeagueButton'
 
 export default async function LigasPage() {
   const supabase = await createClient()
@@ -100,9 +101,10 @@ export default async function LigasPage() {
                     </div>
                   )}
 
-                  {/* Footer: fecha */}
-                  <div className="flex items-center justify-end text-xs text-gray-400 dark:text-gray-500 pt-1 border-t border-gray-50 dark:border-slate-800/50">
+                  {/* Footer: fecha + abandonar */}
+                  <div className="flex items-center justify-between text-xs text-gray-400 dark:text-gray-500 pt-1 border-t border-gray-50 dark:border-slate-800/50">
                     <span>Desde {joinedDate}</span>
+                    <LeaveLeagueButton leagueId={league.id} leagueName={league.name} />
                   </div>
                 </div>
               )

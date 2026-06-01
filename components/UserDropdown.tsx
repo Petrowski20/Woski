@@ -37,7 +37,7 @@ export default function UserDropdown({ avatarUrl, nickname, role }: Props) {
       >
         <div className="relative w-6 h-6 rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 flex items-center justify-center shrink-0">
           {avatarUrl ? (
-            <Image src={avatarUrl} alt={nickname} fill className="object-cover" />
+            <Image src={avatarUrl} alt={nickname} fill sizes="24px" className="object-cover" />
           ) : (
             <span className="text-brand-blue font-bold text-xs">{initial}</span>
           )}
@@ -63,7 +63,7 @@ export default function UserDropdown({ avatarUrl, nickname, role }: Props) {
             <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
               <div className="relative w-10 h-10 rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900 border-2 border-blue-200 dark:border-blue-700 flex items-center justify-center shrink-0">
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt={nickname} fill className="object-cover" />
+                  <Image src={avatarUrl} alt={nickname} fill sizes="40px" className="object-cover" />
                 ) : (
                   <span className="text-blue-600 dark:text-blue-400 font-bold text-base">{initial}</span>
                 )}
