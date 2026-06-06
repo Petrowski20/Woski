@@ -42,6 +42,17 @@ export async function signup(formData: FormData): Promise<{ error: string } | un
     }
   }
 
+  // Pre-validar nickname antes de crear el usuario en Auth
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('nickname', nickname)
+    .maybeSingle()
+
+  if (existing) {
+    return { error: 'Ese nombre de usuario ya está en uso, elige otro' }
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
@@ -55,6 +66,10 @@ export async function signup(formData: FormData): Promise<{ error: string } | un
   })
 
   if (error) {
+    // El trigger de DB falla cuando el nickname se duplica en una condición de carrera
+    if (error.message.toLowerCase().includes('database')) {
+      return { error: 'Ese nombre de usuario ya está en uso, elige otro' }
+    }
     return { error: error.message }
   }
 
