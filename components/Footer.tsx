@@ -30,7 +30,7 @@ export default function Footer() {
             <span>📊</span> Simulador
           </a>
           <a 
-            href="https://www.rtve.es/play/deportes/" 
+            href="https://www.rtve.es/play/" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1"
