@@ -15,6 +15,7 @@ interface Team {
   confederation: string | null
   world_cups_won: number
   last_wc_result: string | null
+  seudonimo: string | null
 }
 
 interface Player {
@@ -73,7 +74,7 @@ export default async function SeleccionDetailPage({
 
   const { data: teamData } = await supabase
     .from('teams')
-    .select('id, name, iso_code, flag_emoji, group_letter, fifa_ranking, manager, confederation, world_cups_won, last_wc_result')
+    .select('id, name, iso_code, flag_emoji, group_letter, fifa_ranking, manager, confederation, world_cups_won, last_wc_result, seudonimo')
     .eq('iso_code', iso.toUpperCase())
     .single()
 
@@ -128,6 +129,9 @@ export default async function SeleccionDetailPage({
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{team.name}</h1>
               <span className="font-mono text-sm font-bold text-gray-400 dark:text-gray-500">{team.iso_code}</span>
+              {team.seudonimo && (
+                <span className="text-sm italic text-gray-400 dark:text-gray-500">«{team.seudonimo}»</span>
+              )}
               {team.group_letter && (
                 <span className="text-xs font-semibold bg-[#FFD6D1]/60 dark:bg-slate-800 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
                   {t('selecciones.grupo', { letter: team.group_letter })}

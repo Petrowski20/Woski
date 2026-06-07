@@ -14,6 +14,7 @@ interface Team {
   confederation: string | null
   world_cups_won: number
   last_wc_result: string | null
+  seudonimo: string | null
   // derivado de los partidos, no de la columna teams.group_letter
   groupLetter: string
 }
@@ -43,7 +44,7 @@ export default async function SeleccionesPage() {
   const [teamsRes, matchesRes] = await Promise.all([
     supabase
       .from('teams')
-      .select('id, name, iso_code, flag_emoji, fifa_ranking, manager, confederation, world_cups_won, last_wc_result')
+      .select('id, name, iso_code, flag_emoji, fifa_ranking, manager, confederation, world_cups_won, last_wc_result, seudonimo')
       .order('name', { ascending: true }),
     supabase
       .from('matches')
@@ -106,6 +107,11 @@ export default async function SeleccionesPage() {
                       <p className="font-mono text-[11px] font-semibold text-gray-400 dark:text-gray-500 tracking-wide">
                         {team.iso_code}
                       </p>
+                      {team.seudonimo && (
+                        <p className="text-[11px] italic text-gray-400 dark:text-gray-500 truncate mt-0.5">
+                          «{team.seudonimo}»
+                        </p>
+                      )}
                     </div>
                   </div>
 
