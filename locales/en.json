@@ -302,9 +302,13 @@
       "r3": { "title": "Predicted goals closest to real", "desc": "The sum of the absolute difference between predicted and actual goals across all matches. Less difference = better position." },
       "r4": { "title": "Registration order",              "desc": "In case of a complete tie, priority goes to whoever registered first on the platform." }
     },
+    "seleccionesSection": {
+      "title": "🌍 Teams",
+      "desc": "Browse the profile of all 48 teams at the 2026 World Cup: FIFA ranking, manager and Qatar 2022 result. Tap any team to see the full squad with position, age, club, international caps and goals."
+    },
     "phases": {
       "title": "📅 Tournament phases",
-      "disclaimer": "The deadline to register or edit a prediction is the exact moment of kick-off for each match.",
+      "disclaimer": "The deadline to register or edit a prediction is 1 hour before kick-off for each match.",
       "p1": { "fase": "Group Stage",                  "desc": "Predict the results of all 48 matches in the first phase." },
       "p2": { "fase": "Round of 16",                  "desc": "The 32 qualified teams compete in knockout rounds." }
     }

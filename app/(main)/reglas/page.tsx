@@ -194,6 +194,11 @@ export default async function ReglasPage() {
         </ol>
       </Section>
 
+      {/* Selecciones */}
+      <Section title={t('reglas.seleccionesSection.title')}>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{t('reglas.seleccionesSection.desc')}</p>
+      </Section>
+
       {/* Fases del torneo */}
       <Section title={t('reglas.phases.title')}>
         <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">

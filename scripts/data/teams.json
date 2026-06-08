@@ -6,7 +6,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": ""
+    "seudonimo": "Los Leones"
   },
   {
     "iso_code": "MEX",
@@ -15,7 +15,7 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo": "El tricolor"
+    "seudonimo": "El Tri"
   },
   {
     "iso_code": "KOR",
@@ -24,7 +24,7 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "Seudonimo": "Los Guerreros de Taeguk"
+    "seudonimo": "Los Guerreros de Taeguk"
   },
   {
     "iso_code": "RSA",
@@ -33,7 +33,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los muchachos"
+    "seudonimo": "Bafana Bafana"
   },
   {
     "iso_code": "BIH",
@@ -42,7 +42,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los Dragones"
+    "seudonimo": "Los Dragones"
   },
   {
     "iso_code": "CAN",
@@ -51,7 +51,7 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo": "The Canucks"
+    "seudonimo": "Les Rouges"
   },
   {
     "iso_code": "QAT",
@@ -60,7 +60,7 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo": "Los Al-Annabi (Los Granates)"
+    "seudonimo": "Al-Annabi"
   },
   {
     "iso_code": "SUI",
@@ -69,7 +69,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "Seudonimo": "Las Cruces Rojas"
+    "seudonimo": "La Nati"
   },
   {
     "iso_code": "BRA",
@@ -78,7 +78,7 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 5,
     "last_wc_result": "Cuartos de final",
-    "Seudonimo": "La Canarinha"
+    "seudonimo": "La Canarinha"
   },
   {
     "iso_code": "SCO",
@@ -87,7 +87,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "El Ejército de Tartán"
+    "seudonimo": "El Ejército de Tartán"
   },
   {
     "iso_code": "HAI",
@@ -96,7 +96,7 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los Granaderos"
+    "seudonimo": "Les Grenadiers"
   },
   {
     "iso_code": "MAR",
@@ -105,7 +105,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Semifinal",
-    "Seudonimo":"Los leones del Atlas"
+    "seudonimo": "Los Leones del Atlas"
   },
   {
     "iso_code": "AUS",
@@ -114,7 +114,7 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "Seudonimo":"Socceroos"
+    "seudonimo": "Los Socceroos"
   },
   {
     "iso_code": "USA",
@@ -123,7 +123,7 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "Seudonimo":"The Stars and Stripes"
+    "seudonimo": "The Stars and Stripes"
   },
   {
     "iso_code": "PAR",
@@ -132,7 +132,7 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"Los Guaraníes"
+    "seudonimo": "Los Guaraníes"
   },
   {
     "iso_code": "TUR",
@@ -141,7 +141,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"Los Crescent-Stars"
+    "seudonimo": "La Media Luna"
   },
   {
     "iso_code": "GER",
@@ -150,7 +150,7 @@
     "confederation": "UEFA",
     "world_cups_won": 4,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"Los teutones"
+    "seudonimo": "Los Teutones"
   },
   {
     "iso_code": "CIV",
@@ -159,7 +159,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"Los elefantes"
+    "seudonimo": "Los Elefantes"
   },
   {
     "iso_code": "CUW",
@@ -168,7 +168,7 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"La Pantera Azul"
+    "seudonimo": "Marchá di León"
   },
   {
     "iso_code": "ECU",
@@ -177,7 +177,7 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"La tricolor"
+    "seudonimo": "La Tricolor"
   },
   {
     "iso_code": "JPN",
@@ -186,7 +186,7 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "Seudonimo":"Los samuráis azules"
+    "seudonimo": "Los Samuráis Azules"
   },
   {
     "iso_code": "NED",
@@ -195,8 +195,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Cuartos de final",
-    "Seudonimo":"La naranja mecánica"
-    
+    "seudonimo": "La Naranja Mecánica"
   },
   {
     "iso_code": "SWE",
@@ -205,7 +204,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"Las tres coronas"
+    "seudonimo": "Las Tres Coronas"
   },
   {
     "iso_code": "TUN",
@@ -214,7 +213,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"Las águilas de Cartago"
+    "seudonimo": "Las Águilas de Cartago"
   },
   {
     "iso_code": "BEL",
@@ -223,7 +222,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"Los diablos rojos"
+    "seudonimo": "Los Diablos Rojos"
   },
   {
     "iso_code": "EGY",
@@ -232,7 +231,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"Los faraones"
+    "seudonimo": "Los Faraones"
   },
   {
     "iso_code": "NZL",
@@ -241,7 +240,7 @@
     "confederation": "OFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"All Whites"
+    "seudonimo": "All Whites"
   },
   {
     "iso_code": "IRN",
@@ -250,16 +249,16 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"Los príncipes de Persia"
+    "seudonimo": "Team Melli"
   },
   {
     "iso_code": "KSA",
     "fifa_ranking": 61,
     "manager": "Georgios Donis",
-    "confederation": "CAF",
+    "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"Los halcones verdes"
+    "seudonimo": "Las Águilas Verdes"
   },
   {
     "iso_code": "ESP",
@@ -268,7 +267,7 @@
     "confederation": "UEFA",
     "world_cups_won": 1,
     "last_wc_result": "Octavos de final",
-    "Seudonimo":"La Roja"
+    "seudonimo": "La Roja"
   },
   {
     "iso_code": "CPV",
@@ -277,7 +276,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo":"Criollos"
+    "seudonimo": "Criollos"
   },
   {
     "iso_code": "URU",
@@ -286,7 +285,7 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 2,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo":"Los Charrúas"
+    "seudonimo": "Los Charrúas"
   },
   {
     "iso_code": "FRA",
@@ -295,16 +294,16 @@
     "confederation": "UEFA",
     "world_cups_won": 2,
     "last_wc_result": "Final",
-    "Seudonimo":"Les Bleus"
+    "seudonimo": "Les Bleus"
   },
   {
     "iso_code": "IRQ",
     "fifa_ranking": 56,
     "manager": "Graham Arnold",
-    "confederation": "CAF",
+    "confederation": "AFC",
     "world_cups_won": 0,
-    "last_wc_result": "",
-    "Seudonimo":"Los Leones de Mesopotamia"
+    "last_wc_result": "No clasificó",
+    "seudonimo": "Los Leones de Mesopotamia"
   },
   {
     "iso_code": "NOR",
@@ -313,7 +312,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los vikingos rojos"
+    "seudonimo": "Los Vikingos Rojos"
   },
   {
     "iso_code": "SEN",
@@ -322,7 +321,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "Seudonimo": "Los Leones de la Teranga"
+    "seudonimo": "Los Leones de la Teranga"
   },
   {
     "iso_code": "ALG",
@@ -331,7 +330,7 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los zorros del desierto"
+    "seudonimo": "Los Zorros del Desierto"
   },
   {
     "iso_code": "ARG",
@@ -340,7 +339,7 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 3,
     "last_wc_result": "Campeón",
-    "Seudonimo": "La Albiceleste"
+    "seudonimo": "La Albiceleste"
   },
   {
     "iso_code": "AUT",
@@ -349,7 +348,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Wunderteam"
+    "seudonimo": "El Equipo Rojo"
   },
   {
     "iso_code": "JOR",
@@ -358,7 +357,7 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los Bravos"
+    "seudonimo": "Los Nashama"
   },
   {
     "iso_code": "COL",
@@ -367,7 +366,7 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los Cafeteros"
+    "seudonimo": "Los Cafeteros"
   },
   {
     "iso_code": "POR",
@@ -376,7 +375,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Cuartos de final",
-    "Seudonimo": "Los Lusos"
+    "seudonimo": "Los Lusos"
   },
   {
     "iso_code": "COD",
@@ -384,8 +383,8 @@
     "manager": "Fabrizio Cesana",
     "confederation": "CAF",
     "world_cups_won": 0,
-    "last_wc_result": "",
-    "Seudonimo": "Diablos rojos"
+    "last_wc_result": "No clasificó",
+    "seudonimo": "Los Leopardos"
   },
   {
     "iso_code": "UZB",
@@ -394,7 +393,7 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Lobos blancos"
+    "seudonimo": "Lobos Blancos"
   },
   {
     "iso_code": "CRO",
@@ -403,7 +402,7 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Semifinal",
-    "Seudonimo": "Los Ardientes"
+    "seudonimo": "Los Vatreni"
   },
   {
     "iso_code": "GHA",
@@ -412,16 +411,16 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "Seudonimo": "Las Estrellas Negras"
+    "seudonimo": "Las Estrellas Negras"
   },
   {
     "iso_code": "ENG",
     "fifa_ranking": 4,
     "manager": "Thomas Tuchel",
     "confederation": "UEFA",
-    "world_cups_won": 0,
+    "world_cups_won": 1,
     "last_wc_result": "Cuartos de final",
-    "Seudonimo": "Los tres leones"
+    "seudonimo": "Los Tres Leones"
   },
   {
     "iso_code": "PAN",
@@ -430,6 +429,6 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "Seudonimo": "Los Canaleros"
+    "seudonimo": "Los Canaleros"
   }
 ]

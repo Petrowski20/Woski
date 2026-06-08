@@ -43,6 +43,7 @@ interface TeamInfo {
   confederation?:  'UEFA' | 'CONMEBOL' | 'CAF' | 'AFC' | 'CONCACAF' | 'OFC'
   world_cups_won?: number
   last_wc_result?: string
+  seudonimo?:      string
 }
 
 // ── Cliente admin (sin RLS) ────────────────────────────────────────────────

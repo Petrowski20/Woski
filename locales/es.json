@@ -302,9 +302,13 @@
       "r3": { "title": "Goles predichos más cercanos al total real","desc": "Se suma la diferencia absoluta entre los goles predichos y los reales en todos los partidos. Menos diferencia = mejor posición." },
       "r4": { "title": "Orden de inscripción",                     "desc": "A igualdad absoluta, tiene prioridad quien se registró antes en la plataforma." }
     },
+    "seleccionesSection": {
+      "title": "🌍 Selecciones",
+      "desc": "Consulta la ficha de cada uno de los 48 equipos del Mundial 2026: ranking FIFA, seleccionador y resultado en Qatar 2022. Entra en cualquier selección para ver la convocatoria completa con posición, edad, club, internacionalidades y goles con la selección."
+    },
     "phases": {
       "title": "📅 Fases del torneo",
-      "disclaimer": "El plazo para registrar o modificar una predicción vence en el momento exacto del pitido inicial de cada partido.",
+      "disclaimer": "El plazo para registrar o modificar una predicción vence 1 hora antes del inicio de cada partido.",
       "p1": { "fase": "Fase de Grupos",              "desc": "Predice ganador o empate de los 72 partidos de la fase de grupos" },
       "p2": { "fase": "Octavos de Final en adelante",             "desc": "Los 32 clasificados se enfrentan en rondas de eliminación directa." }
     }

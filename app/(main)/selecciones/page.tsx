@@ -14,6 +14,7 @@ interface Team {
   confederation: string | null
   world_cups_won: number
   last_wc_result: string | null
+  seudonimo: string | null
   // derivado de los partidos, no de la columna teams.group_letter
   groupLetter: string
 }
@@ -43,7 +44,7 @@ export default async function SeleccionesPage() {
   const [teamsRes, matchesRes] = await Promise.all([
     supabase
       .from('teams')
-      .select('id, name, iso_code, flag_emoji, fifa_ranking, manager, confederation, world_cups_won, last_wc_result')
+      .select('id, name, iso_code, flag_emoji, fifa_ranking, manager, confederation, world_cups_won, last_wc_result, seudonimo')
       .order('name', { ascending: true }),
     supabase
       .from('matches')
@@ -96,16 +97,22 @@ export default async function SeleccionesPage() {
                   href={`/selecciones/${team.iso_code.toLowerCase()}`}
                   className="bg-white dark:bg-slate-900 rounded-xl border border-[#FFD6D1] dark:border-slate-800 p-4 flex flex-col gap-3 hover:shadow-md hover:border-[#ffbdb5] dark:hover:border-slate-600 transition-all group"
                 >
-                  {/* Cabecera: bandera + nombre + siglas */}
+                  {/* Cabecera: bandera + nombre + seudónimo */}
                   <div className="flex items-center gap-3">
                     <TeamFlag team={team} />
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-gray-900 dark:text-gray-100 leading-tight truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {team.name}
                       </p>
-                      <p className="font-mono text-[11px] font-semibold text-gray-400 dark:text-gray-500 tracking-wide">
-                        {team.iso_code}
-                      </p>
+                      {team.seudonimo ? (
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate leading-tight mt-0.5">
+                          {team.seudonimo}
+                        </p>
+                      ) : (
+                        <p className="font-mono text-[11px] font-semibold text-gray-400 dark:text-gray-500 tracking-wide">
+                          {team.iso_code}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -122,18 +129,16 @@ export default async function SeleccionesPage() {
                         🧑‍💼 {team.manager}
                       </span>
                     )}
-                    {team.world_cups_won > 0 && (
-                      <span>{'🏆'.repeat(Math.min(team.world_cups_won, 5))} ×{team.world_cups_won}</span>
+                    {team.last_wc_result && (
+                      <span className="truncate">
+                        <span className="text-gray-400 dark:text-gray-500">Qatar 2022: </span>
+                        {team.last_wc_result}
+                      </span>
                     )}
                   </div>
 
-                  {/* Footer: confederación + CTA */}
-                  <div className="flex items-center justify-between mt-auto pt-1">
-                    {team.confederation ? (
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${CONF_STYLES[team.confederation] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {team.confederation}
-                      </span>
-                    ) : <span />}
+                  {/* Footer: CTA */}
+                  <div className="flex items-center justify-end mt-auto pt-1">
                     <span className="text-[11px] text-blue-500 dark:text-blue-400 font-medium group-hover:underline">
                       {t('selecciones.verPlantilla')} →
                     </span>
