@@ -328,18 +328,16 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
               <div className="bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-white/50 dark:border-slate-800 px-2 py-2 flex items-center gap-1">
                 <input
                   type="number" min={0} max={99} value={localHome}
-                  onChange={(e) => setLocalHome(e.target.value)}
+                  onChange={(e) => setLocalHome(e.target.value.slice(0, 2))}
                   onKeyDown={(e) => { if (['e','E','+','-','.',','].includes(e.key)) e.preventDefault(); }}
-                  onInput={(e) => { if (e.currentTarget.value.length > 2) e.currentTarget.value = e.currentTarget.value.slice(0, 2); }}
                   disabled={isSaving} placeholder="–"
                   className="w-12 h-12 text-2xl font-black text-center text-slate-900 dark:text-white bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
                 <span className="text-slate-400 dark:text-slate-500 font-black text-xl px-0.5">-</span>
                 <input
                   type="number" min={0} max={99} value={localAway}
-                  onChange={(e) => setLocalAway(e.target.value)}
+                  onChange={(e) => setLocalAway(e.target.value.slice(0, 2))}
                   onKeyDown={(e) => { if (['e','E','+','-','.',','].includes(e.key)) e.preventDefault(); }}
-                  onInput={(e) => { if (e.currentTarget.value.length > 2) e.currentTarget.value = e.currentTarget.value.slice(0, 2); }}
                   disabled={isSaving} placeholder="–"
                   className="w-12 h-12 text-2xl font-black text-center text-slate-900 dark:text-white bg-transparent outline-none disabled:opacity-50 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />

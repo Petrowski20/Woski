@@ -274,6 +274,13 @@
   "reglas": {
     "title": "Cómo jugar",
     "subtitle": "Todo lo que necesitas saber para ganar la polla.",
+    "quickstart": {
+      "title": "🚀 ¿Cómo empezar?",
+      "s1": { "title": "Busca un partido", "desc": "En la pantalla principal están todos los partidos ordenados por fecha y fase." },
+      "s2": { "title": "Introduce tu predicción", "desc": "Entra en cualquier partido y escribe el marcador que crees que saldrá." },
+      "s3": { "title": "Acumula puntos", "desc": "Cuantos más aciertos, más alto subes en la clasificación." }
+    },
+    "deadline": "⏱ Tienes hasta 1 hora antes del inicio de cada partido para registrar o modificar tu predicción.",
     "scoring": {
       "title": "⚽ Sistema de puntuación",
       "exact":      { "label": "Resultado exacto",          "desc": "Aciertas el marcador exacto del partido. Ej: predices 2–1 y el resultado final es 2–1." },
@@ -302,7 +309,9 @@
         "pasaEquipoA": "(pasa Equipo A)",
         "pasaEquipoB": "(pasa Equipo B)",
         "failNote": "Fallaste el clasificado → penalización total",
-        "plus2Note": "Clasificado ✓ · diferencia (0 = 0) ✓ · marcador exacto ✗"
+        "plus3Note": "Clasificado ✓ · marcador exacto ✓",
+        "plus2Note": "Clasificado ✓ · diferencia (0 = 0) ✓ · marcador exacto ✗",
+        "plus1Note": "Clasificado ✓ · ganador ✓ · diferencia ✗"
       }
     },
     "tiebreak": {
@@ -320,6 +329,14 @@
     "phases": {
       "title": "📅 Fases del torneo",
       "disclaimer": "El plazo para registrar o modificar una predicción vence 1 hora antes del inicio de cada partido.",
+      "rounds": {
+        "groups": "Grupos",
+        "r32": "Dieciseisavos",
+        "r16": "Octavos",
+        "qf": "Cuartos",
+        "sf": "Semis",
+        "final": "Final"
+      },
       "p1": { "fase": "Fase de Grupos",              "desc": "Predice ganador o empate de los 72 partidos de la fase de grupos" },
       "p2": { "fase": "Octavos de Final en adelante",             "desc": "Los 32 clasificados se enfrentan en rondas de eliminación directa." }
     }

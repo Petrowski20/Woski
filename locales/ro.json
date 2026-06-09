@@ -274,6 +274,13 @@
   "reglas": {
     "title": "Cum să joci",
     "subtitle": "Tot ce trebuie să știi pentru a câștiga.",
+    "quickstart": {
+      "title": "🚀 Cum să începi?",
+      "s1": { "title": "Găsește un meci", "desc": "Pe ecranul principal sunt toate meciurile sortate după dată și fază." },
+      "s2": { "title": "Introdu predicția", "desc": "Intră pe orice meci și scrie scorul pe care crezi că îl va avea." },
+      "s3": { "title": "Acumulează puncte", "desc": "Cu cât nimerești mai multe, cu atât urci mai sus în clasament." }
+    },
+    "deadline": "⏱ Ai până la 1 oră înainte de începerea fiecărui meci pentru a înregistra sau modifica predicția.",
     "scoring": {
       "title": "⚽ Sistem de punctare",
       "exact":      { "label": "Scor exact",          "desc": "Nimeresti scorul exact al meciului. Ex: prezici 2–1 și rezultatul final este 2–1." },
@@ -302,7 +309,9 @@
         "pasaEquipoA": "(se califică Echipa A)",
         "pasaEquipoB": "(se califică Echipa B)",
         "failNote": "Ai greșit echipa calificată → penalizare totală",
-        "plus2Note": "Calificată ✓ · diferență (0 = 0) ✓ · scor exact ✗"
+        "plus3Note": "Calificată ✓ · scor exact ✓",
+        "plus2Note": "Calificată ✓ · diferență (0 = 0) ✓ · scor exact ✗",
+        "plus1Note": "Calificată ✓ · câștigătoare ✓ · diferență ✗"
       }
     },
     "tiebreak": {
@@ -320,6 +329,14 @@
     "phases": {
       "title": "📅 Fazele turneului",
       "disclaimer": "Termenul limită pentru a înregistra sau modifica o predicție expiră cu 1 oră înainte de începerea fiecărui meci.",
+      "rounds": {
+        "groups": "Grupe",
+        "r32": "Șaisprezecimi",
+        "r16": "Optimi",
+        "qf": "Sferturi",
+        "sf": "Semifinale",
+        "final": "Finală"
+      },
       "p1": { "fase": "Faza Grupelor",              "desc": "Prezice câștigătorul sau egalul pentru cele 72 de meciuri din faza grupelor" },
       "p2": { "fase": "Optimi de Finală și mai departe",             "desc": "Cele 32 de echipe calificate se înfruntă în runde eliminatorii." }
     }

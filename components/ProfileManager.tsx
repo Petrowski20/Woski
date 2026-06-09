@@ -249,7 +249,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
                 <div className="h-7 w-[72px] bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
               ) : (
                 <div className="flex gap-1.5">
-                  {(['es', 'en'] as Lang[]).map((l) => (
+                  {(['es', 'en', 'ro'] as Lang[]).map((l) => (
                     <button
                       key={l}
                       onClick={() => handleLang(l)}
