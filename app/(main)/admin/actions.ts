@@ -1,7 +1,15 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createSVClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+
+export interface AdminPrediction {
+  nickname: string
+  pred_home_goals: number | null
+  pred_away_goals: number | null
+  pred_advancing_team_id: number | null
+}
 
 export interface MatchResult {
   matchId: number
@@ -246,4 +254,45 @@ export async function saveAllMatchesAction(
     .filter(Boolean) as { matchId: number; error: string }[]
 
   return { saved: outcomes.filter(o => o.status === 'fulfilled').length, failed }
+}
+
+export async function getAdminAllPredictionsAction(
+  matchId: number
+): Promise<{ data?: AdminPrediction[]; error?: string }> {
+  // Verificar que el llamante es ADMIN
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado' }
+
+  // Cliente con SERVICE_ROLE para saltarse RLS y leer predicciones de todos los usuarios
+  const supabaseAdmin = createSVClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { data, error } = await supabaseAdmin
+    .from('predictions')
+    .select('pred_home_goals, pred_away_goals, pred_advancing_team_id, profiles(nickname)')
+    .eq('match_id', matchId)
+    .order('pred_home_goals', { ascending: false, nullsFirst: false })
+
+  if (error) return { error: error.message }
+
+  return {
+    data: (data ?? []).map((row: any) => ({
+      nickname: (row.profiles as { nickname: string } | null)?.nickname ?? 'Anónimo',
+      pred_home_goals: row.pred_home_goals,
+      pred_away_goals: row.pred_away_goals,
+      pred_advancing_team_id: row.pred_advancing_team_id,
+    })),
+  }
 }

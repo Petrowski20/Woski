@@ -12,6 +12,7 @@ interface Team {
   group_letter: string | null
   fifa_ranking: number | null
   manager: string | null
+  manager_nationality?: string | null
   confederation: string | null
   world_cups_won: number
   last_wc_result: string | null
@@ -74,7 +75,7 @@ export default async function SeleccionDetailPage({
 
   const { data: teamData } = await supabase
     .from('teams')
-    .select('id, name, iso_code, flag_emoji, group_letter, fifa_ranking, manager, confederation, world_cups_won, last_wc_result, seudonimo')
+    .select('id, name, iso_code, flag_emoji, group_letter, fifa_ranking, manager, manager_nationality, confederation, world_cups_won, last_wc_result, seudonimo')
     .eq('iso_code', iso.toUpperCase())
     .single()
 
@@ -90,6 +91,7 @@ export default async function SeleccionDetailPage({
   const players = (playersRaw ?? []) as Player[]
 
   const flagUrl = getFlagUrl(team.flag_emoji ?? '', team.iso_code)
+  const managerFlagUrl = team.manager_nationality ? getFlagUrl(team.manager_nationality) : ''
 
   // Orden de posiciones para mostrar
   const POS_ORDER = ['GK', 'DF', 'MF', 'FW']
@@ -154,7 +156,13 @@ export default async function SeleccionDetailPage({
               {team.manager && (
                 <span>
                   <span className="text-gray-400 dark:text-slate-500 mr-1">{t('selecciones.seleccionador')}</span>
-                  <span className="font-semibold text-gray-700 dark:text-gray-200">{team.manager}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    {managerFlagUrl
+                      ? <img src={managerFlagUrl} alt="" className="w-5 h-[14px] object-cover rounded-[2px] shadow-sm flex-shrink-0" />
+                      : <span>🧑‍💼</span>
+                    }
+                    <span className="font-semibold text-gray-700 dark:text-gray-200">{team.manager}</span>
+                  </span>
                 </span>
               )}
               {team.world_cups_won > 0 && (

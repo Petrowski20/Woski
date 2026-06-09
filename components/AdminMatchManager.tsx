@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from 'sonner'
-import { saveMatchResultAction, saveAllMatchesAction, createMatchAction } from '@/app/(main)/admin/actions'
-import type { MatchResult } from '@/app/(main)/admin/actions'
+import { saveMatchResultAction, saveAllMatchesAction, createMatchAction, getAdminAllPredictionsAction } from '@/app/(main)/admin/actions'
+import type { MatchResult, AdminPrediction } from '@/app/(main)/admin/actions'
 import { getFlagUrl } from '@/utils/getFlagUrl'
 
 interface Team { name: string; flag_emoji: string; iso_code?: string }
@@ -60,6 +60,96 @@ function FlagImg({ flagEmoji, isoCode, name }: { flagEmoji: string; isoCode?: st
     )
   }
   return <img src={url} alt={name} className="w-6 h-4 object-cover rounded-sm shadow-sm flex-shrink-0" />
+}
+
+function PredictionsModal({ match, onClose }: { match: AdminMatch; onClose: () => void }) {
+  const [predictions, setPredictions] = useState<AdminPrediction[] | null>(null)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+
+  useEffect(() => {
+    getAdminAllPredictionsAction(match.id).then((res) => {
+      if (res.error) setFetchError(res.error)
+      else setPredictions(res.data ?? [])
+    })
+  }, [match.id])
+
+  const matchLabel = `${match.home_team?.flag_emoji ?? ''} ${match.home_team?.name ?? '?'}  vs  ${match.away_team?.name ?? '?'} ${match.away_team?.flag_emoji ?? ''}`
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="bg-gray-50 dark:bg-slate-800/60 px-5 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-start">
+          <div>
+            <h3 className="font-bold text-gray-800 dark:text-gray-100">Predicciones del partido</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{matchLabel}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-xl font-bold px-2 leading-none ml-4"
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5">
+          {!predictions && !fetchError && (
+            <p className="text-center text-gray-400 dark:text-slate-500 text-sm py-10">Cargando…</p>
+          )}
+
+          {fetchError && (
+            <p className="text-center text-red-500 dark:text-red-400 text-sm py-10">{fetchError}</p>
+          )}
+
+          {predictions && predictions.length === 0 && (
+            <p className="text-center text-gray-400 dark:text-slate-500 text-sm py-10">
+              Ningún usuario ha predicho este partido todavía.
+            </p>
+          )}
+
+          {predictions && predictions.length > 0 && (
+            <>
+              <ul className="space-y-1 max-h-96 overflow-y-auto pr-1">
+                {predictions.map((pred, i) => {
+                  const advancing =
+                    pred.pred_advancing_team_id !== null
+                      ? pred.pred_advancing_team_id === match.home_team_id
+                        ? match.home_team?.name
+                        : match.away_team?.name
+                      : null
+                  return (
+                    <li
+                      key={i}
+                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800 text-sm"
+                    >
+                      <span className="font-medium text-gray-700 dark:text-gray-200 truncate max-w-[55%]">
+                        {pred.nickname}
+                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums">
+                          {pred.pred_home_goals ?? '?'} – {pred.pred_away_goals ?? '?'}
+                        </span>
+                        {advancing && (
+                          <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">
+                            {advancing}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-3 text-right">
+                {predictions.length} predicción{predictions.length !== 1 ? 'es' : ''}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 function AddMatchModal({ teams, onClose }: { teams: TeamOption[]; onClose: () => void }) {
@@ -266,9 +356,11 @@ function AddMatchModal({ teams, onClose }: { teams: TeamOption[]; onClose: () =>
 function MatchRow({
   match,
   onRowChange,
+  onViewPredictions,
 }: {
   match: AdminMatch
   onRowChange?: (id: number, data: RowValues | null) => void
+  onViewPredictions?: (match: AdminMatch) => void
 }) {
   const [homeGoals, setHomeGoals]             = useState(match.home_goals?.toString() ?? '')
   const [awayGoals, setAwayGoals]             = useState(match.away_goals?.toString() ?? '')
@@ -475,21 +567,29 @@ function MatchRow({
 
       {/* Acción */}
       <td className="px-4 py-3 text-center">
-        <button
-          onClick={handleSave}
-          disabled={isSubmitting || isFinished || (needsAdvancing && advancingTeamId === null)}
-          className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 whitespace-nowrap ${
-            isFinished
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
-              : needsAdvancing && advancingTeamId === null
-              ? 'bg-amber-100 text-amber-600 cursor-not-allowed dark:bg-amber-900/30 dark:text-amber-400'
-              : isSubmitting
-              ? 'opacity-70 cursor-wait bg-gradient-to-r from-brand-blue to-brand-teal text-white'
-              : 'bg-gradient-to-r from-brand-blue to-brand-teal text-white hover:opacity-90 shadow-sm'
-          }`}
-        >
-          {isSubmitting ? 'Calculando…' : isFinished ? '✓ Listo' : '💾 Guardar y Calcular'}
-        </button>
+        <div className="flex flex-col items-center gap-1.5">
+          <button
+            onClick={handleSave}
+            disabled={isSubmitting || isFinished || (needsAdvancing && advancingTeamId === null)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all active:scale-95 whitespace-nowrap ${
+              isFinished
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-slate-700 dark:text-slate-500'
+                : needsAdvancing && advancingTeamId === null
+                ? 'bg-amber-100 text-amber-600 cursor-not-allowed dark:bg-amber-900/30 dark:text-amber-400'
+                : isSubmitting
+                ? 'opacity-70 cursor-wait bg-gradient-to-r from-brand-blue to-brand-teal text-white'
+                : 'bg-gradient-to-r from-brand-blue to-brand-teal text-white hover:opacity-90 shadow-sm'
+            }`}
+          >
+            {isSubmitting ? 'Calculando…' : isFinished ? '✓ Listo' : '💾 Guardar y Calcular'}
+          </button>
+          <button
+            onClick={() => onViewPredictions?.(match)}
+            className="text-xs text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 transition-colors"
+          >
+            👁 Ver predicciones
+          </button>
+        </div>
       </td>
     </tr>
   )
@@ -505,6 +605,7 @@ export default function AdminMatchManager({
   const [showAddModal, setShowAddModal] = useState(false)
   const [isExporting, setIsExporting]  = useState(false)
   const [isSavingAll, setIsSavingAll]  = useState(false)
+  const [predModal, setPredModal]      = useState<AdminMatch | null>(null)
 
   // Tracks current input values of every MatchRow without causing re-renders
   const rowValuesRef = useRef<Record<number, RowValues | null>>(
@@ -664,23 +765,11 @@ export default function AdminMatchManager({
               </tr>
             ) : (
               initialMatches.map((match) => (
-                <MatchRow key={match.id} match={match} onRowChange={handleRowChange} />
+                <MatchRow key={match.id} match={match} onRowChange={handleRowChange} onViewPredictions={setPredModal} />
               ))
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Barra de acción sticky — siempre visible al fondo mientras se edita */}
-      <div className="sticky bottom-4 flex justify-end pointer-events-none">
-        <button
-          onClick={handleSaveAll}
-          disabled={isSavingAll}
-          className="pointer-events-auto flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg hover:opacity-90 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span>💾</span>
-          {isSavingAll ? 'Guardando todos…' : 'Guardar todos los resultados'}
-        </button>
       </div>
 
       {showAddModal && (
@@ -688,6 +777,10 @@ export default function AdminMatchManager({
           teams={teams}
           onClose={() => setShowAddModal(false)}
         />
+      )}
+
+      {predModal && (
+        <PredictionsModal match={predModal} onClose={() => setPredModal(null)} />
       )}
     </div>
   )

@@ -96,7 +96,7 @@ export default async function HomePage() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('home.title')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('home.subtitle')}</p>
           </div>
-          <MatchGrid matches={matchesWithPredictions} />
+          <MatchGrid matches={matchesWithPredictions} activeLeagueId={activeLeagueId} />
         </div>
 
         {/* Sidebar */}

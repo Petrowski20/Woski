@@ -101,7 +101,7 @@ export default function UserDropdown({ avatarUrl, nickname, role }: Props) {
               {!mounted ? (
                 <div className="h-8 w-full bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
               ) : (
-                <div className="flex gap-1.5">
+                <div className="flex gap-1">
                   {([
                     ['light',  '☀️', t('dropdown.claro')],
                     ['system', '⚙️', t('dropdown.auto')],
@@ -111,14 +111,13 @@ export default function UserDropdown({ avatarUrl, nickname, role }: Props) {
                       key={val}
                       onClick={() => setTheme(val)}
                       title={label}
-                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                      className={`flex-1 flex items-center justify-center py-1.5 rounded-lg text-base border transition-all ${
                         theme === val
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          ? 'bg-blue-600 border-blue-600'
+                          : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
                       }`}
                     >
-                      <span>{icon}</span>
-                      <span>{label}</span>
+                      {icon}
                     </button>
                   ))}
                 </div>

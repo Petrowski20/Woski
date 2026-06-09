@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const LINKS = [
   { href: '/admin', label: '⚽ Partidos', exact: true },
   { href: '/admin/recordatorios', label: '📢 Recordatorios', exact: false },
+  { href: '/admin/leagues', label: '🏆 Ligas', exact: false },
 ]
 
 export default function AdminSubNav() {

@@ -11,6 +11,7 @@ interface Team {
   flag_emoji: string | null
   fifa_ranking: number | null
   manager: string | null
+  manager_nationality?: string | null
   confederation: string | null
   world_cups_won: number
   last_wc_result: string | null
@@ -34,6 +35,14 @@ function TeamFlag({ team }: { team: Team }) {
   return <span className="text-2xl leading-none shrink-0">{team.flag_emoji ?? '🏳'}</span>
 }
 
+function ManagerIcon({ nationality }: { nationality?: string | null }) {
+  if (nationality) {
+    const url = getFlagUrl(nationality)
+    if (url) return <img src={url} alt="" className="w-5 h-[14px] object-cover rounded-[2px] shadow-sm flex-shrink-0" />
+  }
+  return <span>🧑‍💼</span>
+}
+
 export default async function SeleccionesPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -44,7 +53,7 @@ export default async function SeleccionesPage() {
   const [teamsRes, matchesRes] = await Promise.all([
     supabase
       .from('teams')
-      .select('id, name, iso_code, flag_emoji, fifa_ranking, manager, confederation, world_cups_won, last_wc_result, seudonimo')
+      .select('id, name, iso_code, flag_emoji, fifa_ranking, manager, manager_nationality, confederation, world_cups_won, last_wc_result, seudonimo')
       .order('name', { ascending: true }),
     supabase
       .from('matches')
@@ -125,8 +134,9 @@ export default async function SeleccionesPage() {
                       </span>
                     )}
                     {team.manager && (
-                      <span className="truncate" title={team.manager}>
-                        🧑‍💼 {team.manager}
+                      <span className="flex items-center gap-1.5">
+                        <ManagerIcon nationality={team.manager_nationality} />
+                        <span className="truncate" title={team.manager}>{team.manager}</span>
                       </span>
                     )}
                     {team.last_wc_result && (

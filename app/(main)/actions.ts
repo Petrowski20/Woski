@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 
 export interface PredictionDraft {
@@ -10,9 +11,37 @@ export interface PredictionDraft {
   advancingTeamId: number | null
 }
 
+export interface PublicUserPrediction {
+  nickname: string
+  avatarUrl: string | null
+  homeGoals: number
+  awayGoals: number
+  advancingTeamId: number | null
+}
+
+export interface MatchAggregate {
+  total: number
+  homeWinPct: number
+  drawPct: number
+  awayWinPct: number
+}
+
+export type PublicMatchPredictionsResult =
+  | { type: 'league'; data: PublicUserPrediction[] }
+  | { type: 'global'; data: MatchAggregate }
+  | { error: string }
+
+function _makeAdminClient() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } },
+  )
+}
+
 // ── Helper interno: borra la predicción validando corte de tiempo ──────────
+// Usa el cliente admin para bypasear RLS (predictions no tiene política DELETE)
 async function _deletePrediction(
-  supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   matchId: number,
   matchDate: string,
@@ -23,7 +52,8 @@ async function _deletePrediction(
   const cutoffMs = new Date(matchDate).getTime() - 60 * 60 * 1000
   if (now >= cutoffMs) throw new Error('Plazo cerrado')
 
-  const { error } = await supabase
+  const supabaseAdmin = _makeAdminClient()
+  const { error } = await supabaseAdmin
     .from('predictions')
     .delete()
     .eq('profile_id', userId)
@@ -59,7 +89,7 @@ export async function saveAllPredictionsAction(
 
       // Borrador nulo → DELETE
       if (homeGoals === null && awayGoals === null) {
-        await _deletePrediction(supabase, user.id, matchId, match.match_date, match.status, now)
+        await _deletePrediction(user.id, matchId, match.match_date, match.status, now)
         return
       }
 
@@ -138,7 +168,7 @@ export async function savePredictionAction(
   // Borrador nulo → DELETE
   if (homeGoals === null && awayGoals === null) {
     try {
-      await _deletePrediction(supabase, user.id, matchId, match.match_date, match.status, Date.now())
+      await _deletePrediction(user.id, matchId, match.match_date, match.status, Date.now())
       revalidatePath('/')
       return { success: true }
     } catch (e) {
@@ -185,4 +215,91 @@ export async function savePredictionAction(
 
   revalidatePath('/')
   return { success: true }
+}
+
+export async function getPublicMatchPredictions(
+  matchId: number,
+  leagueId?: number | null,
+): Promise<PublicMatchPredictionsResult> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const supabaseAdmin = _makeAdminClient()
+
+  if (leagueId) {
+    // Verificar membresía del usuario en la liga
+    const { data: membership } = await supabase
+      .from('profile_leagues')
+      .select('league_id')
+      .eq('profile_id', user.id)
+      .eq('league_id', leagueId)
+      .maybeSingle()
+
+    if (!membership) return { error: 'No eres miembro de esta liga' }
+
+    // IDs de miembros de la liga
+    const { data: members, error: membersError } = await supabaseAdmin
+      .from('profile_leagues')
+      .select('profile_id')
+      .eq('league_id', leagueId)
+
+    if (membersError) return { error: membersError.message }
+
+    const memberIds = (members ?? []).map((m: any) => m.profile_id as string)
+
+    const { data, error } = await supabaseAdmin
+      .from('predictions')
+      .select('profile_id, pred_home_goals, pred_away_goals, pred_advancing_team_id, profiles(nickname, avatar_url)')
+      .eq('match_id', matchId)
+      .in('profile_id', memberIds)
+      .order('pred_home_goals', { ascending: false, nullsFirst: false })
+
+    if (error) return { error: error.message }
+
+    return {
+      type: 'league',
+      data: (data ?? []).map((row: any) => ({
+        nickname: (row.profiles as { nickname: string } | null)?.nickname ?? 'Anónimo',
+        avatarUrl: (row.profiles as { avatar_url: string | null } | null)?.avatar_url ?? null,
+        homeGoals: row.pred_home_goals,
+        awayGoals: row.pred_away_goals,
+        advancingTeamId: row.pred_advancing_team_id,
+      })),
+    }
+  }
+
+  // Vista global: porcentajes agregados
+  const { data, error } = await supabaseAdmin
+    .from('predictions')
+    .select('pred_home_goals, pred_away_goals')
+    .eq('match_id', matchId)
+    .not('pred_home_goals', 'is', null)
+    .not('pred_away_goals', 'is', null)
+
+  if (error) return { error: error.message }
+
+  const rows = data ?? []
+  const total = rows.length
+
+  if (total === 0) {
+    return { type: 'global', data: { total: 0, homeWinPct: 0, drawPct: 0, awayWinPct: 0 } }
+  }
+
+  let homeWin = 0, draw = 0, awayWin = 0
+  for (const row of rows as any[]) {
+    if (row.pred_home_goals > row.pred_away_goals) homeWin++
+    else if (row.pred_home_goals < row.pred_away_goals) awayWin++
+    else draw++
+  }
+
+  return {
+    type: 'global',
+    data: {
+      total,
+      homeWinPct: Math.round((homeWin / total) * 100),
+      drawPct: Math.round((draw / total) * 100),
+      awayWinPct: Math.round((awayWin / total) * 100),
+    },
+  }
 }

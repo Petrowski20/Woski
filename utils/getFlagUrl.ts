@@ -57,8 +57,11 @@ export function getFlagUrl(flagEmoji: string, isoCode?: string): string {
 
     // Last resort: use iso_code for known subdivision flags (e.g. DB stores bare 🏴)
     if (isoCode) {
-      const code = ISO_FALLBACKS[isoCode.toUpperCase()];
+      const upper = isoCode.toUpperCase();
+      const code = ISO_FALLBACKS[upper];
       if (code) return `https://flagcdn.com/w40/${code}.png`;
+      // Direct alpha-2 code (e.g. 'ES', 'AR') — used for manager_nationality
+      if (upper.length === 2) return `https://flagcdn.com/w40/${upper.toLowerCase()}.png`;
     }
   } catch {
     // Malformed emoji — caller renders text fallback

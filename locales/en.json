@@ -139,7 +139,17 @@
       "errorPrefix": "Error: "
     },
     "success": "Prediction saved! ⚽",
-    "cleared": "Prediction removed"
+    "cleared": "Prediction removed",
+    "verApuestas": "View bets",
+    "ocultarApuestas": "Hide",
+    "accordion": {
+      "cargando": "Loading…",
+      "globalTitle": "Global trend",
+      "ligaTitle": "Bets in your league",
+      "empate": "Draw",
+      "sinApuestas": "Nobody has predicted this match yet.",
+      "nApuestas": "{n} bet{s}"
+    }
   },
   "auth": {
     "email": "Email Address",

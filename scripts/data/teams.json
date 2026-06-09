@@ -6,7 +6,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Leones"
+    "seudonimo": "Los Leones",
+    "manager_nationality": "🇨🇿"
   },
   {
     "iso_code": "MEX",
@@ -15,7 +16,8 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "El Tri"
+    "seudonimo": "El Tri",
+    "manager_nationality": "🇲🇽"
   },
   {
     "iso_code": "KOR",
@@ -24,7 +26,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "Los Guerreros de Taeguk"
+    "seudonimo": "Los Guerreros de Taeguk",
+    "manager_nationality": "🇰🇷"
   },
   {
     "iso_code": "RSA",
@@ -33,7 +36,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Bafana Bafana"
+    "seudonimo": "Bafana Bafana",
+    "manager_nationality": "🇧🇪"
   },
   {
     "iso_code": "BIH",
@@ -42,7 +46,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Dragones"
+    "seudonimo": "Los Dragones",
+    "manager_nationality": "🇧🇦"
   },
   {
     "iso_code": "CAN",
@@ -51,7 +56,8 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Les Rouges"
+    "seudonimo": "Les Rouges",
+    "manager_nationality": "🇺🇸"
   },
   {
     "iso_code": "QAT",
@@ -60,7 +66,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Al-Annabi"
+    "seudonimo": "Al-Annabi",
+    "manager_nationality": "🇪🇸"
   },
   {
     "iso_code": "SUI",
@@ -69,7 +76,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "La Nati"
+    "seudonimo": "La Nati",
+    "manager_nationality": "🇨🇭"
   },
   {
     "iso_code": "BRA",
@@ -78,7 +86,8 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 5,
     "last_wc_result": "Cuartos de final",
-    "seudonimo": "La Canarinha"
+    "seudonimo": "La Canarinha",
+    "manager_nationality": "🇮🇹"
   },
   {
     "iso_code": "SCO",
@@ -87,7 +96,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "El Ejército de Tartán"
+    "seudonimo": "El Ejército de Tartán",
+    "manager_nationality": "🏴󠁧󠁢󠁳󠁣󠁴󠁿"
   },
   {
     "iso_code": "HAI",
@@ -96,7 +106,8 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Les Grenadiers"
+    "seudonimo": "Les Grenadiers",
+    "manager_nationality": "🇫🇷"
   },
   {
     "iso_code": "MAR",
@@ -105,7 +116,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Semifinal",
-    "seudonimo": "Los Leones del Atlas"
+    "seudonimo": "Los Leones del Atlas",
+    "manager_nationality": "🇲🇦"
   },
   {
     "iso_code": "AUS",
@@ -114,7 +126,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "Los Socceroos"
+    "seudonimo": "Los Socceroos",
+    "manager_nationality": "🇦🇺"
   },
   {
     "iso_code": "USA",
@@ -123,7 +136,8 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "The Stars and Stripes"
+    "seudonimo": "The Stars and Stripes",
+    "manager_nationality": "🇦🇷"
   },
   {
     "iso_code": "PAR",
@@ -132,7 +146,8 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Guaraníes"
+    "seudonimo": "Los Guaraníes",
+    "manager_nationality": "🇦🇷"
   },
   {
     "iso_code": "TUR",
@@ -141,7 +156,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "La Media Luna"
+    "seudonimo": "La Media Luna",
+    "manager_nationality": "🇮🇹"
   },
   {
     "iso_code": "GER",
@@ -150,7 +166,8 @@
     "confederation": "UEFA",
     "world_cups_won": 4,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Los Teutones"
+    "seudonimo": "Los Teutones",
+    "manager_nationality": "🇩🇪"
   },
   {
     "iso_code": "CIV",
@@ -159,7 +176,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Elefantes"
+    "seudonimo": "Los Elefantes",
+    "manager_nationality": "🇨🇮"
   },
   {
     "iso_code": "CUW",
@@ -168,7 +186,8 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Marchá di León"
+    "seudonimo": "Marchá di León",
+    "manager_nationality": "🇳🇱"
   },
   {
     "iso_code": "ECU",
@@ -177,7 +196,8 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "La Tricolor"
+    "seudonimo": "La Tricolor",
+    "manager_nationality": "🇦🇷"
   },
   {
     "iso_code": "JPN",
@@ -186,7 +206,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "Los Samuráis Azules"
+    "seudonimo": "Los Samuráis Azules",
+    "manager_nationality": "🇯🇵"
   },
   {
     "iso_code": "NED",
@@ -195,16 +216,18 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Cuartos de final",
-    "seudonimo": "La Naranja Mecánica"
+    "seudonimo": "La Naranja Mecánica",
+    "manager_nationality": "🇳🇱"
   },
   {
     "iso_code": "SWE",
-    "fifa_ranking": 0,
+    "fifa_ranking": 38,
     "manager": "Graham Potter",
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Las Tres Coronas"
+    "seudonimo": "Las Tres Coronas",
+    "manager_nationality": "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
   },
   {
     "iso_code": "TUN",
@@ -213,7 +236,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Las Águilas de Cartago"
+    "seudonimo": "Las Águilas de Cartago",
+    "manager_nationality": "🇫🇷"
   },
   {
     "iso_code": "BEL",
@@ -222,7 +246,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Los Diablos Rojos"
+    "seudonimo": "Los Diablos Rojos",
+    "manager_nationality": "🇫🇷"
   },
   {
     "iso_code": "EGY",
@@ -231,7 +256,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Faraones"
+    "seudonimo": "Los Faraones",
+    "manager_nationality": "🇪🇬"
   },
   {
     "iso_code": "NZL",
@@ -240,7 +266,8 @@
     "confederation": "OFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "All Whites"
+    "seudonimo": "All Whites",
+    "manager_nationality": "🏴󠁧󠁢󠁥󠁮󠁧󠁿"
   },
   {
     "iso_code": "IRN",
@@ -249,7 +276,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Team Melli"
+    "seudonimo": "Team Melli",
+    "manager_nationality": "🇮🇷"
   },
   {
     "iso_code": "KSA",
@@ -258,7 +286,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Las Águilas Verdes"
+    "seudonimo": "Las Águilas Verdes",
+    "manager_nationality": "🇬🇷"
   },
   {
     "iso_code": "ESP",
@@ -267,7 +296,8 @@
     "confederation": "UEFA",
     "world_cups_won": 1,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "La Roja"
+    "seudonimo": "La Roja",
+    "manager_nationality": "🇪🇸"
   },
   {
     "iso_code": "CPV",
@@ -276,7 +306,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Criollos"
+    "seudonimo": "Criollos",
+    "manager_nationality": "🇨🇻"
   },
   {
     "iso_code": "URU",
@@ -285,7 +316,8 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 2,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Los Charrúas"
+    "seudonimo": "Los Charrúas",
+    "manager_nationality": "🇦🇷"
   },
   {
     "iso_code": "FRA",
@@ -294,7 +326,8 @@
     "confederation": "UEFA",
     "world_cups_won": 2,
     "last_wc_result": "Final",
-    "seudonimo": "Les Bleus"
+    "seudonimo": "Les Bleus",
+    "manager_nationality": "🇫🇷"
   },
   {
     "iso_code": "IRQ",
@@ -303,7 +336,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Leones de Mesopotamia"
+    "seudonimo": "Los Leones de Mesopotamia",
+    "manager_nationality": "🇦🇺"
   },
   {
     "iso_code": "NOR",
@@ -312,7 +346,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Vikingos Rojos"
+    "seudonimo": "Los Vikingos Rojos",
+    "manager_nationality": "🇳🇴"
   },
   {
     "iso_code": "SEN",
@@ -321,7 +356,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Octavos de final",
-    "seudonimo": "Los Leones de la Teranga"
+    "seudonimo": "Los Leones de la Teranga",
+    "manager_nationality": "🇸🇳"
   },
   {
     "iso_code": "ALG",
@@ -330,7 +366,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Zorros del Desierto"
+    "seudonimo": "Los Zorros del Desierto",
+    "manager_nationality": "🇧🇦"
   },
   {
     "iso_code": "ARG",
@@ -339,7 +376,8 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 3,
     "last_wc_result": "Campeón",
-    "seudonimo": "La Albiceleste"
+    "seudonimo": "La Albiceleste",
+    "manager_nationality": "🇦🇷"
   },
   {
     "iso_code": "AUT",
@@ -348,7 +386,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "El Equipo Rojo"
+    "seudonimo": "El Equipo Rojo",
+    "manager_nationality": "🇩🇪"
   },
   {
     "iso_code": "JOR",
@@ -357,7 +396,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Nashama"
+    "seudonimo": "Los Nashama",
+    "manager_nationality": "🇲🇦"
   },
   {
     "iso_code": "COL",
@@ -366,7 +406,8 @@
     "confederation": "CONMEBOL",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Cafeteros"
+    "seudonimo": "Los Cafeteros",
+    "manager_nationality": "🇦🇷"
   },
   {
     "iso_code": "POR",
@@ -375,7 +416,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Cuartos de final",
-    "seudonimo": "Los Lusos"
+    "seudonimo": "Los Lusos",
+    "manager_nationality": "🇪🇸"
   },
   {
     "iso_code": "COD",
@@ -384,7 +426,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Leopardos"
+    "seudonimo": "Los Leopardos",
+    "manager_nationality": "🇮🇹"
   },
   {
     "iso_code": "UZB",
@@ -393,7 +436,8 @@
     "confederation": "AFC",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Lobos Blancos"
+    "seudonimo": "Lobos Blancos",
+    "manager_nationality": "🇮🇹"
   },
   {
     "iso_code": "CRO",
@@ -402,7 +446,8 @@
     "confederation": "UEFA",
     "world_cups_won": 0,
     "last_wc_result": "Semifinal",
-    "seudonimo": "Los Vatreni"
+    "seudonimo": "Los Vatreni",
+    "manager_nationality": "🇭🇷"
   },
   {
     "iso_code": "GHA",
@@ -411,7 +456,8 @@
     "confederation": "CAF",
     "world_cups_won": 0,
     "last_wc_result": "Fase de grupos",
-    "seudonimo": "Las Estrellas Negras"
+    "seudonimo": "Las Estrellas Negras",
+    "manager_nationality": "🇵🇹"
   },
   {
     "iso_code": "ENG",
@@ -420,7 +466,8 @@
     "confederation": "UEFA",
     "world_cups_won": 1,
     "last_wc_result": "Cuartos de final",
-    "seudonimo": "Los Tres Leones"
+    "seudonimo": "Los Tres Leones",
+    "manager_nationality": "🇩🇪"
   },
   {
     "iso_code": "PAN",
@@ -429,6 +476,7 @@
     "confederation": "CONCACAF",
     "world_cups_won": 0,
     "last_wc_result": "No clasificó",
-    "seudonimo": "Los Canaleros"
+    "seudonimo": "Los Canaleros",
+    "manager_nationality": "🇩🇰"
   }
 ]

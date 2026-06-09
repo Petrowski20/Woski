@@ -139,7 +139,17 @@
       "errorPrefix": "Error: "
     },
     "success": "¡Predicción guardada! ⚽",
-    "cleared": "Predicción eliminada"
+    "cleared": "Predicción eliminada",
+    "verApuestas": "Ver apuestas",
+    "ocultarApuestas": "Ocultar",
+    "accordion": {
+      "cargando": "Cargando…",
+      "globalTitle": "Tendencia global",
+      "ligaTitle": "Apuestas en tu liga",
+      "empate": "Empate",
+      "sinApuestas": "Nadie ha predicho este partido aún.",
+      "nApuestas": "{n} apuesta{s}"
+    }
   },
   "auth": {
     "email": "Correo Electrónico",

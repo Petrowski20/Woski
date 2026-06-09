@@ -16,7 +16,7 @@ const formatPill = (isoDay: string) =>
     weekday: 'short', day: 'numeric', month: 'short',
   });
 
-export default function MatchGrid({ matches }: { matches: any[] }) {
+export default function MatchGrid({ matches, activeLeagueId }: { matches: any[]; activeLeagueId?: number | null }) {
   const router = useRouter();
   const [searchTerm, setSearchTerm]   = useState('');
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -30,7 +30,7 @@ export default function MatchGrid({ matches }: { matches: any[] }) {
 
   const handlePendingChange = useCallback((
     matchId: number,
-    draft: { homeGoals: number; awayGoals: number; advancingTeamId: number | null } | null
+    draft: { homeGoals: number | null; awayGoals: number | null; advancingTeamId: number | null } | null
   ) => {
     if (draft) {
       pendingRef.current.set(matchId, { matchId, ...draft });
@@ -225,6 +225,7 @@ export default function MatchGrid({ matches }: { matches: any[] }) {
               pointsEarned={match.myPred?.points_earned ?? 0}
               stadium={match.stadium}
               referee={match.referee}
+              activeLeagueId={activeLeagueId}
               onPendingChange={handlePendingChange}
             />
           );

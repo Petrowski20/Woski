@@ -139,7 +139,17 @@
       "errorPrefix": "Eroare: "
     },
     "success": "Predicție salvată! ⚽",
-    "cleared": "Predicție ștearsă"
+    "cleared": "Predicție ștearsă",
+    "verApuestas": "Vezi pariuri",
+    "ocultarApuestas": "Ascunde",
+    "accordion": {
+      "cargando": "Se încarcă…",
+      "globalTitle": "Tendință globală",
+      "ligaTitle": "Pariuri în liga ta",
+      "empate": "Egal",
+      "sinApuestas": "Nimeni nu a prezis acest meci încă.",
+      "nApuestas": "{n} pariu{s}"
+    }
   },
   "auth": {
     "email": "Adresă de E-mail",

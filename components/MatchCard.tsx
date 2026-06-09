@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
-import { X } from 'lucide-react';
+import { X, Users } from 'lucide-react';
 import { toast } from 'sonner';
-import { savePredictionAction } from '@/app/(main)/actions';
+import { savePredictionAction, getPublicMatchPredictions } from '@/app/(main)/actions';
+import type { PublicMatchPredictionsResult } from '@/app/(main)/actions';
 import { getFlagUrl } from '@/utils/getFlagUrl';
 import { useLang } from '@/contexts/LangContext';
 
@@ -33,7 +34,8 @@ interface MatchCardProps {
   isLocked?: boolean;
   stadium?: string | null;
   referee?: string | null;
-  onPendingChange?: (matchId: number, draft: { homeGoals: number; awayGoals: number; advancingTeamId: number | null } | null) => void;
+  activeLeagueId?: number | null;
+  onPendingChange?: (matchId: number, draft: { homeGoals: number | null; awayGoals: number | null; advancingTeamId: number | null } | null) => void;
 }
 
 function FlagImg({ flagEmoji, name, isoCode }: { flagEmoji: string; name: string; isoCode?: string }) {
@@ -88,6 +90,7 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
   isLocked = false,
   stadium,
   referee,
+  activeLeagueId = null,
   onPendingChange,
 }: MatchCardProps, ref) {
   const { t } = useLang();
@@ -103,10 +106,15 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
   const [savedAdvancingId, setSavedAdvancingId] = useState<number | null>(predAdvancingTeamId);
   const [isSaving, setIsSaving]                 = useState(false);
 
+  // Accordion state
+  const [showAccordion, setShowAccordion]         = useState(false);
+  const [accordionLoaded, setAccordionLoaded]     = useState(false);
+  const [accordionLoading, setAccordionLoading]   = useState(false);
+  const [accordionData, setAccordionData]         = useState<PublicMatchPredictionsResult | null>(null);
+
   const isKnockout = matchStage !== 'GROUP';
   const isFinished = status === 'FINISHED';
 
-  // Permite a MatchGrid confirmar el guardado en esta tarjeta de forma inmediata
   useImperativeHandle(ref, () => ({
     confirmSaved: () => {
       setSavedHome(localHome);
@@ -115,11 +123,9 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
     },
   }), [localHome, localAway, localAdvancingId]);
 
-  // Stable ref so the pending-change effect doesn't need onPendingChange in its deps
   const onPendingChangeRef = useRef(onPendingChange);
   useEffect(() => { onPendingChangeRef.current = onPendingChange; }, [onPendingChange]);
 
-  // Sync saved state when props update (e.g. after saveAllPredictionsAction + router.refresh)
   useEffect(() => {
     setSavedHome(homePrediction?.toString() ?? '');
     setSavedAway(awayPrediction?.toString() ?? '');
@@ -142,7 +148,6 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
     (isKnockout && localAdvancingId !== savedAdvancingId);
   const canSave = hasChanged && !isPartial && !(needsAdvancing && localAdvancingId === null);
 
-  // Notify parent of pending state so MatchGrid can show the "save all" button
   useEffect(() => {
     if (!canSave || isLocked || isFinished) {
       onPendingChangeRef.current?.(id, null);
@@ -150,7 +155,6 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
     }
     const bothEmpty = localHome === '' && localAway === '';
     if (bothEmpty) {
-      // Borrador nulo: señaliza al padre que este partido tiene una eliminación pendiente
       onPendingChangeRef.current?.(id, { homeGoals: null, awayGoals: null, advancingTeamId: null });
       return;
     }
@@ -209,6 +213,25 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
       setSavedAdvancingId(localAdvancingId);
     }
   };
+
+  const handleToggleAccordion = async () => {
+    if (!showAccordion && !accordionLoaded) {
+      setShowAccordion(true);
+      setAccordionLoading(true);
+      const result = await getPublicMatchPredictions(id, activeLeagueId);
+      setAccordionData(result);
+      setAccordionLoaded(true);
+      setAccordionLoading(false);
+    } else {
+      setShowAccordion(prev => !prev);
+    }
+  };
+
+  const accordionTotal = accordionData && !('error' in accordionData)
+    ? accordionData.type === 'global'
+      ? accordionData.data.total
+      : accordionData.data.length
+    : 0;
 
   return (
     <div className="bg-gradient-to-b from-[#FFD6D1] to-[#F9ECE5] dark:from-slate-800 dark:to-slate-900 rounded-xl shadow-md overflow-hidden relative border border-[#FFD6D1] dark:border-slate-700 text-gray-900 dark:text-white">
@@ -366,7 +389,18 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
 
       {/* Footer */}
       <div className="bg-white/40 dark:bg-black/20 px-4 py-2 flex items-center justify-between">
-        <span className="text-[10px] text-gray-600 dark:text-emerald-300/60 tracking-wide">{date}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] text-gray-600 dark:text-emerald-300/60 tracking-wide">{date}</span>
+          <button
+            type="button"
+            onClick={handleToggleAccordion}
+            disabled={accordionLoading}
+            className="flex items-center gap-0.5 text-[10px] text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors disabled:opacity-50"
+          >
+            <Users size={10} />
+            <span>{showAccordion ? t('matchCard.ocultarApuestas') : t('matchCard.verApuestas')}</span>
+          </button>
+        </div>
 
         {!isFinished && !isLocked && (
           isPartial ? (
@@ -407,6 +441,104 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
           </span>
         )}
       </div>
+
+      {/* Acordeón de predicciones */}
+      {showAccordion && (
+        <div className="bg-slate-100/60 dark:bg-slate-800/50 border-t border-black/5 dark:border-white/5 px-4 py-3">
+          {accordionLoading ? (
+            <p className="text-xs text-center text-gray-400 dark:text-slate-500 py-1">
+              {t('matchCard.accordion.cargando')}
+            </p>
+          ) : !accordionData ? null : 'error' in accordionData ? (
+            <p className="text-xs text-center text-red-500 dark:text-red-400 py-1">{accordionData.error}</p>
+          ) : accordionData.type === 'global' ? (
+            /* ── Vista global: barras de porcentaje ── */
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-slate-500 mb-1">
+                {t('matchCard.accordion.globalTitle')}
+                {accordionData.data.total > 0 && (
+                  <span className="ml-1 normal-case font-normal">
+                    · {accordionData.data.total} {accordionData.data.total === 1 ? 'apuesta' : 'apuestas'}
+                  </span>
+                )}
+              </p>
+              {accordionData.data.total === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-1">
+                  {t('matchCard.accordion.sinApuestas')}
+                </p>
+              ) : (
+                [
+                  { label: home.name, pct: accordionData.data.homeWinPct, color: 'bg-blue-500' },
+                  { label: t('matchCard.accordion.empate'), pct: accordionData.data.drawPct, color: 'bg-gray-400 dark:bg-slate-500' },
+                  { label: away.name, pct: accordionData.data.awayWinPct, color: 'bg-rose-500' },
+                ].map(({ label, pct, color }) => (
+                  <div key={label} className="flex items-center gap-2 text-[11px]">
+                    <span className="w-14 text-right text-gray-600 dark:text-gray-400 truncate text-[10px]">{label}</span>
+                    <div className="flex-1 h-1.5 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${color} rounded-full transition-all duration-500`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="w-7 font-bold text-gray-700 dark:text-gray-300 text-right">{pct}%</span>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : (
+            /* ── Vista liga: lista de usuarios ── */
+            <div>
+              <p className="text-[10px] uppercase tracking-wider font-bold text-gray-400 dark:text-slate-500 mb-1.5">
+                {t('matchCard.accordion.ligaTitle')}
+                {accordionData.data.length > 0 && (
+                  <span className="ml-1 normal-case font-normal">
+                    · {accordionData.data.length} {accordionData.data.length === 1 ? 'apuesta' : 'apuestas'}
+                  </span>
+                )}
+              </p>
+              {accordionData.data.length === 0 ? (
+                <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-1">
+                  {t('matchCard.accordion.sinApuestas')}
+                </p>
+              ) : (
+                <ul className="space-y-1 max-h-40 overflow-y-auto">
+                  {accordionData.data.map((pred, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center justify-between text-[11px] py-1 border-b border-black/5 dark:border-white/5 last:border-0"
+                    >
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        {pred.avatarUrl ? (
+                          <img
+                            src={pred.avatarUrl}
+                            alt={pred.nickname}
+                            className="w-5 h-5 rounded-full object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-[8px] font-bold text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+                            {pred.nickname.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="truncate text-gray-700 dark:text-gray-300 font-medium">{pred.nickname}</span>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0 ml-2">
+                        <span className="font-bold tabular-nums text-gray-900 dark:text-gray-100">
+                          {pred.homeGoals} – {pred.awayGoals}
+                        </span>
+                        {pred.advancingTeamId !== null && (
+                          <span className="text-[9px] text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 rounded">
+                            {pred.advancingTeamId === homeTeamId ? home.name : away.name}
+                          </span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
     </div>
   );
