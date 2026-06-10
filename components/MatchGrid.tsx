@@ -18,9 +18,10 @@ const formatPill = (isoDay: string) =>
 
 export default function MatchGrid({ matches, activeLeagueId }: { matches: any[]; activeLeagueId?: number | null }) {
   const router = useRouter();
-  const [searchTerm, setSearchTerm]   = useState('');
-  const [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const [isSavingAll, setIsSavingAll] = useState(false);
+  const [searchTerm, setSearchTerm]     = useState('');
+  const [selectedDay, setSelectedDay]   = useState<string | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
+  const [isSavingAll, setIsSavingAll]   = useState(false);
 
   // Pending predictions — useRef to avoid re-renders on every keystroke,
   // useState only for the count (to show/hide the sticky button)
@@ -80,6 +81,13 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
     return Array.from(seen).sort();
   }, [matches]);
 
+  // Grupos únicos ordenados (solo fase de grupos, group_letter no nulo)
+  const uniqueGroups = useMemo(() => {
+    const seen = new Set<string>();
+    for (const m of matches) if (m.group_letter) seen.add(m.group_letter);
+    return Array.from(seen).sort();
+  }, [matches]);
+
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     return matches.filter((m) => {
@@ -89,12 +97,13 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
         if (!home.includes(term) && !away.includes(term)) return false;
       }
       if (selectedDay && toUtcDay(m.match_date) !== selectedDay) return false;
+      if (selectedGroup && m.group_letter !== selectedGroup) return false;
       return true;
     });
-  }, [matches, searchTerm, selectedDay]);
+  }, [matches, searchTerm, selectedDay, selectedGroup]);
 
-  const hasFilters = searchTerm !== '' || selectedDay !== null;
-  const clearFilters = () => { setSearchTerm(''); setSelectedDay(null); };
+  const hasFilters = searchTerm !== '' || selectedDay !== null || selectedGroup !== null;
+  const clearFilters = () => { setSearchTerm(''); setSelectedDay(null); setSelectedGroup(null); };
 
   return (
     <div className="flex flex-col gap-4">
@@ -155,6 +164,26 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
                 }`}
               >
                 {formatPill(day)}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Píldoras de grupo */}
+        {uniqueGroups.length > 1 && (
+          <div className="flex flex-wrap gap-1.5 items-center">
+            <span className="text-xs text-gray-400 dark:text-gray-500 font-medium mr-1">Grupo:</span>
+            {uniqueGroups.map((group) => (
+              <button
+                key={group}
+                onClick={() => setSelectedGroup(selectedGroup === group ? null : group)}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                  selectedGroup === group
+                    ? 'bg-violet-600 text-white shadow-sm'
+                    : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {group}
               </button>
             ))}
           </div>
