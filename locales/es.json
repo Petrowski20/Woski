@@ -165,6 +165,8 @@
     "confirmPassword": "Confirmar Contraseña",
     "crearCuenta": "Crear Cuenta",
     "iniciarSesion": "Iniciar Sesión",
+    "creando": "Creando cuenta…",
+    "entrando": "Iniciando sesión…",
     "yaRegistrado": "¿Ya tienes cuenta? Inicia sesión",
     "noRegistrado": "¿No tienes cuenta? Regístrate aquí",
     "mostrar": "Mostrar contraseña",

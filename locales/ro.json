@@ -165,6 +165,8 @@
     "confirmPassword": "Confirmă parola",
     "crearCuenta": "Creează cont",
     "iniciarSesion": "Autentificare",
+    "creando": "Se creează contul…",
+    "entrando": "Se autentifică…",
     "yaRegistrado": "Ai deja un cont? Autentifică-te",
     "noRegistrado": "Nu ai cont? Înregistrează-te",
     "mostrar": "Arată parola",

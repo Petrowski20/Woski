@@ -165,6 +165,8 @@
     "confirmPassword": "Confirm Password",
     "crearCuenta": "Create Account",
     "iniciarSesion": "Sign In",
+    "creando": "Creating account…",
+    "entrando": "Signing in…",
     "yaRegistrado": "Already have an account? Sign in",
     "noRegistrado": "Don't have an account? Sign up here",
     "mostrar": "Show password",

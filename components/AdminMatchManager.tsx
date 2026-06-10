@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { toast } from 'sonner'
 import { saveMatchResultAction, saveAllMatchesAction, createMatchAction, getAdminAllPredictionsAction } from '@/app/(main)/admin/actions'
 import type { MatchResult, AdminPrediction } from '@/app/(main)/admin/actions'
@@ -75,6 +75,29 @@ function PredictionsModal({ match, onClose }: { match: AdminMatch; onClose: () =
 
   const matchLabel = `${match.home_team?.flag_emoji ?? ''} ${match.home_team?.name ?? '?'}  vs  ${match.away_team?.name ?? '?'} ${match.away_team?.flag_emoji ?? ''}`
 
+  const groups = useMemo(() => {
+    if (!predictions) return []
+    const map = new Map<string, {
+      homeGoals: number | null
+      awayGoals: number | null
+      advancingTeamId: number | null
+      nicknames: string[]
+    }>()
+    for (const pred of predictions) {
+      const key = `${pred.pred_home_goals ?? '?'}-${pred.pred_away_goals ?? '?'}-${pred.pred_advancing_team_id ?? ''}`
+      if (!map.has(key)) {
+        map.set(key, {
+          homeGoals: pred.pred_home_goals,
+          awayGoals: pred.pred_away_goals,
+          advancingTeamId: pred.pred_advancing_team_id,
+          nicknames: [],
+        })
+      }
+      map.get(key)!.nicknames.push(pred.nickname)
+    }
+    return Array.from(map.values()).sort((a, b) => b.nicknames.length - a.nicknames.length)
+  }, [predictions])
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
@@ -111,38 +134,61 @@ function PredictionsModal({ match, onClose }: { match: AdminMatch; onClose: () =
 
           {predictions && predictions.length > 0 && (
             <>
-              <ul className="space-y-1 max-h-96 overflow-y-auto pr-1">
-                {predictions.map((pred, i) => {
+              <div className="space-y-2 max-h-[26rem] overflow-y-auto pr-1">
+                {groups.map((group, gi) => {
                   const advancing =
-                    pred.pred_advancing_team_id !== null
-                      ? pred.pred_advancing_team_id === match.home_team_id
+                    group.advancingTeamId !== null
+                      ? group.advancingTeamId === match.home_team_id
                         ? match.home_team?.name
                         : match.away_team?.name
                       : null
+                  const pct = Math.round((group.nicknames.length / predictions.length) * 100)
                   return (
-                    <li
-                      key={i}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800 text-sm"
-                    >
-                      <span className="font-medium text-gray-700 dark:text-gray-200 truncate max-w-[55%]">
-                        {pred.nickname}
-                      </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums">
-                          {pred.pred_home_goals ?? '?'} – {pred.pred_away_goals ?? '?'}
-                        </span>
-                        {advancing && (
-                          <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">
-                            {advancing}
+                    <div key={gi} className="rounded-xl border border-gray-100 dark:border-slate-800 overflow-hidden">
+                      {/* Cabecera del grupo */}
+                      <div className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-slate-800">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900 dark:text-gray-100 tabular-nums text-base">
+                            {group.homeGoals ?? '?'} – {group.awayGoals ?? '?'}
                           </span>
-                        )}
+                          {advancing && (
+                            <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1.5 py-0.5 rounded-full">
+                              {advancing}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <div className="w-16 h-1.5 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-indigo-500 dark:bg-indigo-400"
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 tabular-nums w-6 text-right">
+                            {pct}%
+                          </span>
+                          <span className="text-xs font-semibold bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full tabular-nums">
+                            {group.nicknames.length}
+                          </span>
+                        </div>
                       </div>
-                    </li>
+                      {/* Nicknames */}
+                      <div className="px-3 py-2 flex flex-wrap gap-1.5">
+                        {group.nicknames.map((nick, ni) => (
+                          <span
+                            key={ni}
+                            className="text-xs text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-700/60 px-2 py-0.5 rounded-md"
+                          >
+                            {nick}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   )
                 })}
-              </ul>
+              </div>
               <p className="text-xs text-gray-400 dark:text-slate-500 mt-3 text-right">
-                {predictions.length} predicción{predictions.length !== 1 ? 'es' : ''}
+                {predictions.length} predicción{predictions.length !== 1 ? 'es' : ''} · {groups.length} resultado{groups.length !== 1 ? 's' : ''} distintos
               </p>
             </>
           )}

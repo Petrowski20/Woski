@@ -41,6 +41,7 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
   const { t } = useLang()
   const [showPassword, setShowPassword] = useState(false)
   const [formError, setFormError] = useState(errorInicial)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const passwordRef = useRef<HTMLInputElement>(null)
   const confirmPasswordRef = useRef<HTMLInputElement>(null)
 
@@ -50,15 +51,19 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    if (isSubmitting) return
     setFormError(undefined)
-
-    const formData = new FormData(e.currentTarget)
-    const result = isRegister ? await signup(formData) : await login(formData)
-
-    if (result && 'error' in result) {
-      setFormError(result.error)
-      if (passwordRef.current) passwordRef.current.value = ''
-      if (confirmPasswordRef.current) confirmPasswordRef.current.value = ''
+    setIsSubmitting(true)
+    try {
+      const formData = new FormData(e.currentTarget)
+      const result = isRegister ? await signup(formData) : await login(formData)
+      if (result && 'error' in result) {
+        setFormError(result.error)
+        if (passwordRef.current) passwordRef.current.value = ''
+        if (confirmPasswordRef.current) confirmPasswordRef.current.value = ''
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -97,13 +102,13 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
             />
           </div>
 
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 min-w-0 overflow-hidden">
             <label className="text-xs font-semibold text-gray-600" htmlFor="birthDate">
               {t('auth.birthDate')}
             </label>
             <input
               id="birthDate"
-              className={inputClass}
+              className={`${inputClass} max-w-full`}
               name="birthDate"
               type="date"
               max={maxBirthDate}
@@ -182,9 +187,13 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
 
       <button
         type="submit"
-        className="bg-gradient-to-r from-brand-blue to-brand-teal hover:from-brand-cyan hover:to-brand-mint rounded-lg px-4 py-2.5 text-white font-semibold text-sm mt-2 shadow-md transition-all"
+        disabled={isSubmitting}
+        className="bg-gradient-to-r from-brand-blue to-brand-teal hover:from-brand-cyan hover:to-brand-mint rounded-lg px-4 py-2.5 text-white font-semibold text-sm mt-2 shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        {isRegister ? t('auth.crearCuenta') : t('auth.iniciarSesion')}
+        {isSubmitting
+          ? (isRegister ? t('auth.creando') : t('auth.entrando'))
+          : (isRegister ? t('auth.crearCuenta') : t('auth.iniciarSesion'))
+        }
       </button>
 
       <div className="text-center mt-2">
