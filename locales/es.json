@@ -48,7 +48,7 @@
     },
     "legend": {
       "me": "Marcador exacto",
-      "ar": "Acierto de resultado",
+      "ar": "Acierto parcial",
       "ta": "Total de aciertos",
       "pi": "Pronósticos incorrectos",
       "me_abbr": "ME",

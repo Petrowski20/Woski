@@ -48,7 +48,7 @@
     },
     "legend": {
       "me": "Scor exact",
-      "ar": "Rezultat corect",
+      "ar": "Parțial corect",
       "ta": "Total puncte",
       "pi": "Predicții incorecte",
       "me_abbr": "SE",

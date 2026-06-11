@@ -48,7 +48,7 @@
     },
     "legend": {
       "me": "Exact score",
-      "ar": "Correct result",
+      "ar": "Partial hit",
       "ta": "Total accurate",
       "pi": "Wrong predictions",
       "me_abbr": "ES",
