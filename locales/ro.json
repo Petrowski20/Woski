@@ -48,7 +48,7 @@
     },
     "legend": {
       "me": "Scor exact",
-      "ar": "Parțial corect",
+      "ar": "Diferență de goluri",
       "ta": "Total puncte",
       "pi": "Predicții incorecte",
       "me_abbr": "SE",

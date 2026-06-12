@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import MatchCard from './MatchCard';
@@ -22,6 +22,13 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
   const [selectedDay, setSelectedDay]   = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [isSavingAll, setIsSavingAll]   = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Re-evaluate lock state every 30 s so cards lock automatically when the cutoff passes
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   // Pending predictions — useRef to avoid re-renders on every keystroke,
   // useState only for the count (to show/hide the sticky button)
@@ -224,7 +231,7 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
           else if (match.myPred) status = 'PREDICTED';
 
           const isLocked =
-            new Date(match.match_date).getTime() - Date.now() < 3_600_000 ||
+            new Date(match.match_date).getTime() - now < 3_600_000 ||
             match.status === 'FINISHED' ||
             match.status === 'CANCELLED';
 

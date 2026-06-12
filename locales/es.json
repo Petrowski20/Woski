@@ -48,7 +48,7 @@
     },
     "legend": {
       "me": "Marcador exacto",
-      "ar": "Acierto parcial",
+      "ar": "Diferencia de goles",
       "ta": "Total de aciertos",
       "pi": "Pronósticos incorrectos",
       "me_abbr": "ME",

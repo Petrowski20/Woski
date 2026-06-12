@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { getServerLang, tServer } from '@/utils/i18n-server'
 
 type BaseRow = { position: number; nickname: string; pts: number; profileId: string; avatarUrl: string | null }
-type StatsEntry = { me: number; ar: number; pi: number }
+type StatsEntry = { me: number; ar: number; eq: number; pi: number }
 type RankingRow = BaseRow & { me: number; ar: number; ta: number; pi: number }
 
 function Avatar({ url, initial }: { url: string | null; initial: string }) {
@@ -89,17 +89,18 @@ export default async function ClasificacionPage() {
   for (const pred of preds ?? []) {
     const pid = pred.profile_id
     if (!profileIds.has(pid)) continue
-    if (!statsMap.has(pid)) statsMap.set(pid, { me: 0, ar: 0, pi: 0 })
+    if (!statsMap.has(pid)) statsMap.set(pid, { me: 0, ar: 0, eq: 0, pi: 0 })
     const s = statsMap.get(pid)!
     const matchStatus = (pred.matches as any)?.status
     if (pred.points_earned === 3) s.me++
-    else if (pred.points_earned === 1 || pred.points_earned === 2) s.ar++
+    else if (pred.points_earned === 2) s.ar++
+    else if (pred.points_earned === 1) s.eq++
     else if (pred.points_earned === 0 && matchStatus === 'FINISHED') s.pi++
   }
 
   const ranking: RankingRow[] = baseRanking.map(r => {
-    const s = statsMap.get(r.profileId) ?? { me: 0, ar: 0, pi: 0 }
-    return { ...r, me: s.me, ar: s.ar, ta: s.me + s.ar, pi: s.pi }
+    const s = statsMap.get(r.profileId) ?? { me: 0, ar: 0, eq: 0, pi: 0 }
+    return { ...r, me: s.me, ar: s.ar, ta: s.me + s.ar + s.eq, pi: s.pi }
   })
 
   const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }

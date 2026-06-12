@@ -77,6 +77,7 @@ export async function saveAllPredictionsAction(
 
   const matchMap = new Map((matches ?? []).map(m => [m.id, m]))
   const now = Date.now()
+  const supabaseAdmin = _makeAdminClient()
 
   const outcomes = await Promise.allSettled(
     drafts.map(async ({ matchId, homeGoals, awayGoals, advancingTeamId: clientAdvancingId }) => {
@@ -111,7 +112,7 @@ export async function saveAllPredictionsAction(
         }
       }
 
-      const { error } = await supabase
+      const { error } = await supabaseAdmin
         .from('predictions')
         .upsert({
           profile_id: user.id,
@@ -200,7 +201,8 @@ export async function savePredictionAction(
     }
   }
 
-  const { error } = await supabase
+  const supabaseAdmin = _makeAdminClient()
+  const { error } = await supabaseAdmin
     .from('predictions')
     .upsert({
       profile_id: user.id,

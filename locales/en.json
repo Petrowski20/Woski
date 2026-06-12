@@ -48,7 +48,7 @@
     },
     "legend": {
       "me": "Exact score",
-      "ar": "Partial hit",
+      "ar": "Goal difference",
       "ta": "Total accurate",
       "pi": "Wrong predictions",
       "me_abbr": "ES",
