@@ -43,7 +43,7 @@ export default async function Footer() {
             <span>📺</span> {t('footer.rtve')}
           </a>
           <a
-            href="https://www.fctv33hd.hair/es/football.html"
+            href="https://www.fctv33hd.yachts/es/football.html"
             target="_blank"
             rel="noopener noreferrer"
             className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium flex items-center gap-1"
