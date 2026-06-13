@@ -42,9 +42,13 @@ export default async function HomePage() {
   if (activeLeagueId) {
     const { data: leagueData, error: leagueError } = await supabase
       .from('v_ranking_by_league')
-      .select('profile_id, nickname, total_points, avatar_url, league_name')
+      .select('profile_id, nickname, total_points, avatar_url, league_name, created_at')
       .eq('league_id', activeLeagueId)
-      .order('total_points', { ascending: false })
+      .order('total_points',  { ascending: false })
+      .order('exact_scores',  { ascending: false })
+      .order('correct_signs', { ascending: false })
+      .order('goal_diff_sum', { ascending: true })
+      .order('created_at',    { ascending: true })
       .limit(5);
     if (leagueError) console.error('[home] league ranking error:', leagueError)
     top5 = (leagueData ?? []).map((r: any, i: number) => ({
@@ -54,8 +58,12 @@ export default async function HomePage() {
   } else {
     const { data: globalData, error: globalError } = await supabase
       .from('v_ranking_global')
-      .select('profile_id, nickname, total_points, avatar_url')
-      .order('total_points', { ascending: false })
+      .select('profile_id, nickname, total_points, avatar_url, created_at')
+      .order('total_points',  { ascending: false })
+      .order('exact_scores',  { ascending: false })
+      .order('correct_signs', { ascending: false })
+      .order('goal_diff_sum', { ascending: true })
+      .order('created_at',    { ascending: true })
       .limit(5);
     if (globalError) console.error('[home] global ranking error:', globalError)
     top5 = (globalData ?? []).map((r: any, i: number) => ({
