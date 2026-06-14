@@ -256,6 +256,111 @@ export async function saveAllMatchesAction(
   return { saved: outcomes.filter(o => o.status === 'fulfilled').length, failed }
 }
 
+export async function updatePlayerPredictionAction(
+  profileId: string,
+  matchId: number,
+  predHomeGoals: number,
+  predAwayGoals: number,
+  predAdvancingTeamId: number | null,
+): Promise<{ success?: true; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado' }
+
+  if (
+    !Number.isInteger(predHomeGoals) || !Number.isInteger(predAwayGoals) ||
+    predHomeGoals < 0 || predAwayGoals < 0 || predHomeGoals > 99 || predAwayGoals > 99
+  ) return { error: 'Valores de goles inválidos (0–99)' }
+
+  const supabaseAdmin = createSVClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { data: match, error: matchErr } = await supabaseAdmin
+    .from('matches')
+    .select('home_goals, away_goals, advancing_team_id, stage, home_team_id, away_team_id')
+    .eq('id', matchId)
+    .single()
+
+  if (matchErr || !match) return { error: 'Partido no encontrado' }
+
+  // Partido sin resultado aún: guardar la predicción sin tocar points_earned
+  if (match.home_goals === null || match.away_goals === null) {
+    const { error: predErr } = await supabaseAdmin
+      .from('predictions')
+      .update({ pred_home_goals: predHomeGoals, pred_away_goals: predAwayGoals, pred_advancing_team_id: predAdvancingTeamId })
+      .eq('profile_id', profileId)
+      .eq('match_id', matchId)
+    if (predErr) return { error: predErr.message }
+    revalidatePath(`/jugador/${profileId}`)
+    revalidatePath('/admin/predicciones')
+    return { success: true }
+  }
+
+  const realHome = match.home_goals as number
+  const realAway = match.away_goals as number
+  const advancing = match.advancing_team_id as number | null
+  const isKnockout = match.stage !== 'GROUP'
+  const isRealTie = realHome === realAway
+
+  let pointsEarned: number
+  if (isKnockout && isRealTie && advancing !== null) {
+    if (predAdvancingTeamId !== advancing) {
+      pointsEarned = 0
+    } else if (predHomeGoals === realHome && predAwayGoals === realAway) {
+      pointsEarned = 3
+    } else if (predHomeGoals === predAwayGoals) {
+      pointsEarned = 2
+    } else {
+      pointsEarned = 1
+    }
+  } else {
+    const wrongWinner =
+      (realHome > realAway && predHomeGoals <= predAwayGoals) ||
+      (realAway > realHome && predAwayGoals <= predHomeGoals) ||
+      (isRealTie && predHomeGoals !== predAwayGoals)
+    if (wrongWinner) {
+      pointsEarned = 0
+    } else if (predHomeGoals === realHome && predAwayGoals === realAway) {
+      pointsEarned = 3
+    } else if ((predHomeGoals - predAwayGoals) === (realHome - realAway)) {
+      pointsEarned = 2
+    } else {
+      pointsEarned = 1
+    }
+  }
+
+  const { error: predErr } = await supabaseAdmin
+    .from('predictions')
+    .update({ pred_home_goals: predHomeGoals, pred_away_goals: predAwayGoals, pred_advancing_team_id: predAdvancingTeamId, points_earned: pointsEarned })
+    .eq('profile_id', profileId)
+    .eq('match_id', matchId)
+
+  if (predErr) return { error: predErr.message }
+
+  const { data: totals } = await supabaseAdmin
+    .from('predictions')
+    .select('points_earned')
+    .eq('profile_id', profileId)
+
+  const totalPoints = (totals ?? []).reduce((sum, r) => sum + (r.points_earned ?? 0), 0)
+
+  await supabaseAdmin.from('profiles').update({ total_points: totalPoints }).eq('id', profileId)
+  await supabaseAdmin.from('profile_leagues').update({ league_points: totalPoints }).eq('profile_id', profileId)
+
+  revalidatePath('/')
+  revalidatePath('/clasificacion')
+  revalidatePath('/admin/predicciones')
+  revalidatePath(`/jugador/${profileId}`)
+
+  return { success: true }
+}
+
 export async function getAdminAllPredictionsAction(
   matchId: number
 ): Promise<{ data?: AdminPrediction[]; error?: string }> {

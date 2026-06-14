@@ -73,7 +73,8 @@ export default async function ClasificacionPage() {
     rankingPromise,
     supabase
       .from('predictions')
-      .select('profile_id, points_earned, matches!inner(status)'),
+      .select('profile_id, points_earned, matches!inner(status)')
+      .eq('matches.status', 'FINISHED'),
   ])
 
   if (rankingError) console.error('[clasificacion] ranking error:', rankingError.message, rankingError.code)
@@ -99,11 +100,11 @@ export default async function ClasificacionPage() {
     if (!profileIds.has(pid)) continue
     if (!statsMap.has(pid)) statsMap.set(pid, { me: 0, ar: 0, eq: 0, pi: 0 })
     const s = statsMap.get(pid)!
-    const matchStatus = (pred.matches as any)?.status
-    if (pred.points_earned === 3) s.me++
-    else if (pred.points_earned === 2) s.ar++
-    else if (pred.points_earned === 1) s.eq++
-    else if (pred.points_earned === 0 && matchStatus === 'FINISHED') s.pi++
+    const pts = pred.points_earned ?? 0
+    if (pts === 3) s.me++
+    else if (pts === 2) s.ar++
+    else if (pts === 1) s.eq++
+    else s.pi++
   }
 
   const ranking: RankingRow[] = baseRanking.map(r => {
