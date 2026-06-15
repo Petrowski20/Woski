@@ -6,7 +6,14 @@ import { getServerLang, tServer } from '@/utils/i18n-server'
 
 type BaseRow = { position: number; nickname: string; pts: number; profileId: string; avatarUrl: string | null }
 type StatsEntry = { me: number; ar: number; eq: number; pi: number }
-type RankingRow = BaseRow & { me: number; ar: number; ta: number; pi: number }
+type RankingRow = BaseRow & { me: number; ar: number; ta: number; pi: number; movement: number | null }
+
+function MovementBadge({ m }: { m: number | null }) {
+  if (m === null) return null
+  if (m > 0) return <span className="text-[9px] font-bold text-emerald-500 leading-none">▲{m}</span>
+  if (m < 0) return <span className="text-[9px] font-bold text-red-400 leading-none">▼{Math.abs(m)}</span>
+  return <span className="text-[9px] text-gray-300 dark:text-slate-600 leading-none">—</span>
+}
 
 function Avatar({ url, initial }: { url: string | null; initial: string }) {
   return (
@@ -69,13 +76,19 @@ export default async function ClasificacionPage() {
   const [
     { data: rankingData, error: rankingError },
     { data: preds, error: predsError },
+    { data: movementData },
   ] = await Promise.all([
     rankingPromise,
     supabase
       .from('predictions')
       .select('profile_id, points_earned, matches!inner(status)')
       .eq('matches.status', 'FINISHED'),
+    supabase.rpc('get_ranking_movement', { p_league_id: activeLeagueId ?? null }),
   ])
+
+  const movementMap = new Map<string, number | null>(
+    (movementData ?? []).map((r: any) => [r.profile_id, r.movement ?? null])
+  )
 
   if (rankingError) console.error('[clasificacion] ranking error:', rankingError.message, rankingError.code)
   if (predsError) console.error('[clasificacion] predictions error:', predsError.message, predsError.code)
@@ -109,7 +122,7 @@ export default async function ClasificacionPage() {
 
   const ranking: RankingRow[] = baseRanking.map(r => {
     const s = statsMap.get(r.profileId) ?? { me: 0, ar: 0, eq: 0, pi: 0 }
-    return { ...r, me: s.me, ar: s.ar, ta: s.me + s.ar + s.eq, pi: s.pi }
+    return { ...r, me: s.me, ar: s.ar, ta: s.me + s.ar + s.eq, pi: s.pi, movement: movementMap.get(r.profileId) ?? null }
   })
 
   const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
@@ -161,8 +174,13 @@ export default async function ClasificacionPage() {
                       isMe ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-slate-800/50'
                     }`}
                   >
-                    <td className="px-4 py-3 text-center font-bold text-gray-500 dark:text-gray-400 w-12">
-                      {medals[row.position] ?? row.position}
+                    <td className="px-4 py-3 text-center w-12">
+                      <div className="flex flex-col items-center gap-0.5">
+                        <span className="font-bold text-gray-500 dark:text-gray-400 leading-none">
+                          {medals[row.position] ?? row.position}
+                        </span>
+                        <MovementBadge m={row.movement} />
+                      </div>
                     </td>
                     <td className="px-4 py-3">
                       <Link

@@ -18,6 +18,7 @@ export default function MobileMenu({ isAdmin }: Props) {
     { href: '/supuestos',     label: t('nav.miMundial'),     icon: '⚽' },
     { href: '/selecciones',   label: t('nav.selecciones'),   icon: '🌍' },
     { href: '/ligas',         label: t('nav.ligasPrivadas'), icon: '🔒' },
+    { href: '/premios',       label: 'Premios',              icon: '🏅' },
     { href: '/reglas',        label: t('nav.comoJugar'),     icon: '📋' },
   ]
 

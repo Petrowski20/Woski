@@ -8,6 +8,7 @@ const LINKS = [
   { href: '/admin/predicciones', label: '✏️ Predicciones', exact: false },
   { href: '/admin/recordatorios', label: '📢 Recordatorios', exact: false },
   { href: '/admin/leagues', label: '🏆 Ligas', exact: false },
+  { href: '/admin/stats', label: '🏅 Premios', exact: false },
 ]
 
 export default function AdminSubNav() {

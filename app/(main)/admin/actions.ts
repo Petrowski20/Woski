@@ -169,9 +169,13 @@ export async function saveMatchResultAction(
 
   if (rpcError) return { error: rpcError.message }
 
+  // Congela el ranking actual para el historial de posiciones
+  await supabase.rpc('record_ranking_snapshot', { p_match_id: matchId })
+
   revalidatePath('/')
   revalidatePath('/predicciones')
   revalidatePath('/clasificacion')
+  revalidatePath('/premios')
   revalidatePath('/admin')
 
   return { success: true }
@@ -237,12 +241,16 @@ export async function saveAllMatchesAction(
         p_away_goals: awayGoals,
       })
       if (rpcError) throw new Error(rpcError.message)
+
+      // Snapshot tras cada partido exitoso
+      await supabase.rpc('record_ranking_snapshot', { p_match_id: matchId })
     })
   )
 
   revalidatePath('/')
   revalidatePath('/predicciones')
   revalidatePath('/clasificacion')
+  revalidatePath('/premios')
   revalidatePath('/admin')
 
   const failed = outcomes
@@ -361,6 +369,114 @@ export async function updatePlayerPredictionAction(
   revalidatePath(`/jugador/${profileId}`)
 
   return { success: true }
+}
+
+// ── Tipos para el reporte de estadísticas curiosas ────────────────────────────
+
+export interface FunnyPredictionDetail {
+  match: string
+  home_flag: string
+  away_flag: string
+  home_iso: string
+  away_iso: string
+  stage: string
+  group_letter: string | null
+  home_ranking: number | null
+  away_ranking: number | null
+  home_confederation: string | null
+  away_confederation: string | null
+  pred_result: string
+  actual_result: string
+  points_earned: number
+  cumulative_points: number
+  minutes_before_kickoff: number
+  bet_on_underdog: boolean
+  pred_total_goals: number
+  goal_error: number
+  missed_by_one: boolean
+  predicted_draw: boolean
+}
+
+export interface FunnyPlayerLeague {
+  league_id: number
+  league_name: string
+  league_points: number
+}
+
+export interface ConfederationStat {
+  confederation: string
+  matches: number
+  total_points: number
+  exact_scores: number
+  avg_goal_error: number
+}
+
+export interface FunnyPlayerStats {
+  profile_id: string
+  nickname: string
+  leagues: FunnyPlayerLeague[]
+  total_predictions: number
+  total_points: number
+  exact_scores: number
+  diff_scores: number
+  correct_winners: number
+  wrong_predictions: number
+  underdog_bets: number
+  underdog_wins: number
+  total_goals_predicted: number
+  avg_goals_per_match: number
+  avg_minutes_before_kickoff: number
+  last_minute_count: number
+  late_predictions: number
+  avg_goal_error: number
+  max_goal_error: number
+  max_pred_goals_in_match: number
+  missed_by_one: number
+  predicted_draws: number
+  best_streak: number
+  worst_streak: number
+  current_streak: number
+  by_confederation: ConfederationStat[]
+  predictions: FunnyPredictionDetail[]
+}
+
+export async function getFunnyStatsAction(
+  leagueId?: number | null,
+): Promise<{ data?: FunnyPlayerStats[]; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado' }
+
+  const supabaseAdmin = createSVClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { data, error } = await supabaseAdmin.rpc('get_funny_prediction_stats', {
+    p_league_id: leagueId ?? null,
+  })
+  if (error) return { error: error.message }
+
+  return { data: (data ?? []) as FunnyPlayerStats[] }
+}
+
+export async function getPublicStatsAction(
+  leagueId?: number | null,
+): Promise<{ data?: FunnyPlayerStats[]; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data, error } = await supabase.rpc('get_funny_prediction_stats', {
+    p_league_id: leagueId ?? null,
+  })
+  if (error) return { error: error.message }
+
+  return { data: (data ?? []) as FunnyPlayerStats[] }
 }
 
 export async function getAdminAllPredictionsAction(
