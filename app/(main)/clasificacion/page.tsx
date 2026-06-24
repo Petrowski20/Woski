@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { getServerLang, tServer } from '@/utils/i18n-server'
 
 type BaseRow = { position: number; nickname: string; pts: number; profileId: string; avatarUrl: string | null }
-type StatsEntry = { me: number; ar: number; eq: number; pi: number }
 type RankingRow = BaseRow & { me: number; ar: number; ta: number; pi: number; movement: number | null }
 
 function MovementBadge({ m }: { m: number | null }) {
@@ -75,15 +74,11 @@ export default async function ClasificacionPage() {
 
   const [
     { data: rankingData, error: rankingError },
-    { data: preds, error: predsError },
+    { data: statsData },
     { data: movementData },
   ] = await Promise.all([
     rankingPromise,
-    supabase
-      .from('predictions')
-      .select('profile_id, points_earned, matches!inner(status)')
-      .eq('matches.status', 'FINISHED')
-      .limit(10000),
+    supabase.rpc('get_player_stats'),
     supabase.rpc('get_ranking_movement', { p_league_id: activeLeagueId ?? null }),
   ])
 
@@ -92,7 +87,6 @@ export default async function ClasificacionPage() {
   )
 
   if (rankingError) console.error('[clasificacion] ranking error:', rankingError.message, rankingError.code)
-  if (predsError) console.error('[clasificacion] predictions error:', predsError.message, predsError.code)
 
   const baseRanking: BaseRow[] = (rankingData ?? []).map((r: any, i: number) => ({
     position: i + 1,
@@ -106,20 +100,17 @@ export default async function ClasificacionPage() {
     leagueName = (rankingData as any)?.[0]?.league_name ?? 'Liga privada'
   }
 
-  const profileIds = new Set(baseRanking.map(r => r.profileId))
-  const statsMap = new Map<string, StatsEntry>()
-
-  for (const pred of preds ?? []) {
-    const pid = pred.profile_id
-    if (!profileIds.has(pid)) continue
-    if (!statsMap.has(pid)) statsMap.set(pid, { me: 0, ar: 0, eq: 0, pi: 0 })
-    const s = statsMap.get(pid)!
-    const pts = pred.points_earned ?? 0
-    if (pts === 3) s.me++
-    else if (pts === 2) s.ar++
-    else if (pts === 1) s.eq++
-    else s.pi++
-  }
+  const statsMap = new Map<string, { me: number; ar: number; eq: number; pi: number }>(
+    (statsData ?? []).map((r: any) => [
+      r.profile_id,
+      {
+        me: Number(r.exact_scores ?? 0),
+        ar: Number(r.diff_scores  ?? 0),
+        eq: Number(r.sign_scores  ?? 0),
+        pi: Number(r.misses       ?? 0),
+      },
+    ])
+  )
 
   const ranking: RankingRow[] = baseRanking.map(r => {
     const s = statsMap.get(r.profileId) ?? { me: 0, ar: 0, eq: 0, pi: 0 }
