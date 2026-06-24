@@ -82,7 +82,8 @@ export default async function ClasificacionPage() {
     supabase
       .from('predictions')
       .select('profile_id, points_earned, matches!inner(status)')
-      .eq('matches.status', 'FINISHED'),
+      .eq('matches.status', 'FINISHED')
+      .limit(10000),
     supabase.rpc('get_ranking_movement', { p_league_id: activeLeagueId ?? null }),
   ])
 
