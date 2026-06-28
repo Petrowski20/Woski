@@ -130,17 +130,17 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
       // Para knockout no-empate el servidor infiere el advancing; lo calculamos aquí
       // para que savedAdvancingId coincida con predAdvancingTeamId al revalidar.
       let finalAdvancingId = localAdvancingId;
-      if (isKnockout && !isTied) {
+      if (isKnockout) {
         const h = parseInt(localHome, 10);
         const a = parseInt(localAway, 10);
-        if (!isNaN(h) && !isNaN(a)) {
+        if (!isNaN(h) && !isNaN(a) && h !== a) {
           finalAdvancingId = h > a ? homeTeamId : awayTeamId;
         }
       }
       setSavedAdvancingId(finalAdvancingId);
       setLocalAdvancingId(finalAdvancingId);
     },
-  }), [localHome, localAway, localAdvancingId, isKnockout, isTied, homeTeamId, awayTeamId]);
+  }), [localHome, localAway, localAdvancingId, isKnockout, homeTeamId, awayTeamId]);
 
   const onPendingChangeRef = useRef(onPendingChange);
   useEffect(() => { onPendingChangeRef.current = onPendingChange; }, [onPendingChange]);
