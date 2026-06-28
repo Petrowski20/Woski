@@ -127,9 +127,20 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
     confirmSaved: () => {
       setSavedHome(localHome);
       setSavedAway(localAway);
-      setSavedAdvancingId(localAdvancingId);
+      // Para knockout no-empate el servidor infiere el advancing; lo calculamos aquí
+      // para que savedAdvancingId coincida con predAdvancingTeamId al revalidar.
+      let finalAdvancingId = localAdvancingId;
+      if (isKnockout) {
+        const h = parseInt(localHome, 10);
+        const a = parseInt(localAway, 10);
+        if (!isNaN(h) && !isNaN(a) && h !== a) {
+          finalAdvancingId = h > a ? homeTeamId : awayTeamId;
+        }
+      }
+      setSavedAdvancingId(finalAdvancingId);
+      setLocalAdvancingId(finalAdvancingId);
     },
-  }), [localHome, localAway, localAdvancingId]);
+  }), [localHome, localAway, localAdvancingId, isKnockout, homeTeamId, awayTeamId]);
 
   const onPendingChangeRef = useRef(onPendingChange);
   useEffect(() => { onPendingChangeRef.current = onPendingChange; }, [onPendingChange]);
@@ -150,10 +161,12 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
   const isTied         = localHome !== '' && localAway !== '' && localHome === localAway;
   const needsAdvancing = isKnockout && isTied;
   const isPartial      = (localHome === '') !== (localAway === '');
+  // Para knockout no-empate el servidor infiere el equipo clasificado automáticamente,
+  // por lo que solo comparamos advancing cuando hay empate (el usuario lo eligió explícitamente).
   const hasChanged     =
     localHome !== savedHome ||
     localAway !== savedAway ||
-    (isKnockout && localAdvancingId !== savedAdvancingId);
+    (isKnockout && isTied && localAdvancingId !== savedAdvancingId);
   const canSave = hasChanged && !isPartial && !(needsAdvancing && localAdvancingId === null);
 
   useEffect(() => {
@@ -216,9 +229,20 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
       setSavedAdvancingId(null);
     } else {
       toast.success(t('matchCard.success'));
+      // Para knockout no-empate el servidor infiere el advancing; lo sincronizamos aquí
+      // para que no haya diferencia con predAdvancingTeamId al revalidar.
+      let finalAdvancingId = localAdvancingId;
+      if (isKnockout && !isTied) {
+        const h = parseInt(localHome, 10);
+        const a = parseInt(localAway, 10);
+        if (!isNaN(h) && !isNaN(a)) {
+          finalAdvancingId = h > a ? homeTeamId : awayTeamId;
+        }
+      }
       setSavedHome(localHome);
       setSavedAway(localAway);
-      setSavedAdvancingId(localAdvancingId);
+      setSavedAdvancingId(finalAdvancingId);
+      setLocalAdvancingId(finalAdvancingId);
     }
   };
 
