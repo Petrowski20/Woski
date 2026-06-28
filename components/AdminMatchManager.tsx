@@ -585,6 +585,20 @@ export default function AdminMatchManager({
   const [isSavingAll, setIsSavingAll]  = useState(false)
   const [predModal, setPredModal]      = useState<AdminMatch | null>(null)
 
+  const scrollTargetId = useMemo(
+    () => initialMatches.find((m) => m.status !== 'FINISHED')?.id ?? null,
+    [initialMatches],
+  )
+  const scrollTargetRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!scrollTargetRef.current) return
+    const t = setTimeout(() => {
+      scrollTargetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 200)
+    return () => clearTimeout(t)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const rowValuesRef = useRef<Record<number, RowValues | null>>(
     Object.fromEntries(
       initialMatches.map(m => [
@@ -723,7 +737,9 @@ export default function AdminMatchManager({
           </p>
         ) : (
           initialMatches.map((match) => (
-            <MatchRow key={match.id} match={match} onRowChange={handleRowChange} onViewPredictions={setPredModal} />
+            <div key={match.id} ref={match.id === scrollTargetId ? scrollTargetRef : undefined}>
+              <MatchRow match={match} onRowChange={handleRowChange} onViewPredictions={setPredModal} />
+            </div>
           ))
         )}
       </div>
