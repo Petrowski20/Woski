@@ -114,6 +114,7 @@
     "stages": {
       "finished": "FINALIZADO",
       "group": "GRUPO {group}",
+      "round32": "DIECISEISAVOS",
       "round16": "OCTAVOS",
       "quarter": "CUARTOS",
       "semi": "SEMIFINAL",

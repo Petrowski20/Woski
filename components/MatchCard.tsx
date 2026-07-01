@@ -190,6 +190,7 @@ const MatchCard = forwardRef<MatchCardHandle, MatchCardProps>(function MatchCard
 
   const stageMap: Record<string, string> = {
     GROUP:        t('matchCard.stages.group', { group }),
+    ROUND_OF_32:  t('matchCard.stages.round32'),
     ROUND_OF_16:  t('matchCard.stages.round16'),
     QUARTER_FINAL: t('matchCard.stages.quarter'),
     SEMI_FINAL:   t('matchCard.stages.semi'),

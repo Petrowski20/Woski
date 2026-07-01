@@ -114,6 +114,7 @@
     "stages": {
       "finished": "FINALIZAT",
       "group": "GRUPA {group}",
+      "round32": "ȘAISPREZECIMI",
       "round16": "OPTIMI",
       "quarter": "SFERTURI",
       "semi": "SEMIFINALĂ",
