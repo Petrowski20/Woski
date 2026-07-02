@@ -59,12 +59,8 @@ export default async function HomePage() {
   } else {
     const { data: globalData, error: globalError } = await supabase
       .from('v_ranking_global')
-      .select('profile_id, nickname, total_points, avatar_url, created_at')
-      .order('total_points',  { ascending: false })
-      .order('exact_scores',  { ascending: false })
-      .order('correct_signs', { ascending: false })
-      .order('goal_diff_sum', { ascending: true })
-      .order('created_at',    { ascending: true })
+      .select('profile_id, nickname, total_points, avatar_url')
+      .order('total_points', { ascending: false })
       .limit(5);
     if (globalError) console.error('[home] global ranking error:', globalError)
     top5 = (globalData ?? []).map((r: any, i: number) => ({

@@ -38,6 +38,13 @@ interface Props {
   matches: Match[]
   predictions: Prediction[]
   selectedPlayerId: string | null
+  lockCutoff: string
+}
+
+function matchPriority(match: Match, lockCutoff: string): number {
+  if (match.status === 'FINISHED') return 2
+  if (match.status === 'IN_PROGRESS' || match.match_date <= lockCutoff) return 1
+  return 0
 }
 
 const STAGE_LABELS: Record<string, string> = {
@@ -83,7 +90,7 @@ interface RowState {
   saving: boolean
 }
 
-export default function AdminPredictionsEditor({ profiles, matches, predictions, selectedPlayerId }: Props) {
+export default function AdminPredictionsEditor({ profiles, matches, predictions, selectedPlayerId, lockCutoff }: Props) {
   const router = useRouter()
   const [, startTransition] = useTransition()
 
@@ -157,6 +164,14 @@ export default function AdminPredictionsEditor({ profiles, matches, predictions,
 
   const selectedNickname = profiles.find(p => p.id === selectedPlayerId)?.nickname
 
+  const sortedMatches = [...matches].sort((a, b) => {
+    const pa = matchPriority(a, lockCutoff)
+    const pb = matchPriority(b, lockCutoff)
+    if (pa !== pb) return pa - pb
+    return new Date(a.match_date).getTime() - new Date(b.match_date).getTime()
+  })
+  const firstClosedIdx = sortedMatches.findIndex(m => matchPriority(m, lockCutoff) >= 1)
+
   return (
     <div className="space-y-6">
       {/* Player selector */}
@@ -181,16 +196,16 @@ export default function AdminPredictionsEditor({ profiles, matches, predictions,
         <div className="space-y-3">
           <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 px-1">
             Predicciones de <span className="text-gray-700 dark:text-gray-200">{selectedNickname}</span>
-            {' · '}{matches.length} partido{matches.length !== 1 ? 's' : ''} bloqueados
+            {' · '}{matches.length} partido{matches.length !== 1 ? 's' : ''}
           </h2>
 
           {matches.length === 0 && (
             <p className="text-center text-gray-400 dark:text-slate-500 text-sm py-10">
-              No hay partidos finalizados aún.
+              No hay partidos disponibles.
             </p>
           )}
 
-          {matches.map(match => {
+          {sortedMatches.map((match, idx) => {
             const row = rows.get(match.id)!
             const pred = predMap.get(match.id)
             const currentPoints = pred?.points_earned ?? null
@@ -201,12 +216,27 @@ export default function AdminPredictionsEditor({ profiles, matches, predictions,
             const isPredTie = !isNaN(predHome) && !isNaN(predAway) && predHome === predAway
             const showAdvancing = isKnockout && isPredTie
             const hasPred = pred !== undefined
+            const priority = matchPriority(match, lockCutoff)
+            const showDivider = idx === firstClosedIdx && firstClosedIdx > 0
 
             return (
-              <div
-                key={match.id}
-                className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 shadow-sm p-4"
-              >
+              <div key={match.id}>
+                {showDivider && (
+                  <div className="flex items-center gap-3 py-2 px-1">
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
+                      {priority === 2 ? 'Finalizados' : 'Bloqueados'}
+                    </span>
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-slate-700" />
+                  </div>
+                )}
+                <div
+                  className={`bg-white dark:bg-slate-900 rounded-xl border shadow-sm p-4 ${
+                    priority === 1
+                      ? 'border-amber-100 dark:border-amber-900/30'
+                      : 'border-gray-100 dark:border-slate-800'
+                  }`}
+                >
                 {/* Match header */}
                 <div className="flex items-center justify-between mb-3 gap-2">
                   <div className="flex items-center gap-2 min-w-0">
@@ -324,6 +354,7 @@ export default function AdminPredictionsEditor({ profiles, matches, predictions,
                   >
                     {row.saving ? 'Guardando…' : 'Guardar'}
                   </button>
+                </div>
                 </div>
               </div>
             )

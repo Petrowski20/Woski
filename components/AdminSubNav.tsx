@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 
 const LINKS = [
   { href: '/admin', label: '⚽ Partidos', exact: true },
+  { href: '/admin/jugadores', label: '👥 Jugadores', exact: false },
   { href: '/admin/predicciones', label: '✏️ Predicciones', exact: false },
   { href: '/admin/recordatorios', label: '📢 Recordatorios', exact: false },
   { href: '/admin/leagues', label: '🏆 Ligas', exact: false },
@@ -15,7 +16,7 @@ export default function AdminSubNav() {
   const pathname = usePathname()
 
   return (
-    <div className="flex gap-1 border-b border-gray-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
+    <div className="sticky top-16 z-30 bg-white dark:bg-slate-900 flex gap-1 border-b border-gray-200 dark:border-slate-800 overflow-x-auto scrollbar-hide shadow-sm">
       {LINKS.map(({ href, label, exact }) => {
         const isActive = exact ? pathname === href : pathname.startsWith(href)
         return (

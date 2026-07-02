@@ -54,22 +54,14 @@ export default async function ClasificacionPage() {
   const rankingPromise = activeLeagueId
     ? supabase
         .from('v_ranking_by_league')
-        .select('profile_id, nickname, total_points, avatar_url, league_name, created_at')
+        .select('profile_id, nickname, total_points, avatar_url, league_name')
         .eq('league_id', activeLeagueId)
-        .order('total_points',  { ascending: false })
-        .order('exact_scores',  { ascending: false })
-        .order('correct_signs', { ascending: false })
-        .order('goal_diff_sum', { ascending: true })
-        .order('created_at',    { ascending: true })
+        .order('total_points', { ascending: false })
         .limit(100)
     : supabase
         .from('v_ranking_global')
-        .select('profile_id, nickname, total_points, avatar_url, created_at')
-        .order('total_points',  { ascending: false })
-        .order('exact_scores',  { ascending: false })
-        .order('correct_signs', { ascending: false })
-        .order('goal_diff_sum', { ascending: true })
-        .order('created_at',    { ascending: true })
+        .select('profile_id, nickname, total_points, avatar_url')
+        .order('total_points', { ascending: false })
         .limit(100)
 
   const [

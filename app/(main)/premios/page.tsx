@@ -121,18 +121,6 @@ function buildAwards(players: FunnyPlayerStats[]): AwardCard[] {
     })
   }
 
-  const lastMin = pickMax(players, 'last_minute_count')
-  if (lastMin && lastMin.last_minute_count > 0) {
-    awards.push({
-      emoji: '⚡',
-      title: 'El Último Segundo',
-      description: 'Más predicciones enviadas en los últimos 5 minutos',
-      holder: lastMin.nickname,
-      value: `${lastMin.last_minute_count} veces`,
-      colorClass: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
-    })
-  }
-
   const valiente = pickMax(players, 'underdog_wins', 3)
   if (valiente && valiente.underdog_wins > 0) {
     awards.push({
@@ -148,22 +136,39 @@ function buildAwards(players: FunnyPlayerStats[]): AwardCard[] {
   return awards
 }
 
+interface MvpRow {
+  profile_id: string
+  nickname: string
+  day_points: number
+  match_day: string
+}
+
 export default async function PremiosPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data, error } = await supabase.rpc('get_funny_prediction_stats', {
-    p_league_id: null,
-  })
+  const [{ data, error }, { data: mvpData }] = await Promise.all([
+    supabase.rpc('get_funny_prediction_stats', { p_league_id: null }),
+    supabase.rpc('get_daily_mvp', { p_limit: 5 }),
+  ])
 
   const players: FunnyPlayerStats[] = (data ?? []) as FunnyPlayerStats[]
   const awards = buildAwards(players)
+  const mvpList = (mvpData ?? []) as MvpRow[]
 
   const now = new Date().toLocaleDateString('es-ES', {
     day: '2-digit', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   })
+
+  const mvpDayLabel = mvpList[0]?.match_day
+    ? new Date(mvpList[0].match_day + 'T12:00:00Z').toLocaleDateString('es-ES', {
+        weekday: 'long', day: 'numeric', month: 'long',
+      })
+    : null
+
+  const RANK_ICONS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣']
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -179,6 +184,41 @@ export default async function PremiosPage() {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6 text-sm text-red-700 dark:text-red-400">
           Error cargando premios: {(error as { message?: string }).message ?? String(error)}
+        </div>
+      )}
+
+      {mvpList.length > 0 && (
+        <div className="mb-10">
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              ⭐ MVP del día
+            </h2>
+            {mvpDayLabel && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5 capitalize">
+                {mvpDayLabel} — quien más puntos sacó
+              </p>
+            )}
+          </div>
+          <div className="bg-white dark:bg-slate-900 rounded-xl border border-[#FFD6D1] dark:border-slate-800 overflow-hidden">
+            {mvpList.map((player, i) => (
+              <div
+                key={player.profile_id}
+                className={`flex items-center justify-between px-5 py-3.5 ${
+                  i > 0 ? 'border-t border-gray-100 dark:border-slate-800' : ''
+                } ${i === 0 ? 'bg-amber-50/60 dark:bg-amber-900/10' : ''}`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-xl w-7 text-center">{RANK_ICONS[i]}</span>
+                  <span className={`font-semibold ${i === 0 ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {player.nickname}
+                  </span>
+                </div>
+                <span className={`font-bold tabular-nums ${i === 0 ? 'text-amber-600 dark:text-amber-400 text-base' : 'text-emerald-600 dark:text-emerald-400 text-sm'}`}>
+                  +{player.day_points} pts
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

@@ -336,12 +336,21 @@ export async function updatePlayerPredictionAction(
   const isRealTie = realHome === realAway
 
   let pointsEarned: number
-  if (isKnockout && isRealTie && advancing !== null) {
-    if (effectiveAdvancingId !== advancing) {
+  if (isKnockout) {
+    // Ganador Absoluto: en eliminatoria, comparar el clasificado (por marcador
+    // o, si hay empate a 90', por el equipo elegido en penaltis) en vez del
+    // marcador crudo. Debe reflejar la misma lógica que el RPC SQL
+    // calculate_match_points (ver 20260602000003_fix_absolute_winner.sql).
+    const realWinnerId =
+      realHome > realAway ? match.home_team_id :
+      realAway > realHome ? match.away_team_id :
+      advancing
+
+    if (realWinnerId === null || effectiveAdvancingId !== realWinnerId) {
       pointsEarned = 0
     } else if (predHomeGoals === realHome && predAwayGoals === realAway) {
       pointsEarned = 3
-    } else if (predHomeGoals === predAwayGoals) {
+    } else if ((predHomeGoals - predAwayGoals) === (realHome - realAway)) {
       pointsEarned = 2
     } else {
       pointsEarned = 1
@@ -495,6 +504,40 @@ export async function getPublicStatsAction(
   if (error) return { error: error.message }
 
   return { data: (data ?? []) as FunnyPlayerStats[] }
+}
+
+export async function setPlayerHiddenAction(
+  profileId: string,
+  isHidden: boolean,
+): Promise<{ success?: true; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado' }
+
+  const supabaseAdmin = createSVClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { error } = await supabaseAdmin
+    .from('profiles')
+    .update({ is_hidden: isHidden })
+    .eq('id', profileId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/admin/jugadores')
+  revalidatePath('/clasificacion')
+  revalidatePath('/')
+  return { success: true }
 }
 
 export async function getAdminAllPredictionsAction(

@@ -24,7 +24,6 @@ export default async function AdminPredictionesPage({
 
   const { player: selectedPlayerId } = await searchParams
 
-  // Partidos bloqueados = ya finalizados O a menos de 1 hora del inicio
   const lockCutoff = new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
   const [{ data: profiles }, { data: matches }] = await Promise.all([
@@ -37,7 +36,6 @@ export default async function AdminPredictionesPage({
         home_team:teams!home_team_id(name, flag_emoji, iso_code),
         away_team:teams!away_team_id(name, flag_emoji, iso_code)
       `)
-      .or(`status.neq.PENDING,match_date.lte.${lockCutoff}`)
       .order('match_date', { ascending: true }),
   ])
 
@@ -55,11 +53,13 @@ export default async function AdminPredictionesPage({
     <>
       <ScrollToTopButton />
       <AdminPredictionsEditor
-      profiles={(profiles ?? []) as { id: string; nickname: string }[]}
-      matches={(matches ?? []) as any[]}
-      predictions={predictions}
-      selectedPlayerId={selectedPlayerId ?? null}
-    />
+        key={selectedPlayerId ?? 'none'}
+        profiles={(profiles ?? []) as { id: string; nickname: string }[]}
+        matches={(matches ?? []) as any[]}
+        predictions={predictions}
+        selectedPlayerId={selectedPlayerId ?? null}
+        lockCutoff={lockCutoff}
+      />
     </>
   )
 }
