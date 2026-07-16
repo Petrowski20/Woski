@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import AdminMatchManager from '@/components/AdminMatchManager'
 import type { AdminMatch, TeamOption } from '@/components/AdminMatchManager'
 import ScrollToTopButton from '@/components/ScrollToTopButton'
+import PodiumTestToggle from '@/components/PodiumTestToggle'
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -18,7 +19,7 @@ export default async function AdminPage() {
 
   if (profile?.role !== 'ADMIN') redirect('/')
 
-  const [{ data: matches, error }, { data: teams }] = await Promise.all([
+  const [{ data: matches, error }, { data: teams }, { data: settings }] = await Promise.all([
     supabase
       .from('matches')
       .select(`
@@ -32,6 +33,11 @@ export default async function AdminPage() {
       .from('teams')
       .select('id, name, flag_emoji')
       .order('name'),
+    supabase
+      .from('app_settings')
+      .select('podium_test_enabled')
+      .eq('id', 1)
+      .maybeSingle(),
   ])
 
   if (error) {
@@ -45,6 +51,7 @@ export default async function AdminPage() {
   return (
     <div className="w-full">
       <ScrollToTopButton />
+      <PodiumTestToggle initialEnabled={settings?.podium_test_enabled ?? false} />
       <AdminMatchManager
         initialMatches={(matches ?? []) as unknown as AdminMatch[]}
         teams={(teams ?? []) as TeamOption[]}

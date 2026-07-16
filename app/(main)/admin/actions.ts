@@ -540,6 +540,38 @@ export async function setPlayerHiddenAction(
   return { success: true }
 }
 
+export async function setPodiumTestModeAction(
+  enabled: boolean,
+): Promise<{ success?: true; error?: string }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'No autenticado' }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+  if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado' }
+
+  const supabaseAdmin = createSVClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  )
+
+  const { error } = await supabaseAdmin
+    .from('app_settings')
+    .update({ podium_test_enabled: enabled })
+    .eq('id', 1)
+
+  if (error) return { error: error.message }
+
+  revalidatePath('/clasificacion')
+  revalidatePath('/admin')
+  return { success: true }
+}
+
 export async function getAdminAllPredictionsAction(
   matchId: number
 ): Promise<{ data?: AdminPrediction[]; error?: string }> {

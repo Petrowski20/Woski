@@ -1,8 +1,13 @@
 import { createClient } from '@/utils/supabase/server'
 import LeagueSelector from '@/components/LeagueSelector'
+import PodiumTop3 from '@/components/PodiumTop3'
+import ClasificacionToggle from '@/components/ClasificacionToggle'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getServerLang, tServer } from '@/utils/i18n-server'
+
+// Final del Mundial 2026 — cuando este partido termina, se revela el podio.
+const FINAL_MATCH_ID = 104
 
 type BaseRow = { position: number; nickname: string; pts: number; profileId: string; avatarUrl: string | null }
 type RankingRow = BaseRow & { me: number; ar: number; ta: number; pi: number; movement: number | null }
@@ -68,11 +73,19 @@ export default async function ClasificacionPage() {
     { data: rankingData, error: rankingError },
     { data: statsData },
     { data: movementData },
+    { data: finalMatchData },
+    { data: settingsData },
   ] = await Promise.all([
     rankingPromise,
     supabase.rpc('get_player_stats'),
     supabase.rpc('get_ranking_movement', { p_league_id: activeLeagueId ?? null }),
+    supabase.from('matches').select('status').eq('id', FINAL_MATCH_ID).maybeSingle(),
+    supabase.from('app_settings').select('podium_test_enabled').eq('id', 1).maybeSingle(),
   ])
+
+  // El podio se revela cuando termina la final real, o cuando el admin activa
+  // el modo prueba en /admin para comprobar que la vista funciona.
+  const isChampionDecided = finalMatchData?.status === 'FINISHED' || settingsData?.podium_test_enabled === true
 
   const movementMap = new Map<string, number | null>(
     (movementData ?? []).map((r: any) => [r.profile_id, r.movement ?? null])
@@ -119,6 +132,27 @@ export default async function ClasificacionPage() {
       </div>
 
       <LeagueSelector leagues={leagues} activeLeagueId={activeLeagueId} />
+
+      {isChampionDecided && (
+        <ClasificacionToggle>
+          <PodiumTop3
+            top3={ranking.slice(0, 3).map(r => ({
+              profileId: r.profileId,
+              nickname: r.nickname,
+              avatarUrl: r.avatarUrl,
+              pts: r.pts,
+            }))}
+            next2={ranking.slice(3, 5).map(r => ({
+              profileId: r.profileId,
+              nickname: r.nickname,
+              avatarUrl: r.avatarUrl,
+              pts: r.pts,
+            }))}
+            title={activeLeagueId ? `🏆 ¡Campeón de ${leagueName}!` : '🏆 ¡Tenemos campeón del Mundial!'}
+            subtitle="El torneo ha terminado — así queda el podio final"
+          />
+        </ClasificacionToggle>
+      )}
 
       {/* Leyenda */}
       <div className="bg-[#FFD6D1]/30 dark:bg-slate-800/50 p-4 rounded-xl mb-4 border border-[#FFD6D1] dark:border-slate-800">
