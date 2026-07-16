@@ -23,7 +23,7 @@ export default async function AdminPage() {
     supabase
       .from('matches')
       .select(`
-        id, match_date, stage, group_letter, matchday, status, home_goals, away_goals,
+        id, match_date, stage, group_letter, status, home_goals, away_goals,
         home_team_id, away_team_id, advancing_team_id,
         home_team:teams!home_team_id (name, flag_emoji, iso_code),
         away_team:teams!away_team_id (name, flag_emoji, iso_code)

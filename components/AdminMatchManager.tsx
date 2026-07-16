@@ -15,7 +15,6 @@ export interface AdminMatch {
   match_date: string
   stage: string
   group_letter: string | null
-  matchday: number | null
   status: string
   home_goals: number | null
   away_goals: number | null
@@ -452,7 +451,6 @@ function MatchRow({
         <span className="text-[11px] font-medium text-gray-400 dark:text-slate-500 uppercase tracking-wide">
           {STAGE_LABELS[match.stage] ?? match.stage}
           {match.group_letter && ` · Grupo ${match.group_letter}`}
-          {match.matchday && ` · J${match.matchday}`}
         </span>
         <span className="text-[11px] text-gray-400 dark:text-slate-500 shrink-0 ml-2">
           {dateStr} · {timeStr}
