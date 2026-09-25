@@ -46,8 +46,8 @@ WHERE s.slug = 'lol'
 ON CONFLICT (slug) DO NOTHING;
 
 -- Edición --------------------------------------------------------
-INSERT INTO public.editions (competition_id, name, start_date, end_date)
-SELECT c.id, '2026 · Prueba', current_date - 10, current_date + 30
+INSERT INTO public.editions (competition_id, name, start_date, end_date, timezone)
+SELECT c.id, '2026 · Prueba', current_date - 10, current_date + 30, 'Europe/Berlin'
 FROM public.competitions c
 WHERE c.slug = 'lec'
   AND NOT EXISTS (

@@ -232,19 +232,19 @@ export async function getPublicMatchPredictions(
   if (leagueId) {
     // Verificar membresía del usuario en la liga
     const { data: membership } = await supabase
-      .from('profile_leagues')
-      .select('league_id')
+      .from('pool_members')
+      .select('pool_id')
       .eq('profile_id', user.id)
-      .eq('league_id', leagueId)
+      .eq('pool_id', leagueId)
       .maybeSingle()
 
     if (!membership) return { error: 'No eres miembro de esta liga' }
 
     // IDs de miembros de la liga
     const { data: members, error: membersError } = await supabaseAdmin
-      .from('profile_leagues')
+      .from('pool_members')
       .select('profile_id')
-      .eq('league_id', leagueId)
+      .eq('pool_id', leagueId)
 
     if (membersError) return { error: membersError.message }
 

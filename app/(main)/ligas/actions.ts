@@ -28,7 +28,7 @@ export async function createLeagueAction(
 
   // Insertar la liga
   const { data: league, error: leagueError } = await supabase
-    .from('private_leagues')
+    .from('pools')
     .insert({
       name,
       description: description || null,
@@ -45,12 +45,12 @@ export async function createLeagueAction(
 
   // Inscribir automáticamente al creador
   const { error: memberError } = await supabase
-    .from('profile_leagues')
-    .insert({ profile_id: user.id, league_id: league.id })
+    .from('pool_members')
+    .insert({ profile_id: user.id, pool_id: league.id })
 
   if (memberError) {
     // Rollback: evitar liga huérfana sin miembros
-    await supabase.from('private_leagues').delete().eq('id', league.id)
+    await supabase.from('pools').delete().eq('id', league.id)
     return { error: memberError.message }
   }
 
@@ -71,7 +71,7 @@ export async function joinLeagueAction(
 
   // Buscar la liga por código
   const { data: league, error: findError } = await supabase
-    .from('private_leagues')
+    .from('pools')
     .select('id, name')
     .eq('join_code', code.toUpperCase())
     .single()
@@ -80,18 +80,18 @@ export async function joinLeagueAction(
 
   // Verificar si ya es miembro
   const { data: existing } = await supabase
-    .from('profile_leagues')
-    .select('league_id')
+    .from('pool_members')
+    .select('pool_id')
     .eq('profile_id', user.id)
-    .eq('league_id', league.id)
+    .eq('pool_id', league.id)
     .maybeSingle()
 
   if (existing) return { error: `Ya eres miembro de "${league.name}"` }
 
   // Unirse
   const { error: joinError } = await supabase
-    .from('profile_leagues')
-    .insert({ profile_id: user.id, league_id: league.id })
+    .from('pool_members')
+    .insert({ profile_id: user.id, pool_id: league.id })
 
   if (joinError) {
     if (joinError.code === '23505') return { error: `Ya eres miembro de "${league.name}"` }
@@ -114,9 +114,9 @@ export async function getLeagueMembersAction(leagueId: number): Promise<{
   if (!user) return { error: 'No estás autenticado' }
 
   const { data, error } = await supabase
-    .from('profile_leagues')
+    .from('pool_members')
     .select('profile_id, joined_at, profiles(nickname, avatar_url)')
-    .eq('league_id', leagueId)
+    .eq('pool_id', leagueId)
     .order('joined_at', { ascending: true })
 
   if (error) return { error: error.message }
@@ -141,7 +141,7 @@ export async function kickMemberAction(
   if (!user) return { error: 'No estás autenticado' }
 
   const { data: league } = await supabase
-    .from('private_leagues')
+    .from('pools')
     .select('created_by')
     .eq('id', leagueId)
     .single()
@@ -158,10 +158,10 @@ export async function kickMemberAction(
   )
 
   const { error } = await supabaseAdmin
-    .from('profile_leagues')
+    .from('pool_members')
     .delete()
     .eq('profile_id', targetProfileId)
-    .eq('league_id', leagueId)
+    .eq('pool_id', leagueId)
 
   if (error) return { error: error.message }
 
@@ -179,7 +179,7 @@ export async function leaveLeagueAction(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No estás autenticado' }
 
-  // Cliente admin para saltarse RLS (profile_leagues no tiene política DELETE)
+  // Cliente admin para saltarse RLS (pool_members no tiene política DELETE)
   const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -187,10 +187,10 @@ export async function leaveLeagueAction(
   )
 
   const { error } = await supabaseAdmin
-    .from('profile_leagues')
+    .from('pool_members')
     .delete()
     .eq('profile_id', user.id)
-    .eq('league_id', leagueId)
+    .eq('pool_id', leagueId)
 
   if (error) {
     console.error('[leaveLeagueAction]', error)

@@ -14,8 +14,8 @@ export default async function LigasPage() {
   const t = (key: string, vars?: Record<string, string | number>) => tServer(lang, key, vars)
 
   const { data: rows } = await supabase
-    .from('profile_leagues')
-    .select('joined_at, private_leagues(id, name, description, join_code, created_by)')
+    .from('pool_members')
+    .select('joined_at, pools(id, name, description, join_code, created_by)')
     .eq('profile_id', user.id)
     .order('joined_at', { ascending: false })
 
@@ -30,7 +30,7 @@ export default async function LigasPage() {
 
   const leagues: League[] = (rows ?? [])
     .map((r: any) => ({
-      ...(r.private_leagues as Omit<League, 'joined_at'>),
+      ...(r.pools as Omit<League, 'joined_at'>),
       joined_at: r.joined_at as string,
     }))
     .filter((l: any) => l?.id)

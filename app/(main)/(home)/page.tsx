@@ -5,7 +5,7 @@ import LolCalendar from '@/components/lol/LolCalendar'
 import { HistoryLink } from '@/components/lol/EditionSelector'
 import PredictionsProgressCard from '@/components/lol/PredictionsProgressCard'
 import RankingTop5Card from '@/components/lol/RankingTop5Card'
-import { getActiveLolEditions, getEditionMatches, getRankingSidebar } from './data'
+import { getActiveLolEditions, getEditionMatches, getRankingSidebar } from '../lol/data'
 
 export const metadata = {
   title: 'LoL · Woski',

@@ -113,6 +113,42 @@ export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promi
     }
   }
 
-  revalidatePath('/lol')
+  revalidatePath('/')
   return { ok: true, results }
+}
+
+/**
+ * Guarda el ámbito elegido en la clasificación (null = Global) en
+ * profiles.last_viewed_league_id, igual que LeagueSelector en el fútbol.
+ * Solo acepta pools de esa edición de los que el usuario es miembro.
+ */
+export async function setLolPoolAction(editionId: number, poolId: number | null): Promise<{ error: string | null }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Tu sesión ha caducado, vuelve a iniciar sesión.' }
+
+  if (poolId !== null) {
+    const { data: membership, error } = await supabase
+      .from('pool_members')
+      .select('pool_id, pools!inner(edition_id)')
+      .eq('profile_id', user.id)
+      .eq('pool_id', poolId)
+      .eq('pools.edition_id', editionId)
+      .maybeSingle()
+    if (error) console.error('[lol] set pool: membership', error)
+    if (!membership) return { error: 'No perteneces a ese pool.' }
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ last_viewed_league_id: poolId })
+    .eq('id', user.id)
+  if (error) {
+    console.error('[lol] set pool: update profile', error)
+    return { error: 'No se ha podido cambiar la clasificación. Inténtalo de nuevo.' }
+  }
+
+  revalidatePath('/')
+  revalidatePath('/lol/clasificacion')
+  return { error: null }
 }

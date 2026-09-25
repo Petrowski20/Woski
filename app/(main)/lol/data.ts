@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
-import type { LolEditionOption, LolMatchView, RankingRow, VoteShare } from '@/utils/lol/types'
+import type { LolEditionOption, LolMatchView, PoolOption, RankingRow, StandingRow, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -263,21 +263,8 @@ export async function getRankingSidebar(
       null
   }
 
-  const { data, error } = await supabase.rpc('get_edition_ranking', {
-    p_edition_id: editionId,
-    p_pool_id: pool?.id ?? null,
-  })
-  if (error) throw new LolDataError('ranking', error)
-
-  const rows: RankingRow[] = ((data ?? []) as {
-    profile_id: string; nickname: string; avatar_url: string | null; total_points: number; rank_position: number
-  }[]).map(r => ({
-    profileId: r.profile_id,
-    nickname: r.nickname,
-    avatarUrl: r.avatar_url,
-    points: Number(r.total_points),
-    position: Number(r.rank_position),
-  }))
+  // Mismo cálculo que la clasificación completa, para que puntos y orden coincidan.
+  const rows: RankingRow[] = await getEditionStandings(supabase, editionId, pool?.id ?? null)
 
   const top5 = rows.slice(0, 5)
   const me = rows.find(r => r.profileId === userId) ?? null
@@ -287,4 +274,63 @@ export async function getRankingSidebar(
     top5,
     me: me && me.position > 5 ? me : null,
   }
+}
+
+// ── Clasificación completa ─────────────────────────────────────────────────
+
+/** Pools de la edición a los que pertenece el usuario, por orden de ingreso. */
+export async function getUserEditionPools(
+  supabase: SupabaseClient,
+  editionId: number,
+  userId: string,
+): Promise<PoolOption[]> {
+  const { data, error } = await supabase
+    .from('pool_members')
+    .select('joined_at, pools!inner(id, name, edition_id)')
+    .eq('profile_id', userId)
+    .eq('pools.edition_id', editionId)
+    .order('joined_at', { ascending: true })
+  if (error) throw new LolDataError('user pools', error)
+
+  return ((data ?? []) as unknown as { pools: { id: number; name: string } }[])
+    .map(r => ({ id: r.pools.id, name: r.pools.name }))
+}
+
+/** Clasificación de una edición: global (poolId null) o de un pool de esa edición. */
+export async function getEditionStandings(
+  supabase: SupabaseClient,
+  editionId: number,
+  poolId: number | null,
+): Promise<StandingRow[]> {
+  const { data, error } = await supabase.rpc('get_lol_standings', {
+    p_edition_id: editionId,
+    p_pool_id: poolId,
+  })
+  if (error) throw new LolDataError('standings', error)
+
+  return ((data ?? []) as {
+    profile_id: string
+    nickname: string
+    avatar_url: string | null
+    total_points: number
+    correct_winners: number
+    finished_series: number
+    perfect_days: number
+    negative_days: number
+    current_streak: number
+    rank_position: number
+    movement: number | null
+  }[]).map(r => ({
+    profileId: r.profile_id,
+    nickname: r.nickname,
+    avatarUrl: r.avatar_url,
+    points: Number(r.total_points),
+    position: Number(r.rank_position),
+    correctWinners: Number(r.correct_winners),
+    finishedSeries: Number(r.finished_series),
+    perfectDays: Number(r.perfect_days),
+    negativeDays: Number(r.negative_days),
+    currentStreak: Number(r.current_streak),
+    movement: r.movement === null ? null : Number(r.movement),
+  }))
 }

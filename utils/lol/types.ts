@@ -67,3 +67,19 @@ export interface RankingRow {
   points: number
   position: number
 }
+
+export interface PoolOption {
+  id: number
+  name: string
+}
+
+/** Fila de la clasificación completa de una edición (get_lol_standings). */
+export interface StandingRow extends RankingRow {
+  correctWinners: number
+  finishedSeries: number
+  perfectDays: number
+  negativeDays: number
+  currentStreak: number
+  /** + = sube respecto a la jornada anterior; null si no hay jornada anterior. */
+  movement: number | null
+}

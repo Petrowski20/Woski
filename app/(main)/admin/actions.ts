@@ -388,7 +388,7 @@ export async function updatePlayerPredictionAction(
   const totalPoints = (totals ?? []).reduce((sum, r) => sum + (r.points_earned ?? 0), 0)
 
   await supabaseAdmin.from('profiles').update({ total_points: totalPoints }).eq('id', profileId)
-  await supabaseAdmin.from('profile_leagues').update({ league_points: totalPoints }).eq('profile_id', profileId)
+  await supabaseAdmin.from('pool_members').update({ league_points: totalPoints }).eq('profile_id', profileId)
 
   revalidatePath('/')
   revalidatePath('/clasificacion')

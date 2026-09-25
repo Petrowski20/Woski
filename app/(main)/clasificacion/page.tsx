@@ -46,12 +46,12 @@ export default async function ClasificacionPage() {
   const activeLeagueId: number | null = profile?.last_viewed_league_id ?? null
 
   const { data: memberLeagues } = await supabase
-    .from('profile_leagues')
-    .select('private_leagues(id, name)')
+    .from('pool_members')
+    .select('pools(id, name)')
     .eq('profile_id', user?.id ?? '')
 
   const leagues = (memberLeagues ?? [])
-    .map((ml: any) => ml.private_leagues)
+    .map((ml: any) => ml.pools)
     .filter(Boolean) as { id: number; name: string }[]
 
   let leagueName = 'Global'

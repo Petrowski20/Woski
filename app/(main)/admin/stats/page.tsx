@@ -20,7 +20,7 @@ export default async function AdminStatsPage() {
 
   const [{ data: playersRaw, error }, { data: leaguesRaw }] = await Promise.all([
     supabaseAdmin.rpc('get_funny_prediction_stats', { p_league_id: null }),
-    supabaseAdmin.from('private_leagues').select('id, name').order('name'),
+    supabaseAdmin.from('pools').select('id, name').order('name'),
   ])
 
   if (error) {

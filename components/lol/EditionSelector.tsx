@@ -9,6 +9,8 @@ import type { LolEditionOption } from '@/utils/lol/types'
 interface Props {
   editions: LolEditionOption[]
   selectedId: number | null
+  /** Ruta a la que se navega con ?edicion=ID (calendario por defecto). */
+  basePath?: string
 }
 
 export function HistoryLink() {
@@ -26,7 +28,7 @@ export function HistoryLink() {
 // Píldoras excluyentes, una por edición activa. Cambiar de edición navega a
 // ?edicion=ID (la página es Server Component); mientras carga se marca la
 // píldora destino.
-export default function EditionSelector({ editions, selectedId }: Props) {
+export default function EditionSelector({ editions, selectedId, basePath = '/' }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [targetId, setTargetId] = useState<number | null>(null)
@@ -35,7 +37,7 @@ export default function EditionSelector({ editions, selectedId }: Props) {
     if (id === selectedId) return
     setTargetId(id)
     startTransition(() => {
-      router.push(`/lol?edicion=${id}`, { scroll: false })
+      router.push(`${basePath}?edicion=${id}`, { scroll: false })
     })
   }
 

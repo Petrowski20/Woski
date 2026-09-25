@@ -55,7 +55,7 @@ async function _loadLolMatch(admin: ReturnType<typeof _makeAdminClient>, matchId
 }
 
 function _revalidate() {
-  revalidatePath('/lol')
+  revalidatePath('/')
   revalidatePath('/admin/lol')
 }
 

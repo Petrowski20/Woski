@@ -14,7 +14,7 @@ type AdminLeague = {
   description: string | null
   join_code: string | null
   created_at: string
-  profile_leagues: LeagueMember[]
+  pool_members: LeagueMember[]
 }
 
 export default async function AdminLeaguesPage() {
@@ -38,14 +38,14 @@ export default async function AdminLeaguesPage() {
   )
 
   const { data: leagues, error } = await adminClient
-    .from('private_leagues')
+    .from('pools')
     .select(`
       id,
       name,
       description,
       join_code,
       created_at,
-      profile_leagues(
+      pool_members(
         profile_id,
         profiles(nickname)
       )
@@ -79,7 +79,7 @@ export default async function AdminLeaguesPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {leagueList.map((league) => {
-            const members = league.profile_leagues ?? []
+            const members = league.pool_members ?? []
             const nicknames = members
               .map(m => m.profiles?.nickname)
               .filter(Boolean) as string[]
