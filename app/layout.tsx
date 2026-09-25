@@ -8,8 +8,8 @@ import { getServerLang } from "@/utils/i18n-server";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "PollaMundialista 2026",
-  description: "Predicciones del Mundial 2026",
+  title: "Woski",
+  description: "Predicciones de fútbol y esports entre amigos",
 };
 
 export default async function RootLayout({

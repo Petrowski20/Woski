@@ -1,7 +1,7 @@
 import { Fragment } from 'react'
 import { getServerLang, tServer } from '@/utils/i18n-server'
 
-export const metadata = { title: 'Cómo jugar · PollaMundialista' }
+export const metadata = { title: 'Cómo jugar · Woski' }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

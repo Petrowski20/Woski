@@ -8,7 +8,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const { id } = await params
   const supabase = await createClient()
   const { data } = await supabase.from('profiles').select('nickname').eq('id', id).single()
-  return { title: data ? `${data.nickname} · PollaMundialista` : 'Jugador · PollaMundialista' }
+  return { title: data ? `${data.nickname} · Woski` : 'Jugador · Woski' }
 }
 
 export default async function JugadorPage({ params }: { params: Promise<{ id: string }> }) {

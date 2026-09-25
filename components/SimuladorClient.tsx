@@ -606,7 +606,7 @@ export default function SimuladorClient({ groups, allThirds, predCount, totalGro
 
               {/* Pie de página de branding */}
               <div className="w-full text-center mt-10 text-slate-500 text-sm font-medium tracking-widest">
-                CREADO EN POLLAMUNDIALISTA.COM
+                CREADO EN WOSKI.GG
               </div>
             </div>
 
