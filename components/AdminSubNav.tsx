@@ -10,6 +10,7 @@ const LINKS = [
   { href: '/admin/recordatorios', label: '📢 Recordatorios', exact: false },
   { href: '/admin/leagues', label: '🏆 Ligas', exact: false },
   { href: '/admin/stats', label: '🏅 Premios', exact: false },
+  { href: '/admin/lol', label: '⚔️ LoL', exact: false },
 ]
 
 export default function AdminSubNav() {

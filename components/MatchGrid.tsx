@@ -7,6 +7,9 @@ import MatchCard from './MatchCard';
 import type { MatchCardHandle } from './MatchCard';
 import { saveAllPredictionsAction } from '@/app/(main)/actions';
 import type { PredictionDraft } from '@/app/(main)/actions';
+import SearchInput from './shared/SearchInput';
+import NoResults from './shared/NoResults';
+import SaveAllButton from './shared/SaveAllButton';
 
 // Extrae YYYY-MM-DD en UTC de un match_date ISO
 const toUtcDay = (isoDate: string) => isoDate.slice(0, 10);
@@ -133,33 +136,7 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-4 flex flex-col gap-3 shadow-sm">
 
         {/* Buscador */}
-        <div className="relative">
-          <svg
-            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-            fill="none" viewBox="0 0 24 24" stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-          </svg>
-          <input
-            type="text"
-            placeholder="Buscar por equipo…"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-9 py-2 text-sm bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              aria-label="Limpiar búsqueda"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          )}
-        </div>
+        <SearchInput value={searchTerm} onChange={setSearchTerm} />
 
         {/* Píldoras de fecha */}
         {uniqueDays.length > 1 && (
@@ -220,19 +197,7 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
 
       {/* ── Empty state ── */}
       {filtered.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 py-16 text-center">
-          <span className="text-5xl">🔍</span>
-          <p className="font-semibold text-gray-700 dark:text-gray-300 text-sm">Sin resultados</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500 max-w-xs">
-            No hay partidos que coincidan con tu búsqueda.
-          </p>
-          <button
-            onClick={clearFilters}
-            className="mt-1 px-4 py-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 rounded-full hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-          >
-            Limpiar filtros
-          </button>
-        </div>
+        <NoResults onClear={clearFilters} />
       ) : (
         /* ── Lista de partidos ── */
         filtered.map((match) => {
@@ -285,16 +250,7 @@ export default function MatchGrid({ matches, activeLeagueId }: { matches: any[];
 
       {/* ── Botón sticky "Guardar todo" — aparece cuando hay ≥2 predicciones pendientes ── */}
       {pendingCount >= 2 && (
-        <button
-          onClick={handleSaveAll}
-          disabled={isSavingAll}
-          className="fixed bottom-6 right-6 z-30 flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-xl hover:opacity-90 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-wait animate-in fade-in zoom-in-95 duration-200"
-        >
-          <span>💾</span>
-          {isSavingAll
-            ? 'Guardando…'
-            : `Guardar ${pendingCount} predicciones`}
-        </button>
+        <SaveAllButton count={pendingCount} saving={isSavingAll} onClick={handleSaveAll} />
       )}
     </div>
   );

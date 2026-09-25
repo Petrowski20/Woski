@@ -34,7 +34,12 @@ export async function proxy(request: NextRequest) {
   // No colocar ninguna lógica entre createServerClient y getUser().
   const { data: { user }, error } = await supabase.auth.getUser()
 
-  if ((error || !user) && !isPublicPath(request.nextUrl.pathname)) {
+  // Las Server Actions comprueban la sesión por su cuenta y devuelven un error
+  // controlado ("sesión caducada"). Redirigirlas a /login aquí haría que el
+  // cliente recibiera HTML en vez de la respuesta de la acción.
+  const isServerAction = request.method === 'POST' && request.headers.has('next-action')
+
+  if ((error || !user) && !isPublicPath(request.nextUrl.pathname) && !isServerAction) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     const redirectResponse = NextResponse.redirect(url)

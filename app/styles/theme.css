@@ -1,0 +1,67 @@
+/* ============================================================
+   TOKENS DE TEMA — única fuente de verdad para colores.
+
+   Se declaran en @theme para que Tailwind v4 genere utilidades
+   (bg-bg-elevated, text-text-muted, bg-team-a, border-border…).
+   Las utilidades referencian la variable CSS, así que el modo
+   oscuro solo tiene que redefinir las variables bajo .dark
+   (mismo mecanismo que usa el sitio: next-themes con class="dark").
+
+   Para cambiar la paleta completa basta con editar este archivo.
+   ============================================================ */
+
+@theme {
+  /* Equipos: colores genéricos "izquierda" / "derecha" de una tarjeta.
+     No son colores reales de ningún equipo. */
+  --color-team-a: #2563eb;
+  --color-team-b: #dc2626;
+  --color-on-team: #ffffff;
+
+  /* Fondos */
+  --color-bg-surface: #f9fafb;   /* fondo general de la página */
+  --color-bg-elevated: #ffffff;  /* tarjetas, paneles, modales */
+  --color-bg-muted: #f3f4f6;     /* inputs, pistas de slider, píldoras inactivas */
+
+  /* Texto */
+  --color-text-primary: #111827;
+  --color-text-muted: #6b7280;
+
+  /* Bordes */
+  --color-border: #e5e7eb;
+
+  /* Acento (acciones primarias, selección) */
+  --color-accent: #0284c7;
+  --color-on-accent: #ffffff;
+
+  /* Estados */
+  --color-success: #059669;
+  --color-warning: #d97706;
+  --color-danger: #dc2626;
+
+  /* Fondo de modales */
+  --color-overlay: rgb(15 23 42 / 0.55);
+}
+
+.dark {
+  --color-team-a: #60a5fa;
+  --color-team-b: #f87171;
+  --color-on-team: #0f172a;
+
+  --color-bg-surface: #020617;
+  --color-bg-elevated: #0f172a;
+  --color-bg-muted: #1e293b;
+
+  --color-text-primary: #f3f4f6;
+  --color-text-muted: #9ca3af;
+
+  --color-border: #1e293b;
+
+  --color-accent: #38bdf8;
+  --color-on-accent: #0f172a;
+
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-danger: #f87171;
+
+  --color-overlay: rgb(0 0 0 / 0.7);
+}
