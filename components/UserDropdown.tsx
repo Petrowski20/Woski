@@ -91,6 +91,16 @@ export default function UserDropdown({ avatarUrl, nickname, role }: Props) {
               {t('dropdown.miPerfil')}
             </Link>
 
+            {/* Temporal hasta rehacer la navegación: acceso a Clubs */}
+            <Link
+              href="/clubes"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+            >
+              <span className="text-base">🛡️</span>
+              Mis clubs
+            </Link>
+
             <div className="my-1.5 border-t border-gray-100 dark:border-slate-800" />
 
             {/* Tema */}
