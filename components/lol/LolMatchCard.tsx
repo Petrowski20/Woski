@@ -68,7 +68,7 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
   const badge = STATE_BADGE[state]
   const interactive = state === 'open' || state === 'voted'
 
-  const valueText = current ? formatSeriesScore(current, match.home.name, match.away.name) : ''
+  const valueText = current ? formatSeriesScore(current, match.home.tag, match.away.tag) : ''
   const errorCopy = error ? SAVE_ERROR_COPY[error] : null
 
   return (
@@ -128,14 +128,14 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
 
             <p className="text-center text-sm font-bold text-text-primary min-h-5" aria-live="polite">
               {current
-                ? formatSeriesScore(interactive ? current : savedScore!, match.home.name, match.away.name)
+                ? formatSeriesScore(interactive ? current : savedScore!, match.home.tag, match.away.tag)
                 : <span className="font-normal text-text-muted">Desliza hacia el equipo que crees que ganará</span>}
             </p>
 
             {state === 'finished' && match.result && savedScore && (
               <div className="flex items-center justify-center gap-2 text-sm">
                 <span className="text-text-muted">
-                  Resultado: <strong className="text-text-primary">{formatSeriesScore(match.result, match.home.name, match.away.name)}</strong>
+                  Resultado: <strong className="text-text-primary">{formatSeriesScore(match.result, match.home.tag, match.away.tag)}</strong>
                 </span>
                 <PointsBadge points={saved?.points ?? 0} />
               </div>
@@ -182,8 +182,8 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
           <VoteBreakdown
             distribution={match.distribution}
             mine={savedScore}
-            homeName={match.home.name}
-            awayName={match.away.name}
+            homeName={match.home.tag}
+            awayName={match.away.tag}
           />
         )}
       </div>

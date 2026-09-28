@@ -11,13 +11,17 @@ interface Props {
 
 // Desglose de votos por resultado. Solo se renderiza si el usuario ya votó.
 export default function VoteBreakdown({ distribution, mine, homeName, awayName }: Props) {
+  // De más a menos votado; a igual porcentaje se mantiene el orden del
+  // marcador (3-0 … 0-3), porque sort es estable.
+  const shares = [...distribution.shares].sort((a, b) => b.pct - a.pct)
+
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-semibold text-text-muted">
         Qué ha votado la gente · {distribution.total} voto{distribution.total !== 1 ? 's' : ''}
       </p>
       <ul className="flex flex-col gap-1">
-        {distribution.shares.map((share) => {
+        {shares.map((share) => {
           const isMine = sameScore(share, mine)
           const homeSide = share.home > share.away
           return (

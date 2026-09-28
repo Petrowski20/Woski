@@ -9,6 +9,7 @@ export interface LolEditionOption {
 export interface LolTeamView {
   id: number
   name: string
+  /** Sigla (teams.iso_code): "G2", "MKOI". Se usa en marcadores ("3-1 G2"). */
   tag: string
   logoUrl: string | null
   /** Récord en la fase del partido (solo partidos ya resueltos). */
