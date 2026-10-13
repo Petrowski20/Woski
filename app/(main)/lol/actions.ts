@@ -1,23 +1,18 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import { isPredictionLocked, outcomeIndex, resolveBestOf, type MatchStatus } from '@/utils/lol/series'
 import type { PredictionDraft, SaveMatchResult, SavePredictionsResponse } from '@/utils/lol/types'
-import { LOL_SPORT_SLUG, buildDistribution, getMyDistributions } from './data'
+import { LOL_SPORT_SLUG } from './data'
 
-function _makeAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  )
-}
+// Código de Postgres cuando la RLS rechaza la fila: en LoL solo ocurre si la
+// votación ya está cerrada (políticas predictions_lol_*_while_open).
+const RLS_VIOLATION = '42501'
 
 interface MatchForSave {
   id: number
-  match_date: string
+  prediction_locks_at: string
   status: MatchStatus
   metadata: unknown
   home_team_id: number
@@ -32,6 +27,8 @@ interface MatchForSave {
  * Guarda una o varias predicciones de LoL. Nunca lanza: devuelve un código
  * por partido para que el cliente muestre un mensaje específico.
  * Se usa tanto para "Guardar predicción" como para "Guardar todas".
+ * Escribe con el cliente del usuario: la RLS es quien decide si la votación
+ * sigue abierta; la comprobación previa solo da un mensaje más claro.
  */
 export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promise<SavePredictionsResponse> {
   const supabase = await createClient()
@@ -46,7 +43,7 @@ export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promi
   const { data, error } = await supabase
     .from('matches')
     .select(`
-      id, match_date, status, metadata, home_team_id, away_team_id,
+      id, prediction_locks_at, status, metadata, home_team_id, away_team_id,
       phases!inner (
         rulesets (config),
         editions!inner ( competitions!inner ( sports!inner (slug) ) )
@@ -61,14 +58,13 @@ export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promi
 
   const matchById = new Map(((data ?? []) as unknown as MatchForSave[]).map(m => [m.id, m]))
   const now = Date.now()
-  const supabaseAdmin = _makeAdminClient()
 
   const results: SaveMatchResult[] = await Promise.all(unique.map(async (draft): Promise<SaveMatchResult> => {
     const match = matchById.get(draft.matchId)
     if (!match || match.phases.editions.competitions.sports.slug !== LOL_SPORT_SLUG) {
       return { matchId: draft.matchId, ok: false, code: 'NOT_FOUND' }
     }
-    if (isPredictionLocked(match.status, match.match_date, now)) {
+    if (isPredictionLocked(match.status, match.prediction_locks_at, now)) {
       return { matchId: draft.matchId, ok: false, code: 'LOCKED' }
     }
 
@@ -78,7 +74,7 @@ export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promi
       return { matchId: draft.matchId, ok: false, code: 'INVALID' }
     }
 
-    const { error: upsertError } = await supabaseAdmin
+    const { error: upsertError } = await supabase
       .from('predictions')
       .upsert({
         profile_id: user.id,
@@ -90,28 +86,12 @@ export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promi
       }, { onConflict: 'profile_id, match_id' })
 
     if (upsertError) {
+      if (upsertError.code === RLS_VIOLATION) return { matchId: draft.matchId, ok: false, code: 'LOCKED' }
       console.error('[lol] save: upsert', draft.matchId, upsertError)
       return { matchId: draft.matchId, ok: false, code: 'SERVER' }
     }
-    return { matchId: draft.matchId, ok: true, prediction: score, distribution: null }
+    return { matchId: draft.matchId, ok: true, prediction: score }
   }))
-
-  // Desglose de % de los partidos recién guardados (ya se puede ver: has votado)
-  const savedIds = results.filter(r => r.ok).map(r => r.matchId)
-  if (savedIds.length) {
-    try {
-      const distributions = await getMyDistributions(supabase, savedIds)
-      for (const r of results) {
-        if (!r.ok) continue
-        const match = matchById.get(r.matchId)!
-        const bestOf = resolveBestOf(match.metadata, match.phases.rulesets?.config)
-        r.distribution = buildDistribution(bestOf, distributions.get(r.matchId) ?? [])
-      }
-    } catch {
-      // Ya registrado en el log; la predicción está guardada y la revalidación
-      // de la página traerá el desglose.
-    }
-  }
 
   revalidatePath('/')
   return { ok: true, results }

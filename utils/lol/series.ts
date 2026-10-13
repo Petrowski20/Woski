@@ -9,9 +9,6 @@ export interface SeriesScore {
 
 export const DEFAULT_BEST_OF: BestOf = 3
 
-// Las predicciones se cierran 1h antes del inicio (igual que en el Mundial).
-export const PREDICTION_CUTOFF_MS = 60 * 60 * 1000
-
 export function parseBestOf(value: unknown): BestOf | null {
   const n = typeof value === 'string' ? Number(value) : value
   return n === 1 || n === 3 || n === 5 ? n : null
@@ -53,10 +50,15 @@ export function sameScore(a: SeriesScore | null, b: SeriesScore | null): boolean
 
 export type MatchStatus = 'PENDING' | 'IN_PROGRESS' | 'FINISHED' | 'CANCELLED'
 
-/** Un partido admite predicciones si no ha empezado/terminado y falta más de 1h. */
-export function isPredictionLocked(status: MatchStatus, matchDateIso: string, now: number): boolean {
+/**
+ * Un partido admite predicciones si sigue PENDING y no ha llegado su corte.
+ * locksAtIso es matches.prediction_locks_at: lo calcula la BD con
+ * rulesets.config.prediction_cutoff_minutes (60 por defecto), el mismo
+ * corte que aplica la RLS al guardar.
+ */
+export function isPredictionLocked(status: MatchStatus, locksAtIso: string, now: number): boolean {
   if (status !== 'PENDING') return true
-  return now >= new Date(matchDateIso).getTime() - PREDICTION_CUTOFF_MS
+  return now >= new Date(locksAtIso).getTime()
 }
 
 interface SeriesRuleset {

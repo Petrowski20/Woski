@@ -227,6 +227,11 @@ export async function getPublicMatchPredictions(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'No autenticado' }
 
+  // Esta acción lee con service role (salta la RLS). Los votos de LoL tienen
+  // su propia regla de visibilidad (RLS + get_my_vote_distribution): aquí no.
+  const { data: isLol, error: lolError } = await supabase.rpc('is_lol_match', { p_match_id: matchId })
+  if (lolError || isLol) return { error: 'Partido no encontrado' }
+
   const supabaseAdmin = _makeAdminClient()
 
   if (leagueId) {

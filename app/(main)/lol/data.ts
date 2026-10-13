@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
+import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import type { LolEditionOption, LolMatchView, PoolOption, RankingRow, StandingRow, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
@@ -62,6 +62,7 @@ interface TeamRow { id: number; name: string; iso_code: string; logo_url: string
 interface MatchRow {
   id: number
   match_date: string
+  prediction_locks_at: string
   status: MatchStatus
   home_goals: number | null
   away_goals: number | null
@@ -132,7 +133,7 @@ export async function getEditionMatches(
   const { data, error } = await supabase
     .from('matches')
     .select(`
-      id, match_date, status, home_goals, away_goals, metadata, phase_id,
+      id, match_date, prediction_locks_at, status, home_goals, away_goals, metadata, phase_id,
       home_team:teams!home_team_id (id, name, iso_code, logo_url),
       away_team:teams!away_team_id (id, name, iso_code, logo_url)
     `)
@@ -142,6 +143,12 @@ export async function getEditionMatches(
 
   const matches = (data ?? []) as unknown as MatchRow[]
   const matchIds = matches.map(m => m.id)
+  // Los % solo se piden de partidos con la votación cerrada (la BD tampoco
+  // los devuelve antes del corte).
+  const now = Date.now()
+  const closedIds = matches
+    .filter(m => m.status !== 'CANCELLED' && isPredictionLocked(m.status, m.prediction_locks_at, now))
+    .map(m => m.id)
 
   const [predsRes, distributions] = await Promise.all([
     matchIds.length
@@ -151,7 +158,7 @@ export async function getEditionMatches(
           .eq('profile_id', userId)
           .in('match_id', matchIds)
       : Promise.resolve({ data: [], error: null }),
-    getMyDistributions(supabase, matchIds),
+    getMyDistributions(supabase, closedIds),
   ])
   if (predsRes.error) throw new LolDataError('my predictions', predsRes.error)
 
@@ -183,6 +190,7 @@ export async function getEditionMatches(
     return {
       id: m.id,
       date: m.match_date,
+      locksAt: m.prediction_locks_at,
       status: m.status,
       phaseName: phase?.name ?? '',
       bestOf,
@@ -211,7 +219,7 @@ export async function getEditionMatches(
             points: m.status === 'FINISHED' ? mine.points_earned ?? 0 : null,
           }
         : null,
-      distribution: mine && distRows ? buildDistribution(bestOf, distRows) : null,
+      distribution: distRows ? buildDistribution(bestOf, distRows) : null,
     }
   })
 }
