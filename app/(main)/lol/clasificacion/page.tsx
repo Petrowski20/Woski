@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server'
 import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
 import type { StandingRow } from '@/utils/lol/types'
-import { getActiveLolEditions, getEditionStandings, getUserEditionPools } from '../data'
+import { getActiveLolEditions, getEditionPoolPreference, getEditionStandings, getUserEditionPools, resolveActivePool } from '../data'
 
 export const metadata = { title: 'Clasificación · LoL · Woski' }
 
@@ -57,14 +57,12 @@ export default async function LolClasificacionPage({
   // Edición pedida en la URL si sigue activa; si no, la primera activa.
   const selected = editions.find(e => String(e.id) === edicion) ?? editions[0]
 
-  const [pools, profileRes] = await Promise.all([
+  const [pools, preference] = await Promise.all([
     getUserEditionPools(supabase, selected.id, user.id),
-    supabase.from('profiles').select('last_viewed_league_id').eq('id', user.id).maybeSingle(),
+    getEditionPoolPreference(supabase, selected.id, user.id),
   ])
 
-  // El ámbito guardado solo vale si es un pool tuyo de esta edición; si no, Global.
-  const lastViewed = profileRes.data?.last_viewed_league_id as number | null | undefined
-  const activePool = pools.find(p => p.id === lastViewed) ?? null
+  const activePool = resolveActivePool(pools, preference)
 
   const ranking: StandingRow[] = await getEditionStandings(supabase, selected.id, activePool?.id ?? null)
 
@@ -86,14 +84,14 @@ export default async function LolClasificacionPage({
       {/* Leyenda */}
       <div className="bg-bg-muted/60 p-4 rounded-xl mb-4 border border-border">
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-muted">
-          <span>🎯 <strong className="text-text-primary">Aciertos</strong> ganadores acertados / series jugadas</span>
+          <span>🎯 <strong className="text-text-primary">Aciertos</strong> series en las que acertaste el ganador</span>
           <span>
             ⭐ <strong className="text-text-primary">Plenos</strong>{' '}
-            <span className="text-success font-semibold">jornadas acertando todo</span> |{' '}
-            <span className="text-danger font-semibold">jornadas fallando todo (−1 pt)</span>
+            <span className="text-success font-semibold">jornadas acertando todas</span> |{' '}
+            <span className="text-danger font-semibold">jornadas sin ningún acierto (−1 pt)</span>
           </span>
           <span>🔥 <strong className="text-text-primary">Racha</strong> aciertos seguidos ahora mismo</span>
-          <span>💤 Si no votas una jornada, sumas lo mismo que el peor de ese día</span>
+          <span>💤 Una serie sin votar cuenta como fallada</span>
         </div>
       </div>
 
@@ -146,7 +144,7 @@ export default async function LolClasificacionPage({
                       </Link>
                     </td>
                     <td className="px-2 sm:px-3 py-3 text-center text-text-muted tabular-nums whitespace-nowrap">
-                      {row.correctWinners}/{row.finishedSeries}
+                      {row.correctWinners}
                     </td>
                     <td className="px-2 sm:px-3 py-3 text-center tabular-nums whitespace-nowrap">
                       <span className="font-semibold text-success">{row.perfectDays}</span>

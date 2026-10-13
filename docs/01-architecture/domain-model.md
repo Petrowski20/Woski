@@ -202,6 +202,30 @@ Best of Five
 
 Each competition edition references one Ruleset.
 
+### LoL series ruleset (`config`)
+
+Per series (stored in `predictions.points_earned` by the admin result action):
+
+- `correct_winner_points` — correct series winner (default 1)
+- `exact_score_points` — exact series score, e.g. 3-1 (default 3)
+- `default_best_of` — format when the match has no `metadata.best_of`
+
+Per matchday (computed at read time by `lol_standings_at`; a matchday is
+all non-cancelled series of the edition on the same local day of
+`editions.timezone`, in any phase and any format):
+
+- `matchday.positive_perfect_points` — correct winner in every series of
+  the matchday (default 0: informative and tiebreaker only)
+- `matchday.negative_perfect_points` — 0 correct winners over all series
+  of the matchday (default -1)
+
+An unvoted series counts as a miss (0 points), exactly like a voted and
+missed one. So the negative perfect applies whether you missed the ones
+you voted, did not vote, or both: 5 series, 2 voted and missed, 3 not
+voted → 0 of 5 → negative perfect. With at least one hit there is no
+perfect of either kind. Matchday rules only apply once every series of
+the day is finished.
+
 ---
 
 # Relationships

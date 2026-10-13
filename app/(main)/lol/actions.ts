@@ -118,9 +118,9 @@ export async function saveLolPredictionsAction(drafts: PredictionDraft[]): Promi
 }
 
 /**
- * Guarda el ámbito elegido en la clasificación (null = Global) en
- * profiles.last_viewed_league_id, igual que LeagueSelector en el fútbol.
- * Solo acepta pools de esa edición de los que el usuario es miembro.
+ * Guarda el ámbito elegido en la clasificación de una edición (null = Global)
+ * en edition_pool_preferences. Solo acepta pools de esa edición de los que el
+ * usuario es miembro (también lo exige la RLS).
  */
 export async function setLolPoolAction(editionId: number, poolId: number | null): Promise<{ error: string | null }> {
   const supabase = await createClient()
@@ -140,11 +140,13 @@ export async function setLolPoolAction(editionId: number, poolId: number | null)
   }
 
   const { error } = await supabase
-    .from('profiles')
-    .update({ last_viewed_league_id: poolId })
-    .eq('id', user.id)
+    .from('edition_pool_preferences')
+    .upsert(
+      { profile_id: user.id, edition_id: editionId, pool_id: poolId, updated_at: new Date().toISOString() },
+      { onConflict: 'profile_id,edition_id' },
+    )
   if (error) {
-    console.error('[lol] set pool: update profile', error)
+    console.error('[lol] set pool: save preference', error)
     return { error: 'No se ha podido cambiar la clasificación. Inténtalo de nuevo.' }
   }
 

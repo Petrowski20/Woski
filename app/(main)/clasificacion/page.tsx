@@ -43,16 +43,22 @@ export default async function ClasificacionPage() {
     .eq('id', user?.id ?? '')
     .single()
 
-  const activeLeagueId: number | null = profile?.last_viewed_league_id ?? null
-
+  // Solo pools de fútbol: los de LoL tienen su propia clasificación y su
+  // propia preferencia (edition_pool_preferences).
   const { data: memberLeagues } = await supabase
     .from('pool_members')
-    .select('pools(id, name)')
+    .select('pools!inner(id, name, editions!inner(competitions!inner(sports!inner(slug))))')
     .eq('profile_id', user?.id ?? '')
+    .eq('pools.editions.competitions.sports.slug', 'football')
 
   const leagues = (memberLeagues ?? [])
     .map((ml: any) => ml.pools)
-    .filter(Boolean) as { id: number; name: string }[]
+    .filter(Boolean)
+    .map((l: { id: number; name: string }) => ({ id: l.id, name: l.name }))
+
+  // Una preferencia que apunte a un pool que no es tuyo de fútbol se trata como Global.
+  const savedLeagueId: number | null = profile?.last_viewed_league_id ?? null
+  const activeLeagueId: number | null = leagues.some(l => l.id === savedLeagueId) ? savedLeagueId : null
 
   let leagueName = 'Global'
 

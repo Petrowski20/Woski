@@ -225,43 +225,49 @@ export interface RankingSidebarData {
 }
 
 /**
- * Mismo criterio que el Mundial: se usa el pool que el usuario vio por
- * última vez (profiles.last_viewed_league_id) si pertenece a esta edición.
- * Si no, el primer pool de la edición al que se unió. Sin pools → global.
+ * Pool elegido en la clasificación de esta edición: undefined si nunca ha
+ * elegido, null si eligió Global.
  */
+export async function getEditionPoolPreference(
+  supabase: SupabaseClient,
+  editionId: number,
+  userId: string,
+): Promise<number | null | undefined> {
+  const { data, error } = await supabase
+    .from('edition_pool_preferences')
+    .select('pool_id')
+    .eq('profile_id', userId)
+    .eq('edition_id', editionId)
+    .maybeSingle()
+  if (error) throw new LolDataError('pool preference', error)
+  return data ? (data.pool_id as number | null) : undefined
+}
+
+/**
+ * Ámbito que se muestra: el elegido si sigue siendo un pool tuyo de la
+ * edición; si nunca has elegido, tu primer pool de la edición (pools viene
+ * ordenado por fecha de ingreso); en cualquier otro caso, Global (null).
+ */
+export function resolveActivePool(
+  pools: PoolOption[],
+  preference: number | null | undefined,
+): PoolOption | null {
+  if (preference === undefined) return pools[0] ?? null
+  return pools.find(p => p.id === preference) ?? null
+}
+
+/** Top 5 del calendario: mismo ámbito que la clasificación completa. */
 export async function getRankingSidebar(
   supabase: SupabaseClient,
   editionId: number,
   userId: string,
 ): Promise<RankingSidebarData> {
-  const [membershipsRes, profileRes] = await Promise.all([
-    supabase.from('pool_members').select('pool_id, joined_at').eq('profile_id', userId),
-    supabase.from('profiles').select('last_viewed_league_id').eq('id', userId).maybeSingle(),
+  const [pools, preference] = await Promise.all([
+    getUserEditionPools(supabase, editionId, userId),
+    getEditionPoolPreference(supabase, editionId, userId),
   ])
-  if (membershipsRes.error) throw new LolDataError('pool memberships', membershipsRes.error)
 
-  const memberships = (membershipsRes.data ?? []) as { pool_id: number; joined_at: string | null }[]
-  let pool: { id: number; name: string } | null = null
-
-  if (memberships.length) {
-    const { data: pools, error } = await supabase
-      .from('pools')
-      .select('id, name')
-      .eq('edition_id', editionId)
-      .in('id', memberships.map(m => m.pool_id))
-    if (error) throw new LolDataError('pools', error)
-
-    const editionPools = (pools ?? []) as { id: number; name: string }[]
-    const lastViewed = profileRes.data?.last_viewed_league_id as number | null | undefined
-    pool =
-      editionPools.find(p => p.id === lastViewed) ??
-      [...editionPools].sort((a, b) => {
-        const ja = memberships.find(m => m.pool_id === a.id)?.joined_at ?? ''
-        const jb = memberships.find(m => m.pool_id === b.id)?.joined_at ?? ''
-        return ja.localeCompare(jb)
-      })[0] ??
-      null
-  }
+  const pool = resolveActivePool(pools, preference)
 
   // Mismo cálculo que la clasificación completa, para que puntos y orden coincidan.
   const rows: RankingRow[] = await getEditionStandings(supabase, editionId, pool?.id ?? null)
