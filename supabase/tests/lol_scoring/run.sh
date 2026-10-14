@@ -78,6 +78,18 @@ echo "== Utilidades de test y foto v1 de hoy (regresión)"
 psql_pg < "$HERE/fixtures/helpers.sql" >/dev/null
 psql_pg < "$HERE/fixtures/v1_regression_before.sql" >/dev/null
 
+echo "== Config del bloque 1A de supabase/seeds/worlds_2026_playin_v2.sql"
+# El JSON comentado del primer "SET config = '{" hasta su "}'::jsonb".
+SEED_CFG="$(awk '
+  !done && /^-- SET config = .\{/ { on = 1; print "{"; next }
+  on && /^-- \}.::jsonb/          { print "}"; on = 0; done = 1; next }
+  on                              { sub(/^-- /, ""); print }
+' "$ROOT/supabase/seeds/worlds_2026_playin_v2.sql")"
+[ -n "$SEED_CFG" ] || { echo "No encuentro el config del bloque 1A" >&2; exit 1; }
+psql_pg <<SQL >/dev/null
+CREATE TABLE t.seed_playin AS SELECT \$cfg\$${SEED_CFG}\$cfg\$::jsonb AS config;
+SQL
+
 echo "== Migraciones nuevas"
 for f in "$ROOT"/supabase/migrations/*.sql; do
   v="$(basename "$f" | cut -d_ -f1)"
