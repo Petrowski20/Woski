@@ -7,6 +7,7 @@ import { sameScore, type SeriesScore } from '@/utils/lol/series'
 import type { LolMatchView, LolTeamView, SaveErrorCode } from '@/utils/lol/types'
 import SeriesSlider from './SeriesSlider'
 import VoteBreakdown from './VoteBreakdown'
+import PointsBreakdown from './PointsBreakdown'
 import TeamLogo from './TeamLogo'
 import { SliderHelpButton } from './SliderHelp'
 import { SAVE_ERROR_ACTION_LABEL, SAVE_ERROR_COPY } from './saveErrors'
@@ -84,6 +85,11 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
           <span className="font-semibold">Bo{match.bestOf}</span>
           <span aria-hidden>·</span>
           <time dateTime={match.date} className="capitalize">{formatMatchDate(match.date)}</time>
+          {match.featured && (
+            <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold whitespace-nowrap">
+              ⭐ Partido de la jornada
+            </span>
+          )}
         </div>
         <span className={`px-2 py-0.5 rounded-full font-semibold ${badge.className}`}>{badge.label}</span>
       </header>
@@ -133,11 +139,14 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
             </p>
 
             {state === 'finished' && match.result && savedScore && (
-              <div className="flex items-center justify-center gap-2 text-sm">
-                <span className="text-text-muted">
-                  Resultado: <strong className="text-text-primary">{formatSeriesScore(match.result, match.home.tag, match.away.tag)}</strong>
-                </span>
-                <PointsBadge points={saved?.points ?? 0} />
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center justify-center gap-2 text-sm">
+                  <span className="text-text-muted">
+                    Resultado: <strong className="text-text-primary">{formatSeriesScore(match.result, match.home.tag, match.away.tag)}</strong>
+                  </span>
+                  <PointsBadge points={saved?.points ?? 0} />
+                </div>
+                {saved?.breakdown && <PointsBreakdown breakdown={saved.breakdown} />}
               </div>
             )}
 

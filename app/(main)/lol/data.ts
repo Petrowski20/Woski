@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
-import type { LolEditionOption, LolMatchView, PoolOption, RankingRow, StandingRow, VoteShare } from '@/utils/lol/types'
+import type { LolEditionOption, LolMatchView, PoolOption, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -123,6 +123,54 @@ export async function getMyDistributions(
   return byMatch
 }
 
+interface BreakdownRow {
+  match_id: number
+  rules_version: number
+  correct_winner: boolean
+  correct_score: boolean
+  base_winner: number
+  base_exact: number
+  streak_length: number
+  streak_bonus: number
+  featured_bonus: number
+  total: number
+  explanation: {
+    winner?: { share?: number | null; tier?: string | null }
+    exact?: { share?: number | null; tier?: string | null }
+  } | null
+}
+
+/** Desglose de puntos de mis predicciones en series terminadas (lo calcula la BD). */
+export async function getMyBreakdowns(
+  supabase: SupabaseClient,
+  matchIds: number[],
+): Promise<Map<number, ScoreBreakdown>> {
+  const byMatch = new Map<number, ScoreBreakdown>()
+  if (matchIds.length === 0) return byMatch
+
+  const { data, error } = await supabase.rpc('get_my_lol_breakdowns', { p_match_ids: matchIds })
+  if (error) throw new LolDataError('score breakdowns', error)
+
+  for (const r of (data ?? []) as BreakdownRow[]) {
+    byMatch.set(r.match_id, {
+      rulesVersion: r.rules_version,
+      correctWinner: r.correct_winner,
+      correctScore: r.correct_score,
+      baseWinner: r.base_winner,
+      baseExact: r.base_exact,
+      streakLength: r.streak_length,
+      streakBonus: r.streak_bonus,
+      featuredBonus: r.featured_bonus,
+      total: r.total,
+      winnerShare: r.explanation?.winner?.share ?? null,
+      exactShare: r.explanation?.exact?.share ?? null,
+      winnerTier: r.explanation?.winner?.tier ?? null,
+      exactTier: r.explanation?.exact?.tier ?? null,
+    })
+  }
+  return byMatch
+}
+
 export async function getEditionMatches(
   supabase: SupabaseClient,
   editionId: number,
@@ -177,6 +225,10 @@ export async function getEditionMatches(
   const myPreds = new Map(
     (predsRes.data ?? []).map((p: { match_id: number; pred_home_goals: number; pred_away_goals: number; points_earned: number | null }) => [p.match_id, p]),
   )
+  const breakdowns = await getMyBreakdowns(
+    supabase,
+    matches.filter(m => m.status === 'FINISHED' && myPreds.has(m.id)).map(m => m.id),
+  )
 
   // Récord W-L por (fase, equipo) a partir de los partidos resueltos.
   const records = new Map<string, { wins: number; losses: number }>()
@@ -224,11 +276,13 @@ export async function getEditionMatches(
         m.status === 'FINISHED' && m.home_goals !== null && m.away_goals !== null
           ? { home: m.home_goals, away: m.away_goals }
           : null,
+      featured: (m.metadata as { featured_match?: unknown } | null)?.featured_match === true,
       myPrediction: mine
         ? {
             home: mine.pred_home_goals,
             away: mine.pred_away_goals,
             points: m.status === 'FINISHED' ? mine.points_earned ?? 0 : null,
+            breakdown: breakdowns.get(m.id) ?? null,
           }
         : null,
       distribution: distRows ? buildDistribution(bestOf, distRows) : null,

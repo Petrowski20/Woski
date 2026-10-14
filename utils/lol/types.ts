@@ -23,6 +23,28 @@ export interface VoteShare extends SeriesScore {
   pct: number
 }
 
+/**
+ * Desglose de los puntos de una serie, tal cual lo devuelve la BD
+ * (get_my_lol_breakdowns → lol_score_breakdown). Aquí no se calcula nada.
+ */
+export interface ScoreBreakdown {
+  rulesVersion: number
+  correctWinner: boolean
+  correctScore: boolean
+  baseWinner: number
+  baseExact: number
+  streakLength: number
+  streakBonus: number
+  featuredBonus: number
+  total: number
+  /** % de votantes que eligió el mismo ganador / marcador (solo v2 y si acertó). */
+  winnerShare: number | null
+  exactShare: number | null
+  /** 'sole' (único), 'fallback' (único sin votantes suficientes) o 'min_share:N'. */
+  winnerTier: string | null
+  exactTier: string | null
+}
+
 export interface LolMatchView {
   id: number
   date: string
@@ -34,7 +56,9 @@ export interface LolMatchView {
   home: LolTeamView
   away: LolTeamView
   result: SeriesScore | null
-  myPrediction: (SeriesScore & { points: number | null }) | null
+  /** Partido de la jornada (matches.metadata.featured_match). */
+  featured: boolean
+  myPrediction: (SeriesScore & { points: number | null; breakdown: ScoreBreakdown | null }) | null
   /** Solo presente cuando la votación del partido ya está cerrada. */
   distribution: { total: number; shares: VoteShare[] } | null
 }
