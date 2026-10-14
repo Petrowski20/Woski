@@ -1,28 +1,17 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
-import { outcomeIndex, resolveBestOf } from '@/utils/lol/series'
-import { LOL_SPORT_SLUG } from '../../lol/data'
 
-// Admin mínimo para probar el calendario LoL con datos reales.
-// TODO: sustituir la comprobación role = 'ADMIN' por permisos granulares.
-//
-// Los puntos los calcula siempre la BD (score_lol_match / rescore_lol_edition,
-// migración 20261014120002). Las RPC del motor se llaman con la sesión del
-// admin: la BD vuelve a comprobar el rol con auth.uid() y la carga manual de
-// votos queda registrada a su nombre.
+// Centro de operaciones LoL. Cada acción:
+// 1. comprueba en el servidor que la sesión es ADMIN (_requireAdmin), y
+// 2. llama a una función SQL admin_* con la sesión del admin, que vuelve a
+//    comprobar el rol con auth.uid(), valida, escribe, recalcula puntos con el
+//    motor si hace falta y deja registro en lol_admin_audit (o
+//    lol_prediction_audit para votos cargados a mano).
+// Aquí no se escribe en tablas ni se calculan puntos.
 
 type AdminResult = { success: true } | { error: string }
-
-function _makeAdminClient() {
-  return createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  )
-}
 
 async function _requireAdmin(): Promise<string | null> {
   const supabase = await createClient()
@@ -33,111 +22,54 @@ async function _requireAdmin(): Promise<string | null> {
   return null
 }
 
-interface LolMatchRow {
-  id: number
-  home_team_id: number
-  away_team_id: number
-  metadata: unknown
-  phases: {
-    rulesets: { config: unknown } | null
-    editions: { competitions: { sports: { slug: string } } }
-  }
-}
-
-async function _loadLolMatch(admin: ReturnType<typeof _makeAdminClient>, matchId: number) {
-  const { data, error } = await admin
-    .from('matches')
-    .select(`
-      id, home_team_id, away_team_id, metadata,
-      phases!inner ( rulesets (config), editions!inner ( competitions!inner ( sports!inner (slug) ) ) )
-    `)
-    .eq('id', matchId)
-    .maybeSingle()
-  if (error) console.error('[admin lol] load match', error)
-  const match = data as unknown as LolMatchRow | null
-  if (!match || match.phases.editions.competitions.sports.slug !== LOL_SPORT_SLUG) return null
-  return match
-}
-
 function _revalidate() {
   revalidatePath('/')
   revalidatePath('/admin/lol')
   revalidatePath('/lol/clasificacion')
 }
 
-// Errores de validación del motor (22023 / 23505) traen un mensaje en
+// Errores de validación de la BD (22023 / 23505 / 55000) traen un mensaje en
 // castellano pensado para el admin; el resto se queda en los logs.
 function _rpcError(context: string, error: { code?: string; message: string }, fallback: string): { error: string } {
-  if (error.code === '22023' || error.code === '23505') return { error: error.message }
+  if (error.code === '22023' || error.code === '23505' || error.code === '55000') return { error: error.message }
   if (error.code === '42501') return { error: 'Necesitas permisos de administrador.' }
   console.error(`[admin lol] ${context}`, error)
   return { error: fallback }
 }
 
-/** Puntúa la serie y las posteriores de su fase (la racha depende del orden). */
-async function _scoreMatch(matchId: number): Promise<{ error: string } | null> {
-  const supabase = await createClient()
-  const { error } = await supabase.rpc('score_lol_match', { p_match_id: matchId })
-  return error ? _rpcError('score_lol_match', error, 'No se han podido calcular los puntos. Vuelve a intentarlo.') : null
+/**
+ * "2026-10-17T20:00" (hora de Madrid, del <input type="datetime-local">) →
+ * literal timestamptz con zona. Postgres lo pasa a UTC teniendo en cuenta el
+ * cambio de hora; null si el formato no es válido.
+ */
+function _madridTimestamp(local: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(local)) return null
+  return `${local.replace('T', ' ')}:00 Europe/Madrid`
 }
 
-/** Guarda el resultado de la serie, marca el partido FINISHED y puntúa las predicciones. */
+// ── Resultado, estado, partido de la jornada, recálculo ───────────────────
+
+/** Guarda el resultado (FINISHED); la BD valida el marcador y puntúa. */
 export async function setLolMatchResultAction(matchId: number, home: number, away: number): Promise<AdminResult> {
   const authError = await _requireAdmin()
   if (authError) return { error: authError }
 
-  const admin = _makeAdminClient()
-  const match = await _loadLolMatch(admin, matchId)
-  if (!match) return { error: 'No se ha encontrado el partido de LoL.' }
-
-  const config = match.phases.rulesets?.config
-  const bestOf = resolveBestOf(match.metadata, config)
-  const result = { home, away }
-  if (outcomeIndex(bestOf, result) === -1) return { error: `${home}-${away} no es un resultado válido para un Bo${bestOf}.` }
-
-  const { error: matchError } = await admin
-    .from('matches')
-    .update({
-      home_goals: home,
-      away_goals: away,
-      winner_id: home > away ? match.home_team_id : match.away_team_id,
-      status: 'FINISHED',
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', matchId)
-  if (matchError) {
-    console.error('[admin lol] update match', matchError)
-    return { error: 'No se ha podido guardar el resultado. Inténtalo de nuevo.' }
-  }
-
-  const scoreError = await _scoreMatch(matchId)
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_set_lol_match_result', { p_match_id: matchId, p_home: home, p_away: away })
+  if (error) return _rpcError('admin_set_lol_match_result', error, 'No se ha podido guardar el resultado. Inténtalo de nuevo.')
   _revalidate()
-  if (scoreError) return { error: `Resultado guardado, pero no se han podido calcular los puntos. ${scoreError.error}` }
   return { success: true }
 }
 
-/** Reabre (PENDING) o cancela (CANCELLED) un partido, borrando resultado y puntos. */
+/** Reabre (PENDING) o cancela (CANCELLED, nunca se borra) una serie. */
 export async function setLolMatchStatusAction(matchId: number, status: 'PENDING' | 'CANCELLED'): Promise<AdminResult> {
   const authError = await _requireAdmin()
   if (authError) return { error: authError }
 
-  const admin = _makeAdminClient()
-  const match = await _loadLolMatch(admin, matchId)
-  if (!match) return { error: 'No se ha encontrado el partido de LoL.' }
-
-  const { error: matchError } = await admin
-    .from('matches')
-    .update({ status, home_goals: null, away_goals: null, winner_id: null, updated_at: new Date().toISOString() })
-    .eq('id', matchId)
-  if (matchError) {
-    console.error('[admin lol] update status', matchError)
-    return { error: 'No se ha podido cambiar el estado. Inténtalo de nuevo.' }
-  }
-
-  // El motor deja esta serie a 0 y recalcula las posteriores de la fase.
-  const scoreError = await _scoreMatch(matchId)
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_set_lol_match_status', { p_match_id: matchId, p_status: status })
+  if (error) return _rpcError('admin_set_lol_match_status', error, 'No se ha podido cambiar el estado. Inténtalo de nuevo.')
   _revalidate()
-  if (scoreError) return { error: `Estado cambiado, pero no se han podido recalcular los puntos. ${scoreError.error}` }
   return { success: true }
 }
 
@@ -147,8 +79,8 @@ export async function setLolFeaturedMatchAction(matchId: number, featured: boole
   if (authError) return { error: authError }
 
   const supabase = await createClient()
-  const { error } = await supabase.rpc('set_lol_featured_match', { p_match_id: matchId, p_featured: featured })
-  if (error) return _rpcError('set_lol_featured_match', error, 'No se ha podido cambiar el partido de la jornada.')
+  const { error } = await supabase.rpc('admin_set_lol_featured_match', { p_match_id: matchId, p_featured: featured })
+  if (error) return _rpcError('admin_set_lol_featured_match', error, 'No se ha podido cambiar el partido de la jornada.')
   _revalidate()
   return { success: true }
 }
@@ -159,11 +91,110 @@ export async function rescoreLolEditionAction(editionId: number): Promise<AdminR
   if (authError) return { error: authError }
 
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('rescore_lol_edition', { p_edition_id: editionId })
-  if (error) return _rpcError('rescore_lol_edition', error, 'No se ha podido recalcular la edición.')
+  const { data, error } = await supabase.rpc('admin_rescore_lol_edition', { p_edition_id: editionId })
+  if (error) return _rpcError('admin_rescore_lol_edition', error, 'No se ha podido recalcular la edición.')
   _revalidate()
   return { success: true, changed: Number(data ?? 0) }
 }
+
+// ── Crear / editar series ─────────────────────────────────────────────────
+
+export interface CreateMatchInput {
+  phaseId: number
+  homeTag: string
+  awayTag: string
+  /** "YYYY-MM-DDTHH:mm" en hora de Madrid. */
+  localDateTime: string
+  bestOf: number
+  featured: boolean
+}
+
+export async function createLolMatchAction(
+  input: CreateMatchInput,
+): Promise<{ success: true; warnings: string[] } | { error: string }> {
+  const authError = await _requireAdmin()
+  if (authError) return { error: authError }
+
+  const matchDate = _madridTimestamp(input.localDateTime)
+  if (!matchDate) return { error: 'Indica la fecha y la hora de inicio.' }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('admin_create_lol_match', {
+    p_phase_id: input.phaseId,
+    p_home_tag: input.homeTag,
+    p_away_tag: input.awayTag,
+    p_match_date: matchDate,
+    p_best_of: input.bestOf,
+    p_featured: input.featured,
+  })
+  if (error) return _rpcError('admin_create_lol_match', error, 'No se ha podido crear la serie. Inténtalo de nuevo.')
+  _revalidate()
+  return { success: true, warnings: ((data as { warnings?: string[] } | null)?.warnings ?? []) }
+}
+
+export interface UpdateMatchInput {
+  matchId: number
+  /** "YYYY-MM-DDTHH:mm" en hora de Madrid, o null para no cambiarla. */
+  localDateTime: string | null
+  bestOf: number | null
+  /** Confirmación explícita para cambiar la hora de una serie con votos. */
+  confirm: boolean
+}
+
+/**
+ * Cambia fecha y/o formato de una serie con la votación abierta. Si ya tiene
+ * votos y no viene confirmada devuelve needsConfirm para que la interfaz pida
+ * confirmación (la BD responde 55000).
+ */
+export async function updateLolMatchAction(
+  input: UpdateMatchInput,
+): Promise<{ success: true } | { error: string; needsConfirm?: boolean }> {
+  const authError = await _requireAdmin()
+  if (authError) return { error: authError }
+
+  const matchDate = input.localDateTime ? _madridTimestamp(input.localDateTime) : null
+  if (input.localDateTime && !matchDate) return { error: 'La fecha y hora no son válidas.' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_update_lol_match', {
+    p_match_id: input.matchId,
+    p_match_date: matchDate,
+    p_best_of: input.bestOf,
+    p_confirm: input.confirm,
+  })
+  if (error) {
+    if (error.code === '55000') return { error: error.message, needsConfirm: true }
+    return _rpcError('admin_update_lol_match', error, 'No se ha podido editar la serie. Inténtalo de nuevo.')
+  }
+  _revalidate()
+  return { success: true }
+}
+
+// ── Participación ─────────────────────────────────────────────────────────
+
+export interface ParticipationRow {
+  nickname: string
+  hasVoted: boolean
+}
+
+/** Quién ha votado una serie (sí/no). Nunca el voto. */
+export async function getLolMatchParticipationAction(
+  matchId: number,
+): Promise<{ success: true; rows: ParticipationRow[] } | { error: string }> {
+  const authError = await _requireAdmin()
+  if (authError) return { error: authError }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('admin_lol_match_participation', { p_match_id: matchId })
+  if (error) return _rpcError('admin_lol_match_participation', error, 'No se ha podido cargar la participación.')
+  const rows = ((data ?? []) as { nickname: string; has_voted: boolean }[]).map(r => ({
+    nickname: r.nickname,
+    hasVoted: r.has_voted,
+  }))
+  return { success: true, rows }
+}
+
+// ── Votos a mano ──────────────────────────────────────────────────────────
 
 export interface ManualVoteInput {
   userId: string
