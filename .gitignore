@@ -44,3 +44,6 @@ next-env.d.ts
 CLAUDE.md
 AGENTS.md
 .claude/
+
+# Database backups
+backup_*.sql
