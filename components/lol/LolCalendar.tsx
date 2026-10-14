@@ -53,7 +53,7 @@ export default function LolCalendar({ editions, selectedEditionId, matches, side
   const views = useMemo(() => matches.map((m): LolMatchView => {
     const c = confirmed[m.id]
     if (!c) return m
-    return { ...m, myPrediction: { ...c.prediction, points: null } }
+    return { ...m, myPrediction: { ...c.prediction, points: null, breakdown: null } }
   }), [matches, confirmed])
 
   const lockedIds = useMemo(() => new Set(

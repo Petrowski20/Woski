@@ -61,22 +61,5 @@ export function isPredictionLocked(status: MatchStatus, locksAtIso: string, now:
   return now >= new Date(locksAtIso).getTime()
 }
 
-interface SeriesRuleset {
-  correct_winner_points?: number
-  exact_score_points?: number
-}
-
-export function scoreSeriesPrediction(
-  rulesetConfig: unknown,
-  prediction: SeriesScore,
-  result: SeriesScore,
-): { points: number; correctWinner: boolean; correctScore: boolean } {
-  const cfg = (rulesetConfig ?? {}) as SeriesRuleset
-  const winnerPts = cfg.correct_winner_points ?? 1
-  const exactPts = cfg.exact_score_points ?? 3
-
-  const correctScore = sameScore(prediction, result)
-  const correctWinner = Math.sign(prediction.home - prediction.away) === Math.sign(result.home - result.away)
-  const points = correctScore ? exactPts : correctWinner ? winnerPts : 0
-  return { points, correctWinner, correctScore }
-}
+// Los puntos de LoL se calculan solo en la BD (lol_score_breakdown,
+// migración 20261014120002): aquí no hay fórmulas de puntuación.
