@@ -23,10 +23,12 @@
 --      (ganador y marcador exacto), rachas, pleno negativo −2.
 --      featured_match_bonus 2 (el Play-In es Bo5; solo aplica si
 --      se marca un partido de la jornada).
---      min_voters_override: null → mínimo = max(1, ceil(1 % de los
---      votantes)). Con pocos votantes eso es 1: el único que
---      acierta cobra 6 aunque solo vote él. Si quieres exigir un
---      mínimo real, pon aquí un entero (p. ej. 3) en los dos bloques.
+--      min_voters_override: 3 → el tramo "único" (6) solo vale si
+--      votaron al menos 3 personas la SERIE completa; con menos, el
+--      único que acierta cobra fallback_points (2).
+--      Aviso: sin override (null) el mínimo sería max(1, ceil(1 % de
+--      los votantes de la serie)), que con pocos votantes es 1: el
+--      único que acierta cobraría 6 aunque solo votara él.
 -- ------------------------------------------------------------
 -- UPDATE public.rulesets
 -- SET config = '{
@@ -36,11 +38,11 @@
 --   "prediction_cutoff_minutes": 0,
 --   "winner_points": {
 --     "tiers": [{"min_share": 50, "points": 2}, {"min_share": 25, "points": 3}, {"min_share": 0, "points": 4}],
---     "sole_voter_points": 6, "min_voters_percent": 1, "min_voters_override": null, "fallback_points": 2
+--     "sole_voter_points": 6, "min_voters_percent": 1, "min_voters_override": 3, "fallback_points": 2
 --   },
 --   "exact_score_points": {
 --     "tiers": [{"min_share": 50, "points": 2}, {"min_share": 25, "points": 3}, {"min_share": 0, "points": 4}],
---     "sole_voter_points": 6, "min_voters_percent": 1, "min_voters_override": null, "fallback_points": 2
+--     "sole_voter_points": 6, "min_voters_percent": 1, "min_voters_override": 3, "fallback_points": 2
 --   },
 --   "streak_bonus": {
 --     "scope": "phase",
