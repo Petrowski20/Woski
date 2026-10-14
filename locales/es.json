@@ -61,14 +61,16 @@
   },
   "ligas": {
     "title": "Mis Ligas Privadas",
-    "subtitle": "Crea una liga para competir con tus amigos o únete con un código.",
+    "subtitle": "Las ligas en las que ya juegas.",
     "myLeagues": "Tus ligas ({n})",
     "noLeagues": "Aún no perteneces a ninguna liga",
-    "noLeaguesHint": "Crea la primera o únete con un código.",
+    "noLeaguesHint": "Para jugar con amigos, crea un club o únete a uno.",
     "admin": "Admin",
     "code": "Código:",
     "desde": "Desde {date}",
-    "ereCreador": "Eres el creador"
+    "ereCreador": "Eres el creador",
+    "frozen": "Las ligas ya no admiten altas nuevas: para jugar con amigos, crea un club o únete a uno con su código.",
+    "goToClubs": "Ir a Clubes"
   },
   "leagueDetail": {
     "miembros": "Miembros ({n})",

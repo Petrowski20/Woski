@@ -61,14 +61,16 @@
   },
   "ligas": {
     "title": "My Private Leagues",
-    "subtitle": "Create a league to compete with friends or join with a code.",
+    "subtitle": "The leagues you already play in.",
     "myLeagues": "Your leagues ({n})",
     "noLeagues": "You don't belong to any league yet",
-    "noLeaguesHint": "Create the first one or join with a code.",
+    "noLeaguesHint": "To play with friends, create a club or join one.",
     "admin": "Admin",
     "code": "Code:",
     "desde": "Since {date}",
-    "ereCreador": "You're the owner"
+    "ereCreador": "You're the owner",
+    "frozen": "Leagues no longer accept new members: to play with friends, create a club or join one with its code.",
+    "goToClubs": "Go to Clubs"
   },
   "leagueDetail": {
     "miembros": "Members ({n})",
