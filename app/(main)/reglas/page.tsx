@@ -1,7 +1,7 @@
 export const metadata = { title: 'Cómo jugar · Woski' }
 
-// Reglas oficiales de LoL. Lo marcado con `wip` aún no lo calcula el motor
-// de puntuación (llega con el motor v2); el resto ya funciona así.
+// Reglas oficiales de LoL (rulesets v2). Las calcula el motor de la BD
+// (migración 20261014120002); esta página solo las explica.
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -12,35 +12,14 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-function WipBadge() {
-  return (
-    <span className="ml-2 whitespace-nowrap rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 align-middle dark:bg-amber-900/40 dark:text-amber-300">
-      En construcción
-    </span>
-  )
-}
-
-function Rule({
-  points,
-  title,
-  wip = false,
-  children,
-}: {
-  points: string
-  title: string
-  wip?: boolean
-  children: React.ReactNode
-}) {
+function Rule({ points, title, children }: { points: string; title: string; children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-4 py-3 border-b border-gray-50 dark:border-slate-800 last:border-0">
       <span className="shrink-0 w-12 text-center text-lg font-extrabold text-blue-600 dark:text-blue-400 tabular-nums">
         {points}
       </span>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-          {title}
-          {wip && <WipBadge />}
-        </p>
+        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{title}</p>
         <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 space-y-1">{children}</div>
       </div>
     </div>
@@ -66,6 +45,7 @@ const TIEBREAK = [
   { title: 'Puntos', desc: 'Gana quien más puntos tenga.' },
   { title: 'Plenos positivos', desc: 'Jornadas en las que votaste todas las series y acertaste todos los ganadores.' },
   { title: 'Mejor racha de la fase', desc: 'La racha de aciertos de ganador más larga en la fase en curso.' },
+  { title: 'Antigüedad', desc: 'Si todo lo anterior empata, va antes la cuenta más antigua.' },
 ]
 
 export default function ReglasPage() {
@@ -85,11 +65,8 @@ export default function ReglasPage() {
         <div className="text-sm text-amber-900 dark:text-amber-200">
           <p>
             <strong>Corte de votación:</strong> puedes votar o cambiar tu voto hasta la hora de inicio de cada serie.
-            <WipBadge />
           </p>
-          <p className="text-xs mt-1 opacity-80">
-            De momento la votación puede cerrarse hasta 60 minutos antes. Cada partido muestra su hora de cierre.
-          </p>
+          <p className="text-xs mt-1 opacity-80">Cada partido muestra su hora de cierre.</p>
         </div>
       </div>
 
@@ -120,20 +97,25 @@ export default function ReglasPage() {
           </table>
         </div>
 
-        <Rule points="2–6" title="Ganador acertado" wip>
+        <p className="text-xs text-gray-400 dark:text-slate-500 mb-3">
+          El tramo de único exige un mínimo de votantes en la serie; si no se llega, el acierto vale 2.
+        </p>
+
+        <Rule points="2–6" title="Ganador acertado">
           <p>Aciertas qué equipo gana la serie. Los puntos dependen del % de votantes que eligió ese mismo equipo.</p>
-          <p>De momento suma 1 punto fijo.</p>
         </Rule>
-        <Rule points="2–6" title="Marcador exacto (Bo3 / Bo5)" wip>
+        <Rule points="2–6" title="Marcador exacto (Bo3 / Bo5)">
           <p>
-            En series Bo3 y Bo5 el marcador exacto es otro acierto aparte, con los mismos tramos, pero el % es el
-            de votantes que eligieron ese mismo marcador. En Bo1 solo cuenta el ganador.
+            En series Bo3 y Bo5 el marcador exacto es otro acierto aparte que se suma al del ganador, con los
+            mismos tramos, pero el % es el de votantes que eligieron ese mismo marcador. En Bo1 solo cuenta el
+            ganador.
           </p>
-          <p>De momento el marcador exacto suma 3 puntos en lugar de los del ganador.</p>
         </Rule>
-        <Rule points="+2" title="Partido de la jornada (Bo1)" wip>
-          <p>En jornadas Bo1 se elige un partido de la jornada: si aciertas su ganador, sumas +2 extra.</p>
-          <p>De momento no se aplica.</p>
+        <Rule points="+2" title="Partido de la jornada (Bo1)">
+          <p>
+            En jornadas Bo1 se elige un partido de la jornada antes de que empiece: si aciertas su ganador, sumas
+            +2 extra. Cuenta para la racha como cualquier otra serie.
+          </p>
         </Rule>
         <Rule points="0" title="Fallo o sin voto">
           <p>Una serie fallada o sin votar no suma puntos y reinicia tu racha.</p>
@@ -146,7 +128,6 @@ export default function ReglasPage() {
           Cada acierto de ganador seguido alarga tu racha. Cada serie que sumes a la racha te da un bonus según su
           longitud. La racha se mantiene entre jornadas y solo se reinicia al cambiar de fase (Play-In → Swiss →
           Play-offs) o al fallar o no votar una serie. El marcador exacto no cuenta para la racha.
-          <WipBadge />
         </p>
         <div className="grid grid-cols-5 gap-2 text-center">
           {STREAK.map(({ range, bonus }) => (
@@ -157,15 +138,17 @@ export default function ReglasPage() {
           ))}
         </div>
         <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
-          Ejemplo: con 4 aciertos seguidos sumas +0, +0, +1 y +1 de bonus. De momento la racha solo sirve para desempatar.
+          Ejemplo: con 4 aciertos seguidos sumas +0, +0, +1 y +1 de bonus, encima de los puntos de cada acierto.
         </p>
       </Section>
 
       {/* Plenos */}
       <Section title="Plenos">
-        <Rule points="−2" title="Pleno negativo" wip>
-          <p>Una jornada cerrada con 0 aciertos de ganador, ya sea por fallos, por no votar o por una mezcla.</p>
-          <p>De momento resta 1 punto.</p>
+        <Rule points="−2" title="Pleno negativo">
+          <p>
+            Una jornada cerrada con 0 aciertos de ganador, ya sea por fallos, por no votar o por una mezcla. Cuenta
+            desde la jornada de tu primera predicción (en un club, desde que entraste).
+          </p>
         </Rule>
         <Rule points="0" title="Pleno positivo">
           <p>Votas todas las series de la jornada y aciertas todos los ganadores. No da puntos, pero sirve para desempatar.</p>
