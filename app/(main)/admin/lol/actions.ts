@@ -3,11 +3,16 @@
 import { createClient } from '@/utils/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
-import { outcomeIndex, resolveBestOf, scoreSeriesPrediction } from '@/utils/lol/series'
+import { outcomeIndex, resolveBestOf } from '@/utils/lol/series'
 import { LOL_SPORT_SLUG } from '../../lol/data'
 
 // Admin mínimo para probar el calendario LoL con datos reales.
 // TODO: sustituir la comprobación role = 'ADMIN' por permisos granulares.
+//
+// Los puntos los calcula siempre la BD (score_lol_match / rescore_lol_edition,
+// migración 20261014120002). Las RPC del motor se llaman con la sesión del
+// admin: la BD vuelve a comprobar el rol con auth.uid() y la carga manual de
+// votos queda registrada a su nombre.
 
 type AdminResult = { success: true } | { error: string }
 
@@ -57,6 +62,23 @@ async function _loadLolMatch(admin: ReturnType<typeof _makeAdminClient>, matchId
 function _revalidate() {
   revalidatePath('/')
   revalidatePath('/admin/lol')
+  revalidatePath('/lol/clasificacion')
+}
+
+// Errores de validación del motor (22023 / 23505) traen un mensaje en
+// castellano pensado para el admin; el resto se queda en los logs.
+function _rpcError(context: string, error: { code?: string; message: string }, fallback: string): { error: string } {
+  if (error.code === '22023' || error.code === '23505') return { error: error.message }
+  if (error.code === '42501') return { error: 'Necesitas permisos de administrador.' }
+  console.error(`[admin lol] ${context}`, error)
+  return { error: fallback }
+}
+
+/** Puntúa la serie y las posteriores de su fase (la racha depende del orden). */
+async function _scoreMatch(matchId: number): Promise<{ error: string } | null> {
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('score_lol_match', { p_match_id: matchId })
+  return error ? _rpcError('score_lol_match', error, 'No se han podido calcular los puntos. Vuelve a intentarlo.') : null
 }
 
 /** Guarda el resultado de la serie, marca el partido FINISHED y puntúa las predicciones. */
@@ -88,33 +110,9 @@ export async function setLolMatchResultAction(matchId: number, home: number, awa
     return { error: 'No se ha podido guardar el resultado. Inténtalo de nuevo.' }
   }
 
-  const { data: preds, error: predsError } = await admin
-    .from('predictions')
-    .select('id, profile_id, match_id, pred_home_goals, pred_away_goals')
-    .eq('match_id', matchId)
-  if (predsError) {
-    console.error('[admin lol] load predictions', predsError)
-    return { error: 'Resultado guardado, pero no se han podido calcular los puntos. Vuelve a guardarlo.' }
-  }
-
-  if (preds?.length) {
-    const rows = preds.map(p => {
-      const s = scoreSeriesPrediction(config, { home: p.pred_home_goals, away: p.pred_away_goals }, result)
-      return {
-        ...p,
-        points_earned: s.points,
-        is_correct_winner: s.correctWinner,
-        is_correct_score: s.correctScore,
-      }
-    })
-    const { error: scoreError } = await admin.from('predictions').upsert(rows, { onConflict: 'id' })
-    if (scoreError) {
-      console.error('[admin lol] score predictions', scoreError)
-      return { error: 'Resultado guardado, pero no se han podido calcular los puntos. Vuelve a guardarlo.' }
-    }
-  }
-
+  const scoreError = await _scoreMatch(matchId)
   _revalidate()
+  if (scoreError) return { error: `Resultado guardado, pero no se han podido calcular los puntos. ${scoreError.error}` }
   return { success: true }
 }
 
@@ -136,15 +134,65 @@ export async function setLolMatchStatusAction(matchId: number, status: 'PENDING'
     return { error: 'No se ha podido cambiar el estado. Inténtalo de nuevo.' }
   }
 
-  const { error: resetError } = await admin
-    .from('predictions')
-    .update({ points_earned: 0, is_correct_winner: null, is_correct_score: null })
-    .eq('match_id', matchId)
-  if (resetError) {
-    console.error('[admin lol] reset points', resetError)
-    return { error: 'Estado cambiado, pero no se han podido reiniciar los puntos. Inténtalo de nuevo.' }
-  }
+  // El motor deja esta serie a 0 y recalcula las posteriores de la fase.
+  const scoreError = await _scoreMatch(matchId)
+  _revalidate()
+  if (scoreError) return { error: `Estado cambiado, pero no se han podido recalcular los puntos. ${scoreError.error}` }
+  return { success: true }
+}
 
+/** Marca o desmarca el partido de la jornada (la BD valida plazo y unicidad). */
+export async function setLolFeaturedMatchAction(matchId: number, featured: boolean): Promise<AdminResult> {
+  const authError = await _requireAdmin()
+  if (authError) return { error: authError }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('set_lol_featured_match', { p_match_id: matchId, p_featured: featured })
+  if (error) return _rpcError('set_lol_featured_match', error, 'No se ha podido cambiar el partido de la jornada.')
+  _revalidate()
+  return { success: true }
+}
+
+/** Recalcula todos los puntos de una edición con el motor de la BD. */
+export async function rescoreLolEditionAction(editionId: number): Promise<AdminResult & { changed?: number }> {
+  const authError = await _requireAdmin()
+  if (authError) return { error: authError }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('rescore_lol_edition', { p_edition_id: editionId })
+  if (error) return _rpcError('rescore_lol_edition', error, 'No se ha podido recalcular la edición.')
+  _revalidate()
+  return { success: true, changed: Number(data ?? 0) }
+}
+
+export interface ManualVoteInput {
+  userId: string
+  matchId: number
+  winnerTeamId: number
+  home: number
+  away: number
+  reason: string
+}
+
+/**
+ * Carga o corrige el voto de un usuario aunque la votación esté cerrada.
+ * Queda auditado en lol_prediction_audit y, si la serie ya terminó, la BD
+ * la vuelve a puntuar.
+ */
+export async function adminSetLolPredictionAction(input: ManualVoteInput): Promise<AdminResult> {
+  const authError = await _requireAdmin()
+  if (authError) return { error: authError }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_set_lol_prediction', {
+    p_user_id: input.userId,
+    p_match_id: input.matchId,
+    p_winner_team_id: input.winnerTeamId,
+    p_home_score: input.home,
+    p_away_score: input.away,
+    p_reason: input.reason.trim() || null,
+  })
+  if (error) return _rpcError('admin_set_lol_prediction', error, 'No se ha podido guardar el voto.')
   _revalidate()
   return { success: true }
 }
