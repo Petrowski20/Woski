@@ -105,7 +105,7 @@ for t in "$HERE"/test_*.sql; do
   echo "-- $(basename "$t")"
   if ! out="$(psql_pg -At < "$t" 2>&1)"; then status=1; fi
   echo "$out"
-  if grep -q -E '^not ok|Looks like you failed|ERROR' <<<"$out"; then status=1; fi
+  if grep -q -E '^not ok|Looks like you|ERROR' <<<"$out"; then status=1; fi
 done
 
 if [ "$status" -eq 0 ]; then echo "== TODO OK"; else echo "== HAY FALLOS"; fi
