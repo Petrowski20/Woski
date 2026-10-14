@@ -2,7 +2,7 @@
 -- carga manual de votos con auditoría.
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(38);
+SELECT plan(40);
 
 DO $$
 DECLARE
@@ -70,6 +70,15 @@ SELECT is(t.run_as('authenticated', t.uid('au-user'),
 SELECT is(t.run_as('authenticated', t.uid('au-other'),
           format('SELECT count(*) FROM get_my_lol_breakdowns(ARRAY[%s])', (SELECT open FROM ids))),
           '0', 'get_my_lol_breakdowns: nada de series con la votación abierta');
+
+-- La app sigue leyendo la clasificación y los % con la sesión del usuario
+-- (lol_standings_at pasó a INVOKER; la llama get_lol_standings).
+SELECT is(t.run_as('authenticated', t.uid('au-user'),
+          format('SELECT count(*) FROM get_lol_standings(%s, NULL)', (SELECT e FROM ids))),
+          '2', 'authenticated puede leer get_lol_standings');
+SELECT is(t.run_as('authenticated', t.uid('au-user'),
+          format('SELECT sum(votes) FROM get_my_vote_distribution(ARRAY[%s])', (SELECT done FROM ids))),
+          '2', 'authenticated puede leer los % de una serie cerrada');
 
 -- ---------- service_role: puntúa, pero no carga votos ----------
 SELECT is(t.run_as('service_role', NULL, (SELECT sql FROM q WHERE k = 'score')), '0', 'service_role puede puntuar');
