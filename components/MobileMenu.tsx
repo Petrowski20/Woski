@@ -3,24 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useLang } from '@/contexts/LangContext'
+import { NAV_LINKS } from '@/components/navLinks'
 
-interface Props {
-  isAdmin: boolean
-}
-
-export default function MobileMenu({ isAdmin }: Props) {
+export default function MobileMenu() {
   const [isOpen, setIsOpen] = useState(false)
   const { t } = useLang()
-
-  const NAV_LINKS = [
-    { href: '/',              label: t('nav.home'),          icon: '🏠' },
-    { href: '/clasificacion', label: t('nav.clasificacion'), icon: '🏆' },
-    { href: '/supuestos',     label: t('nav.miMundial'),     icon: '⚽' },
-    { href: '/selecciones',   label: t('nav.selecciones'),   icon: '🌍' },
-    { href: '/ligas',         label: t('nav.ligasPrivadas'), icon: '🔒' },
-    { href: '/premios',       label: 'Premios',              icon: '🏅' },
-    { href: '/reglas',        label: t('nav.comoJugar'),     icon: '📋' },
-  ]
 
   return (
     <>
@@ -60,7 +47,7 @@ export default function MobileMenu({ isAdmin }: Props) {
         </div>
 
         <nav className="flex flex-col p-4 gap-1">
-          {NAV_LINKS.map(({ href, label, icon }) => (
+          {NAV_LINKS.map(({ href, labelKey, icon }) => (
             <Link
               key={href}
               href={href}
@@ -68,20 +55,9 @@ export default function MobileMenu({ isAdmin }: Props) {
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-brand-blue transition-colors"
             >
               <span className="text-base">{icon}</span>
-              {label}
+              {t(labelKey)}
             </Link>
           ))}
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-            >
-              <span className="text-base">🛡️</span>
-              Admin
-            </Link>
-          )}
 
         </nav>
       </div>

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { createClient } from '@/utils/supabase/server';
 import UserDropdown from '@/components/UserDropdown';
 import MobileMenu from '@/components/MobileMenu';
+import { NAV_LINKS } from '@/components/navLinks';
 import { getServerLang, tServer } from '@/utils/i18n-server';
 
 export default async function NavBar() {
@@ -11,7 +12,6 @@ export default async function NavBar() {
   const lang = await getServerLang();
   const t = (key: string) => tServer(lang, key);
 
-  let isAdmin = false;
   let nickname = '';
   let role = 'PLAYER';
   let avatarUrl: string | null = null;
@@ -24,7 +24,6 @@ export default async function NavBar() {
       .single();
 
     role      = profile?.role ?? 'PLAYER';
-    isAdmin   = role === 'ADMIN';
     nickname  = profile?.nickname ?? '';
     avatarUrl = profile?.avatar_url ?? null;
   }
@@ -39,7 +38,7 @@ export default async function NavBar() {
               <Link href="/" className="flex items-center">
                 <Image
                   src="/logo.svg"
-                  alt="PollaMundialista"
+                  alt="Woski"
                   width={36}
                   height={35}
                   className="block md:hidden w-auto h-auto dark:brightness-0 dark:invert"
@@ -49,7 +48,7 @@ export default async function NavBar() {
                 />
                 <Image
                   src="/titulo.svg"
-                  alt="PollaMundialista"
+                  alt="Woski"
                   width={160}
                   height={47}
                   className="hidden md:block w-auto h-auto dark:brightness-0 dark:invert"
@@ -61,32 +60,11 @@ export default async function NavBar() {
             </div>
 
             <div className="hidden md:flex space-x-4 items-center">
-              <Link href="/" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                {t('nav.home')}
-              </Link>
-              <Link href="/clasificacion" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                {t('nav.clasificacion')}
-              </Link>
-              <Link href="/supuestos" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                {t('nav.miMundial')}
-              </Link>
-              <Link href="/selecciones" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                {t('nav.selecciones')}
-              </Link>
-              <Link href="/ligas" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                {t('nav.ligasPrivadas')}
-              </Link>
-              <Link href="/premios" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                🏅 Premios
-              </Link>
-              <Link href="/reglas" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
-                {t('nav.comoJugar')}
-              </Link>
-              {isAdmin && (
-                <Link href="/admin" className="text-sm font-semibold text-red-600 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 px-3 py-2 rounded-md transition-colors">
-                  🛡️ Admin
+              {NAV_LINKS.map(({ href, labelKey }) => (
+                <Link key={href} href={href} className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
+                  {t(labelKey)}
                 </Link>
-              )}
+              ))}
             </div>
           </div>
 
@@ -101,7 +79,7 @@ export default async function NavBar() {
                 {t('nav.iniciarSesion')}
               </Link>
             )}
-            <MobileMenu isAdmin={isAdmin} />
+            <MobileMenu />
           </div>
 
         </div>
