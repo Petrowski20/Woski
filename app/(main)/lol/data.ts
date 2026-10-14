@@ -52,8 +52,20 @@ export async function getActiveLolEditions(supabase: SupabaseClient): Promise<Lo
       id: e.id,
       label: perCompetition.get(e.competition_id)! > 1 ? `${comp} ${e.name}` : comp,
       fullName: `${comp} ${e.name}`,
+      startDate: e.start_date,
     }
   })
+}
+
+/**
+ * Edición pedida en la URL (?edicion=ID) si sigue activa; si no, la activa
+ * con start_date más reciente. `editions` no puede estar vacío.
+ */
+export function pickLolEdition(editions: LolEditionOption[], edicion: unknown): LolEditionOption {
+  return (
+    editions.find(e => String(e.id) === edicion) ??
+    editions.reduce((latest, e) => (e.startDate >= latest.startDate ? e : latest))
+  )
 }
 
 // ── Partidos de una edición ────────────────────────────────────────────────

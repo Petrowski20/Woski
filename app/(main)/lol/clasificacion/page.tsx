@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/server'
 import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
 import type { StandingRow } from '@/utils/lol/types'
-import { getActiveLolEditions, getEditionStandings, getUserEditionPools } from '../data'
+import { getActiveLolEditions, pickLolEdition, getEditionStandings, getUserEditionPools } from '../data'
 
 export const metadata = { title: 'Clasificación · LoL · Woski' }
 
@@ -54,8 +54,7 @@ export default async function LolClasificacionPage({
     )
   }
 
-  // Edición pedida en la URL si sigue activa; si no, la primera activa.
-  const selected = editions.find(e => String(e.id) === edicion) ?? editions[0]
+  const selected = pickLolEdition(editions, edicion)
 
   const [pools, profileRes] = await Promise.all([
     getUserEditionPools(supabase, selected.id, user.id),
