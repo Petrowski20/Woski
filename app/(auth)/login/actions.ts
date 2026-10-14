@@ -28,7 +28,6 @@ export async function signup(formData: FormData): Promise<{ error: string } | un
   const confirmPassword = formData.get('confirmPassword') as string
   const nickname = formData.get('nickname') as string
   const birthDate = formData.get('birthDate') as string
-  const favoriteTeamId = formData.get('favoriteTeamId') as string
 
   if (password !== confirmPassword) {
     return { error: 'Las contraseñas no coinciden' }
@@ -60,7 +59,6 @@ export async function signup(formData: FormData): Promise<{ error: string } | un
       data: {
         nickname,
         birth_date: birthDate,
-        favorite_team_id: favoriteTeamId ? parseInt(favoriteTeamId) : null,
       },
     },
   })

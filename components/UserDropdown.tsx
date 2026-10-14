@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes'
 import { createClient } from '@/utils/supabase/client'
 import { useLang } from '@/contexts/LangContext'
 import type { Lang } from '@/contexts/LangContext'
+import { ADMIN_HREF } from '@/components/navLinks'
 
 interface Props {
   avatarUrl: string | null
@@ -91,15 +92,17 @@ export default function UserDropdown({ avatarUrl, nickname, role }: Props) {
               {t('dropdown.miPerfil')}
             </Link>
 
-            {/* Temporal hasta rehacer la navegación: acceso a Clubs */}
-            <Link
-              href="/clubes"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-            >
-              <span className="text-base">🛡️</span>
-              Mis clubs
-            </Link>
+            {/* Solo visibilidad: /admin/lol comprueba el rol en el servidor */}
+            {role === 'ADMIN' && (
+              <Link
+                href={ADMIN_HREF}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+              >
+                <span className="text-base">🛡️</span>
+                Admin
+              </Link>
+            )}
 
             <div className="my-1.5 border-t border-gray-100 dark:border-slate-800" />
 

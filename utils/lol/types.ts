@@ -4,6 +4,8 @@ export interface LolEditionOption {
   id: number
   label: string
   fullName: string
+  /** YYYY-MM-DD; decide la edición por defecto. */
+  startDate: string
 }
 
 export interface LolTeamView {

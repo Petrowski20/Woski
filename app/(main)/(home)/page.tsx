@@ -5,7 +5,7 @@ import LolCalendar from '@/components/lol/LolCalendar'
 import { HistoryLink } from '@/components/lol/EditionSelector'
 import PredictionsProgressCard from '@/components/lol/PredictionsProgressCard'
 import RankingTop5Card from '@/components/lol/RankingTop5Card'
-import { getActiveLolEditions, getEditionMatches, getRankingSidebar } from '../lol/data'
+import { getActiveLolEditions, pickLolEdition, getEditionMatches, getRankingSidebar } from '../lol/data'
 
 export const metadata = {
   title: 'LoL · Woski',
@@ -40,8 +40,7 @@ export default async function LolPage({
     )
   }
 
-  // Edición pedida en la URL si sigue activa; si no, la primera activa.
-  const selected = editions.find(e => String(e.id) === edicion) ?? editions[0]
+  const selected = pickLolEdition(editions, edicion)
 
   const [matches, ranking] = await Promise.all([
     getEditionMatches(supabase, selected.id, user.id),
