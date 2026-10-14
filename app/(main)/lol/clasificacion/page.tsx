@@ -90,10 +90,10 @@ export default async function LolClasificacionPage({
           <span>
             ⭐ <strong className="text-text-primary">Plenos</strong>{' '}
             <span className="text-success font-semibold">jornadas acertando todo</span> |{' '}
-            <span className="text-danger font-semibold">jornadas fallando todo (−1 pt)</span>
+            <span className="text-danger font-semibold">jornadas sin ningún acierto (−1 pt)</span>
           </span>
           <span>🔥 <strong className="text-text-primary">Racha</strong> aciertos seguidos ahora mismo</span>
-          <span>💤 Si no votas una jornada, sumas lo mismo que el peor de ese día</span>
+          <span>💤 Una serie sin votar cuenta como fallo</span>
         </div>
       </div>
 

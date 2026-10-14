@@ -24,6 +24,8 @@ export interface VoteShare extends SeriesScore {
 export interface LolMatchView {
   id: number
   date: string
+  /** Cierre de la votación (matches.prediction_locks_at, calculado en la BD). */
+  locksAt: string
   status: MatchStatus
   phaseName: string
   bestOf: BestOf
@@ -31,7 +33,7 @@ export interface LolMatchView {
   away: LolTeamView
   result: SeriesScore | null
   myPrediction: (SeriesScore & { points: number | null }) | null
-  /** Solo presente si el usuario ya ha votado este partido. */
+  /** Solo presente cuando la votación del partido ya está cerrada. */
   distribution: { total: number; shares: VoteShare[] } | null
 }
 
@@ -52,8 +54,6 @@ export type SaveMatchResult =
       matchId: number
       ok: true
       prediction: SeriesScore
-      /** null si el guardado fue bien pero no se pudo leer el desglose. */
-      distribution: { total: number; shares: VoteShare[] } | null
     }
   | { matchId: number; ok: false; code: Exclude<SaveErrorCode, 'NETWORK' | 'UNAUTHENTICATED'> }
 

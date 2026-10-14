@@ -53,15 +53,11 @@ export default function LolCalendar({ editions, selectedEditionId, matches, side
   const views = useMemo(() => matches.map((m): LolMatchView => {
     const c = confirmed[m.id]
     if (!c) return m
-    return {
-      ...m,
-      myPrediction: { ...c.prediction, points: null },
-      distribution: c.distribution ?? m.distribution,
-    }
+    return { ...m, myPrediction: { ...c.prediction, points: null } }
   }), [matches, confirmed])
 
   const lockedIds = useMemo(() => new Set(
-    views.filter(m => serverLocked.has(m.id) || isPredictionLocked(m.status, m.date, now)).map(m => m.id),
+    views.filter(m => serverLocked.has(m.id) || isPredictionLocked(m.status, m.locksAt, now)).map(m => m.id),
   ), [views, serverLocked, now])
 
   // Solo cuentan como pendientes los borradores que difieren de lo guardado

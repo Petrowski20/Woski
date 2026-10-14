@@ -4,12 +4,13 @@ import { formatSeriesScore } from './format'
 
 interface Props {
   distribution: { total: number; shares: VoteShare[] }
-  mine: SeriesScore
+  /** Voto del usuario, si votó. */
+  mine: SeriesScore | null
   homeName: string
   awayName: string
 }
 
-// Desglose de votos por resultado. Solo se renderiza si el usuario ya votó.
+// Desglose de votos por resultado. Solo se renderiza con la votación cerrada.
 export default function VoteBreakdown({ distribution, mine, homeName, awayName }: Props) {
   // De más a menos votado; a igual porcentaje se mantiene el orden del
   // marcador (3-0 … 0-3), porque sort es estable.
@@ -22,7 +23,7 @@ export default function VoteBreakdown({ distribution, mine, homeName, awayName }
       </p>
       <ul className="flex flex-col gap-1">
         {shares.map((share) => {
-          const isMine = sameScore(share, mine)
+          const isMine = mine !== null && sameScore(share, mine)
           const homeSide = share.home > share.away
           return (
             <li

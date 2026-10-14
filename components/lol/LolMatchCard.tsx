@@ -177,8 +177,8 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
           </div>
         )}
 
-        {/* Desglose: solo si ya has guardado tu voto en este partido */}
-        {savedScore && match.distribution && (
+        {/* Desglose: solo con la votación cerrada (el servidor no lo envía antes) */}
+        {locked && match.distribution && (
           <VoteBreakdown
             distribution={match.distribution}
             mine={savedScore}
