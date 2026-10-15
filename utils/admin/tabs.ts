@@ -9,6 +9,7 @@ export const ADMIN_SPORTS = [
 
 export const ADMIN_TABS = [
   { id: 'partidos', label: 'Partidos', icon: '🗓️' },
+  { id: 'equipos', label: 'Equipos', icon: '🛡️' },
   { id: 'usuarios', label: 'Usuarios', icon: '🔑' },
   { id: 'predicciones', label: 'Predicciones', icon: '✏️' },
   { id: 'recordatorios', label: 'Recordatorios', icon: '📢' },

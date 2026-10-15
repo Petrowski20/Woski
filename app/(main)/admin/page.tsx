@@ -7,6 +7,7 @@ import LigasTab from './_tabs/Ligas'
 import LolPartidosTab from './_tabs/lol/Partidos'
 import LolPrediccionesTab from './_tabs/lol/Predicciones'
 import LolRecordatoriosTab from './_tabs/lol/Recordatorios'
+import LolEquiposTab from './_tabs/lol/Equipos'
 import EnConstruccion from './_tabs/EnConstruccion'
 import FutbolPartidosTab from './_tabs/futbol/Partidos'
 import FutbolPrediccionesTab from './_tabs/futbol/Predicciones'
@@ -49,6 +50,9 @@ export default async function AdminPage({ searchParams }: { searchParams: Promis
       content = sport === 'lol'
         ? <LolPartidosTab userId={user.id} edicion={param(sp, 'edicion')} fase={param(sp, 'fase')} estado={param(sp, 'estado')} />
         : <FutbolPartidosTab />
+      break
+    case 'equipos':
+      content = sport === 'lol' ? <LolEquiposTab /> : <EnConstruccion titulo="Equipos" />
       break
     case 'predicciones':
       content = sport === 'lol'

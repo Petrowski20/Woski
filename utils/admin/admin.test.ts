@@ -14,6 +14,11 @@ test('admin: deporte y pestaña válidos', () => {
   assert.deepEqual(parseAdminParams({ deporte: 'futbol', tab: 'premios' }), { sport: 'futbol', tab: 'premios', redirect: null })
 })
 
+test('admin: pestaña Equipos', () => {
+  assert.deepEqual(parseAdminParams({ deporte: 'lol', tab: 'equipos' }), { sport: 'lol', tab: 'equipos', redirect: null })
+  assert.equal(adminHref('lol', 'equipos'), '/admin?deporte=lol&tab=equipos')
+})
+
 test('admin: Jugadores redirige a Usuarios conservando el deporte', () => {
   assert.equal(parseAdminParams({ deporte: 'futbol', tab: 'jugadores' }).redirect, '/admin?deporte=futbol&tab=usuarios')
   assert.equal(parseAdminParams({ tab: 'jugadores' }).redirect, '/admin?deporte=lol&tab=usuarios')
