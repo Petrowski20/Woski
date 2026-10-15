@@ -22,6 +22,13 @@
   --color-team-b: #b13a0b;
   --color-on-team: #ffffff;
 
+  /* Ficha de los logos de equipo (components/lol/TeamLogo.tsx). Oscura en
+     los DOS temas: los logos están pensados para fondo oscuro. No se
+     redefinen bajo .dark. */
+  --color-logo-tile: #05070d;       /* casi negro (abajo) */
+  --color-logo-tile-top: #161b28;   /* arriba: degradado sutil */
+  --color-logo-tile-edge: rgb(255 255 255 / 0.16); /* borde si el equipo no tiene color */
+
   /* Fondos */
   --color-bg-surface: #f6f2eb;   /* fondo general de la página (cálido) */
   --color-bg-elevated: #fffdf9;  /* tarjetas, paneles, modales */
@@ -140,6 +147,17 @@
 /* Degradado del botón primario (cian → azul en oscuro, teal → cian profundo en claro) */
 @utility bg-accent-gradient {
   background-image: linear-gradient(90deg, var(--color-accent), var(--color-accent-deep));
+}
+
+/* Ficha oscura de los logos de equipo, igual en ambos temas. Borde fino
+   con el color del equipo (--team-color, inline desde teams.color) y un
+   halo corto hacia fuera que se apaga en ~5 px: no invade el relleno
+   interior (el logo) ni el texto de al lado. Sin transiciones. */
+@utility logo-tile {
+  background-image: linear-gradient(160deg, var(--color-logo-tile-top), var(--color-logo-tile));
+  box-shadow:
+    inset 0 0 0 1px var(--team-color, var(--color-logo-tile-edge)),
+    0 0 6px -2px color-mix(in srgb, var(--team-color, transparent) 60%, transparent);
 }
 
 /* Títulos: fuente condensada, mayúsculas y tracking amplio */
