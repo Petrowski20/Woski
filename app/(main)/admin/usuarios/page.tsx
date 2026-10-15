@@ -21,7 +21,7 @@ export default async function AdminUsuariosPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center text-red-600 dark:text-red-400">
+      <div className="p-8 text-center text-danger">
         <p className="font-semibold">Error cargando usuarios</p>
         <p className="text-sm mt-1">{error.message}</p>
       </div>

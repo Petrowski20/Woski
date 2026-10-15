@@ -10,7 +10,7 @@ export default function LolClasificacionLoading() {
         {[0, 1, 2].map(i => <div key={i} className="h-7 w-24 rounded-full bg-bg-muted" />)}
       </div>
       <div className="h-16 rounded-xl bg-bg-muted mb-4" />
-      <div className="rounded-xl bg-bg-elevated border border-border">
+      <div className="rounded-card bg-bg-elevated border border-border shadow-card">
         {[0, 1, 2, 3, 4, 5].map(i => <div key={i} className="h-14 border-b border-border last:border-0" />)}
       </div>
     </div>

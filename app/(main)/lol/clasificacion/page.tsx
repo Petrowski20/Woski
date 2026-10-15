@@ -46,7 +46,7 @@ export default async function LolClasificacionPage({
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-center">
         <span className="text-5xl" aria-hidden>🏆</span>
-        <h1 className="text-lg font-bold text-text-primary">No hay ninguna competición en curso ahora mismo</h1>
+        <h1 className="heading-display text-lg font-bold text-text-primary">No hay ninguna competición en curso ahora mismo</h1>
         <p className="text-sm text-text-muted max-w-sm">
           La clasificación aparecerá aquí cuando arranque la próxima competición de League of Legends.
         </p>
@@ -70,7 +70,7 @@ export default async function LolClasificacionPage({
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Clasificación</h1>
+        <h1 className="heading-display text-2xl font-bold text-text-primary">Clasificación</h1>
         <p className="text-sm text-text-muted mt-1">
           {selected.fullName} · {activePool?.name ?? 'Global'}
         </p>
@@ -83,7 +83,7 @@ export default async function LolClasificacionPage({
       <PoolSelector key={selected.id} editionId={selected.id} pools={pools} activePoolId={activePool?.id ?? null} />
 
       {/* Leyenda */}
-      <div className="bg-bg-muted/60 p-4 rounded-xl mb-4 border border-border">
+      <div className="bg-bg-muted/60 p-4 rounded-card mb-4 border border-border">
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-muted">
           <span>🎯 <strong className="text-text-primary">Aciertos</strong> ganadores acertados / series jugadas</span>
           <span>
@@ -96,7 +96,7 @@ export default async function LolClasificacionPage({
         </div>
       </div>
 
-      <div className="bg-bg-elevated rounded-xl shadow-sm border border-border overflow-hidden">
+      <div className="bg-bg-elevated rounded-card shadow-card border border-border overflow-hidden">
         {ranking.length === 0 ? (
           <p className="text-center text-text-muted text-sm py-12">
             Todavía no hay clasificación: se formará cuando se jueguen los primeros partidos.
@@ -104,7 +104,7 @@ export default async function LolClasificacionPage({
         ) : (
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-bg-muted/60 border-b border-border text-xs uppercase tracking-wider text-text-muted">
+              <tr className="bg-bg-muted/60 border-b border-border font-display text-xs uppercase tracking-display text-text-muted">
                 <th className="px-3 sm:px-4 py-3 text-center w-12">Pos</th>
                 <th className="px-3 sm:px-4 py-3 text-left">Usuario</th>
                 <th className="px-2 sm:px-3 py-3 text-center">Aciertos</th>
@@ -121,7 +121,7 @@ export default async function LolClasificacionPage({
                     key={row.profileId}
                     aria-current={isMe || undefined}
                     className={`border-b border-border/60 last:border-0 transition-colors ${
-                      isMe ? 'bg-accent/10' : 'hover:bg-bg-muted/60'
+                      isMe ? 'bg-accent/10 shadow-[inset_3px_0_0_var(--color-accent)]' : 'hover:bg-bg-muted/60'
                     }`}
                   >
                     <td className="px-3 sm:px-4 py-3 text-center w-12">
@@ -155,7 +155,7 @@ export default async function LolClasificacionPage({
                     <td className="px-3 py-3 text-center text-text-muted tabular-nums hidden sm:table-cell">
                       {row.currentStreak}
                     </td>
-                    <td className="px-3 sm:px-4 py-3 text-right sm:pr-6 font-bold text-accent tabular-nums whitespace-nowrap">
+                    <td className="px-3 sm:px-4 py-3 text-right sm:pr-6 font-display text-base font-bold text-accent tabular-nums whitespace-nowrap">
                       {row.points}
                       <span className="ml-1 text-xs text-text-muted font-normal">pts</span>
                     </td>

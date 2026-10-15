@@ -16,11 +16,11 @@ import { formatMatchDate, formatSeriesScore } from './format'
 type CardState = 'open' | 'voted' | 'locked' | 'finished' | 'cancelled'
 
 const STATE_BADGE: Record<CardState, { label: string; className: string }> = {
-  open:      { label: 'Por votar',  className: 'bg-accent/10 text-accent' },
-  voted:     { label: 'Ya votado',  className: 'bg-success/10 text-success' },
-  locked:    { label: 'Bloqueado',  className: 'bg-warning/10 text-warning' },
-  finished:  { label: 'Finalizado', className: 'bg-bg-muted text-text-muted' },
-  cancelled: { label: 'Cancelado',  className: 'bg-danger/10 text-danger' },
+  open:      { label: 'Por votar',  className: 'bg-accent/10 text-accent ring-1 ring-inset ring-accent/30' },
+  voted:     { label: 'Ya votado',  className: 'bg-success/10 text-success ring-1 ring-inset ring-success/30' },
+  locked:    { label: 'Bloqueado',  className: 'bg-warning/10 text-warning ring-1 ring-inset ring-warning/30' },
+  finished:  { label: 'Finalizado', className: 'bg-bg-muted text-text-muted ring-1 ring-inset ring-border' },
+  cancelled: { label: 'Cancelado',  className: 'bg-danger/10 text-danger ring-1 ring-inset ring-danger/30' },
 }
 
 interface Props {
@@ -46,7 +46,7 @@ function TeamColumn({ team, side }: { team: LolTeamView; side: 'a' | 'b' }) {
 }
 
 function PointsBadge({ points }: { points: number }) {
-  const tone = points === 0 ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'
+  const tone = points === 0 ? 'bg-danger/10 text-danger ring-1 ring-inset ring-danger/30' : 'bg-success/10 text-success ring-1 ring-inset ring-success/30'
   return (
     <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${tone}`}>
       {points > 0 ? `+${points}` : points} pt{points !== 1 ? 's' : ''}
@@ -74,7 +74,7 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
 
   return (
     <article
-      className="bg-bg-elevated border border-border rounded-xl shadow-sm overflow-hidden"
+      className="bg-bg-elevated border border-border rounded-card shadow-card overflow-hidden"
       aria-label={`${match.home.name} contra ${match.away.name}`}
     >
       {/* Cabecera */}
@@ -86,7 +86,7 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
           <span aria-hidden>·</span>
           <time dateTime={match.date} className="capitalize">{formatMatchDate(match.date)}</time>
           {match.featured && (
-            <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning font-semibold whitespace-nowrap">
+            <span className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary ring-1 ring-inset ring-secondary/30 font-semibold whitespace-nowrap">
               ⭐ Partido de la jornada
             </span>
           )}
@@ -100,11 +100,11 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
           <TeamColumn team={match.home} side="a" />
           <div className="self-center shrink-0 text-center">
             {match.result ? (
-              <span className="text-2xl font-black tabular-nums text-text-primary">
+              <span className="font-display text-2xl font-bold tabular-nums text-text-primary">
                 {match.result.home}<span className="text-text-muted mx-1">-</span>{match.result.away}
               </span>
             ) : (
-              <span className="text-sm font-bold text-text-muted">VS</span>
+              <span className="font-display text-sm font-bold tracking-display text-text-muted">VS</span>
             )}
           </div>
           <TeamColumn team={match.away} side="b" />
@@ -166,7 +166,7 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
 
         {/* Error de guardado */}
         {errorCopy && (
-          <div role="alert" className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg bg-danger/10 text-sm text-text-primary">
+          <div role="alert" className="flex flex-col sm:flex-row sm:items-center gap-2 p-3 rounded-lg bg-danger/10 ring-1 ring-inset ring-danger/30 text-sm text-text-primary">
             <p className="flex-1">{errorCopy.text}</p>
             {errorCopy.action === 'login' && (
               <Link href="/login" className="shrink-0 px-3 py-1.5 rounded-md bg-danger text-on-accent font-semibold text-xs text-center">

@@ -40,8 +40,8 @@ function Row({ row, isMe }: { row: RankingRow; isMe: boolean }) {
 
 export default function RankingTop5Card({ title, top5, me, userId }: Props) {
   return (
-    <div className="bg-bg-elevated rounded-xl shadow-sm border border-border p-5">
-      <h2 className="font-bold text-text-primary border-b border-border pb-3 mb-4">{title}</h2>
+    <div className="bg-bg-elevated rounded-card shadow-card border border-border p-5">
+      <h2 className="heading-display font-bold text-text-primary border-b border-border pb-3 mb-4">{title}</h2>
 
       <div className="flex flex-col gap-2">
         {top5.length === 0 ? (

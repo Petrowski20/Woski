@@ -167,7 +167,7 @@ export default function LolCalendar({ editions, selectedEditionId, matches, side
         <section className="lg:col-span-8 flex flex-col gap-4" aria-labelledby="lol-matches-title">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <h1 id="lol-matches-title" className="text-2xl font-bold text-text-primary">Partidos</h1>
+              <h1 id="lol-matches-title" className="heading-display text-2xl font-bold text-text-primary">Partidos</h1>
               <SliderHelpButton />
             </div>
             {search && filtered.length > 0 && (

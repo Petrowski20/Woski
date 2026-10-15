@@ -12,7 +12,7 @@ function tierLabel(tier: string | null, share: number | null): string | null {
 
 function Chip({ label, points, detail }: { label: string; points: number; detail?: string | null }) {
   return (
-    <li className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-muted text-xs text-text-muted">
+    <li className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-bg-muted ring-1 ring-inset ring-border text-xs text-text-muted">
       <span>{label}</span>
       <strong className="text-text-primary tabular-nums">+{points}</strong>
       {detail && <span className="opacity-80">({detail})</span>}

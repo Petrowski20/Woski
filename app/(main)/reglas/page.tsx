@@ -5,8 +5,8 @@ export const metadata = { title: 'Cómo jugar · Woski' }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-6 shadow-sm">
-      <h2 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-4">{title}</h2>
+    <section className="bg-bg-elevated rounded-card border border-border p-6 shadow-card">
+      <h2 className="heading-display text-base font-bold text-text-primary mb-4">{title}</h2>
       {children}
     </section>
   )
@@ -14,13 +14,13 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Rule({ points, title, children }: { points: string; title: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-4 py-3 border-b border-gray-50 dark:border-slate-800 last:border-0">
-      <span className="shrink-0 w-12 text-center text-lg font-extrabold text-blue-600 dark:text-blue-400 tabular-nums">
+    <div className="flex items-start gap-4 py-3 border-b border-border last:border-0">
+      <span className="shrink-0 w-12 text-center font-display text-lg font-bold text-accent tabular-nums">
         {points}
       </span>
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{title}</p>
-        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 space-y-1">{children}</div>
+        <p className="text-sm font-semibold text-text-primary">{title}</p>
+        <div className="text-xs text-text-muted mt-0.5 space-y-1">{children}</div>
       </div>
     </div>
   )
@@ -53,16 +53,16 @@ export default function ReglasPage() {
     <div className="w-full max-w-2xl mx-auto space-y-6">
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Cómo jugar</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="heading-display text-2xl font-bold text-text-primary">Cómo jugar</h1>
+        <p className="text-sm text-text-muted mt-1">
           Reglas oficiales de las predicciones de League of Legends.
         </p>
       </div>
 
       {/* Corte de votación */}
-      <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 px-5 py-4">
+      <div className="flex items-start gap-3 rounded-card border border-warning/40 bg-warning/10 px-5 py-4">
         <span className="text-lg shrink-0 mt-0.5">⏱</span>
-        <div className="text-sm text-amber-900 dark:text-amber-200">
+        <div className="text-sm text-text-primary">
           <p>
             <strong>Corte de votación:</strong> puedes votar o cambiar tu voto hasta la hora de inicio de cada serie.
           </p>
@@ -72,15 +72,15 @@ export default function ReglasPage() {
 
       {/* Aciertos */}
       <Section title="Puntos por acierto">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+        <p className="text-sm text-text-muted mb-3">
           Cuanta menos gente acierte contigo, más vale tu acierto. El porcentaje se calcula sobre todos los
           participantes que votaron esa serie (es global, no depende de tu club) y solo se muestra cuando se
           cierra la votación.
         </p>
 
-        <div className="overflow-hidden rounded-lg border border-gray-100 dark:border-slate-800 mb-2">
+        <div className="overflow-hidden rounded-lg border border-border mb-2">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 dark:bg-slate-800/60 text-xs text-gray-500 dark:text-gray-400">
+            <thead className="bg-bg-muted/60 font-display text-xs uppercase tracking-display text-text-muted">
               <tr>
                 <th className="text-left font-semibold px-4 py-2">Votaron lo mismo que tú</th>
                 <th className="text-right font-semibold px-4 py-2">Puntos</th>
@@ -88,16 +88,16 @@ export default function ReglasPage() {
             </thead>
             <tbody>
               {TIERS.map(({ range, points }) => (
-                <tr key={range} className="border-t border-gray-100 dark:border-slate-800">
-                  <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{range}</td>
-                  <td className="px-4 py-2 text-right font-bold text-blue-600 dark:text-blue-400 tabular-nums">+{points}</td>
+                <tr key={range} className="border-t border-border">
+                  <td className="px-4 py-2 text-text-primary">{range}</td>
+                  <td className="px-4 py-2 text-right font-bold text-accent tabular-nums">+{points}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <p className="text-xs text-gray-400 dark:text-slate-500 mb-3">
+        <p className="text-xs text-text-muted mb-3">
           El tramo de único exige un mínimo de votantes en la serie; si no se llega, el acierto vale 2.
         </p>
 
@@ -124,20 +124,20 @@ export default function ReglasPage() {
 
       {/* Rachas */}
       <Section title="Rachas">
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+        <p className="text-sm text-text-muted mb-3">
           Cada acierto de ganador seguido alarga tu racha. Cada serie que sumes a la racha te da un bonus según su
           longitud. La racha se mantiene entre jornadas y solo se reinicia al cambiar de fase (Play-In → Swiss →
           Play-offs) o al fallar o no votar una serie. El marcador exacto no cuenta para la racha.
         </p>
         <div className="grid grid-cols-5 gap-2 text-center">
           {STREAK.map(({ range, bonus }) => (
-            <div key={range} className="rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/40 py-2">
-              <p className="text-[11px] text-gray-500 dark:text-gray-400">{range}</p>
-              <p className="text-base font-extrabold text-blue-700 dark:text-blue-400 tabular-nums">{bonus}</p>
+            <div key={range} className="rounded-lg bg-accent/10 border border-accent/25 py-2">
+              <p className="text-[11px] text-text-muted">{range}</p>
+              <p className="font-display text-base font-bold text-accent tabular-nums">{bonus}</p>
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-400 dark:text-slate-500 mt-3">
+        <p className="text-xs text-text-muted mt-3">
           Ejemplo: con 4 aciertos seguidos sumas +0, +0, +1 y +1 de bonus, encima de los puntos de cada acierto.
         </p>
       </Section>
@@ -160,12 +160,12 @@ export default function ReglasPage() {
         <ol className="space-y-3">
           {TIEBREAK.map(({ title, desc }, i) => (
             <li key={title} className="flex gap-3">
-              <span className="shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-400 text-xs font-bold flex items-center justify-center">
+              <span className="shrink-0 w-6 h-6 rounded-full bg-accent/15 text-accent ring-1 ring-inset ring-accent/30 text-xs font-bold flex items-center justify-center">
                 {i + 1}
               </span>
               <div>
-                <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{title}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{desc}</p>
+                <p className="text-sm font-semibold text-text-primary">{title}</p>
+                <p className="text-xs text-text-muted mt-0.5">{desc}</p>
               </div>
             </li>
           ))}

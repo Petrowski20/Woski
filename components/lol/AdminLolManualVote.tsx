@@ -70,9 +70,9 @@ export default function AdminLolManualVote({
   }
 
   return (
-    <section className="bg-bg-elevated border border-border rounded-xl p-4 flex flex-col gap-3">
+    <section className="bg-bg-elevated border border-border rounded-card shadow-card p-4 flex flex-col gap-3">
       <div>
-        <h2 className="font-bold text-text-primary">Cargar voto a mano</h2>
+        <h2 className="heading-display font-bold text-text-primary">Cargar voto a mano</h2>
         <p className="text-xs text-text-muted">
           Se salta el corte de votación. Queda registrado quién lo cargó, cuándo y el voto anterior.
         </p>

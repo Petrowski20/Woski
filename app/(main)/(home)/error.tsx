@@ -20,7 +20,7 @@ export default function LolError({
   return (
     <div className="flex flex-col items-center gap-3 py-20 text-center">
       <span className="text-5xl" aria-hidden>🛠️</span>
-      <h1 className="text-lg font-bold text-text-primary">No hemos podido cargar el calendario</h1>
+      <h1 className="heading-display text-lg font-bold text-text-primary">No hemos podido cargar el calendario</h1>
       <p className="text-sm text-text-muted max-w-sm">
         {offline
           ? 'Parece que no tienes conexión. Comprueba tu red e inténtalo de nuevo.'

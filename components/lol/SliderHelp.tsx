@@ -59,10 +59,10 @@ function SliderHelpModal({ onClose }: { onClose: () => void }) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="slider-help-title"
-        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-bg-elevated text-text-primary rounded-2xl shadow-2xl border border-border"
+        className="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-bg-elevated text-text-primary rounded-panel shadow-raised border border-border"
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h2 id="slider-help-title" className="font-bold">¿Cómo funciona la predicción?</h2>
+          <h2 id="slider-help-title" className="heading-display font-bold">¿Cómo funciona la predicción?</h2>
           <button
             ref={closeRef}
             type="button"

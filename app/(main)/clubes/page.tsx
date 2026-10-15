@@ -25,7 +25,7 @@ export default async function ClubesPage() {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Mis clubs</h1>
+        <h1 className="heading-display text-2xl font-bold text-text-primary">Mis clubs</h1>
         <p className="text-sm text-text-muted mt-1">
           Tu grupo de siempre. Cada club abre un pool por competición para jugarla entre vosotros.
         </p>
@@ -35,7 +35,7 @@ export default async function ClubesPage() {
 
       <div className="mt-8">
         {clubs.length === 0 ? (
-          <p className="text-sm text-text-muted text-center py-10 border border-dashed border-border rounded-xl">
+          <p className="text-sm text-text-muted text-center py-10 border border-dashed border-border rounded-card bg-bg-elevated/40">
             Todavía no estás en ningún club. Crea uno o únete con un código.
           </p>
         ) : (
@@ -44,7 +44,7 @@ export default async function ClubesPage() {
               <li key={club.id}>
                 <Link
                   href={`/clubes/${club.id}`}
-                  className="flex items-center gap-3 bg-bg-elevated rounded-xl border border-border p-4 hover:border-accent/50 transition-colors"
+                  className="flex items-center gap-3 bg-bg-elevated rounded-card shadow-card border border-border p-4 hover:border-accent/50 hover:shadow-glow-accent transition-[border-color,box-shadow]"
                 >
                   <ClubLogo url={club.logo_url} name={club.name} size={40} />
                   <div className="min-w-0">

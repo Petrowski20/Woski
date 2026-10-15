@@ -16,7 +16,7 @@ export default async function PerfilPage() {
 
   if (error || !profile) {
     return (
-      <div className="p-8 text-center text-red-600">
+      <div className="p-8 text-center text-danger">
         Error al cargar el perfil.
       </div>
     )

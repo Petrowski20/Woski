@@ -96,8 +96,8 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
   return (
     <div className="w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">🔑 Usuarios</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+        <h1 className="heading-display text-2xl font-bold text-text-primary">🔑 Usuarios</h1>
+        <p className="text-sm text-text-muted mt-1">
           Correos, clubes y último acceso. Reinicia contraseñas y oculta jugadores.
         </p>
       </div>
@@ -107,17 +107,17 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
         value={query}
         onChange={e => setQuery(e.target.value)}
         placeholder="Buscar por nickname, correo o club"
-        className="w-full mb-4 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-slate-500"
+        className="w-full mb-4 border border-border bg-bg-muted text-text-primary rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent placeholder:text-text-muted"
       />
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+      <p className="text-xs text-text-muted mb-2">
         {filtered.length} de {users.length} usuarios
       </p>
 
-      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#FFD6D1] dark:border-slate-800 overflow-x-auto">
+      <div className="bg-bg-elevated rounded-card shadow-card border border-border overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-[#FFD6D1]/30 dark:bg-slate-800/50 border-b border-[#FFD6D1] dark:border-slate-800 text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">
+            <tr className="bg-bg-muted/60 border-b border-border font-display text-xs uppercase tracking-display text-text-muted">
               <th className="px-4 py-3 text-left">Usuario</th>
               <th className="px-3 py-3 text-left">Rol</th>
               <th className="px-3 py-3 text-left">Clubes</th>
@@ -126,28 +126,28 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
               <th className="px-4 py-3 text-right">Contraseña</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
+          <tbody className="divide-y divide-border">
             {filtered.map(u => {
               const isHidden = hiddenMap[u.id]
               const isSelf = u.id === currentUserId
               return (
                 <tr key={u.id} className={isHidden ? 'opacity-60' : ''}>
                   <td className="px-4 py-3">
-                    <div className="font-semibold text-gray-900 dark:text-gray-100">
+                    <div className="font-semibold text-text-primary">
                       {u.nickname}
-                      {isSelf && <span className="ml-2 text-[10px] font-normal text-gray-400">tú</span>}
+                      {isSelf && <span className="ml-2 text-[10px] font-normal text-text-muted">tú</span>}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 break-all">{u.email ?? '—'}</div>
+                    <div className="text-xs text-text-muted break-all">{u.email ?? '—'}</div>
                   </td>
                   <td className="px-3 py-3">
-                    <span className={`text-xs font-semibold ${u.role === 'ADMIN' ? 'text-amber-600 dark:text-amber-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    <span className={`text-xs font-semibold ${u.role === 'ADMIN' ? 'text-secondary' : 'text-text-muted'}`}>
                       {u.role}
                     </span>
                   </td>
-                  <td className="px-3 py-3 text-xs text-gray-600 dark:text-gray-300">
+                  <td className="px-3 py-3 text-xs text-text-muted">
                     {u.clubs.length > 0 ? u.clubs.join(', ') : '—'}
                   </td>
-                  <td className="px-3 py-3 text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                  <td className="px-3 py-3 text-xs text-text-muted whitespace-nowrap">
                     {formatDate(u.last_sign_in_at)}
                   </td>
                   <td className="px-3 py-3 text-center">
@@ -156,8 +156,8 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
                       disabled={pendingMap[u.id]}
                       className={`text-xs font-semibold px-2.5 py-1 rounded-full border transition-colors disabled:opacity-50 ${
                         isHidden
-                          ? 'border-gray-300 text-gray-500 dark:border-slate-600 dark:text-slate-400'
-                          : 'border-emerald-300 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400'
+                          ? 'border-border text-text-muted'
+                          : 'border-success/40 bg-success/10 text-success'
                       }`}
                     >
                       {isHidden ? 'Oculto' : 'Visible'}
@@ -165,13 +165,13 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
                     {mustChangeMap[u.id] && (
-                      <span className="mr-2 text-[10px] text-amber-600 dark:text-amber-400">pendiente de cambio</span>
+                      <span className="mr-2 text-[10px] text-warning">pendiente de cambio</span>
                     )}
                     {isSelf ? (
-                      <span className="text-xs text-gray-400">desde tu perfil</span>
+                      <span className="text-xs text-text-muted">desde tu perfil</span>
                     ) : u.role === 'ADMIN' ? (
                       <span
-                        className="text-xs text-gray-400"
+                        className="text-xs text-text-muted"
                         title="La contraseña de un administrador no se puede reiniciar desde el panel"
                       >
                         admin: no se puede reiniciar
@@ -179,7 +179,7 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
                     ) : (
                       <button
                         onClick={() => setConfirmUser(u)}
-                        className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+                        className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-danger/40 text-danger hover:bg-danger/10 transition-colors"
                       >
                         Reiniciar
                       </button>
@@ -195,8 +195,8 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
       {/* Confirmación */}
       {confirmUser && (
         <Modal onClose={() => !isResetting && setConfirmUser(null)}>
-          <h3 className="font-bold text-gray-900 dark:text-white mb-2">Reiniciar contraseña</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <h3 className="heading-display font-bold text-text-primary mb-2">Reiniciar contraseña</h3>
+          <p className="text-sm text-text-muted">
             Se generará una contraseña temporal para <strong>{confirmUser.nickname}</strong>, se cerrarán
             sus sesiones abiertas y tendrá que cambiarla al entrar. La verás una sola vez.
           </p>
@@ -204,14 +204,14 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
             <button
               onClick={() => setConfirmUser(null)}
               disabled={isResetting}
-              className="flex-1 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+              className="flex-1 py-2.5 border border-border rounded-xl text-sm font-medium text-text-primary hover:bg-bg-muted hover:border-accent/50 transition-colors"
             >
               Cancelar
             </button>
             <button
               onClick={confirmReset}
               disabled={isResetting}
-              className="flex-1 py-2.5 bg-red-600 text-white rounded-xl text-sm font-semibold hover:bg-red-700 disabled:bg-red-400 transition-colors"
+              className="flex-1 py-2.5 bg-danger text-on-accent rounded-xl text-sm font-semibold hover:brightness-110 disabled:opacity-60 disabled:brightness-100 transition-colors"
             >
               {isResetting ? 'Reiniciando…' : 'Reiniciar'}
             </button>
@@ -222,24 +222,24 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
       {/* Contraseña temporal: una sola vez */}
       {revealed && (
         <Modal onClose={() => setRevealed(null)}>
-          <h3 className="font-bold text-gray-900 dark:text-white mb-2">Contraseña temporal de {revealed.nickname}</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+          <h3 className="heading-display font-bold text-text-primary mb-2">Contraseña temporal de {revealed.nickname}</h3>
+          <p className="text-sm text-text-muted mb-3">
             Cópiala y pásasela por un canal privado. Al cerrar este aviso no se puede volver a ver.
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 select-all font-mono text-base tracking-wider bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg px-3 py-2 break-all">
+            <code className="flex-1 select-all font-mono text-base tracking-wider bg-bg-muted text-text-primary ring-1 ring-inset ring-border rounded-lg px-3 py-2 break-all">
               {revealed.password}
             </code>
             <button
               onClick={copyPassword}
-              className="shrink-0 px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
+              className="shrink-0 px-3 py-2 bg-accent bg-accent-gradient text-on-accent shadow-glow-accent rounded-lg text-sm font-semibold hover:brightness-110 transition-colors"
             >
               Copiar
             </button>
           </div>
           <button
             onClick={() => setRevealed(null)}
-            className="w-full mt-5 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+            className="w-full mt-5 py-2.5 border border-border rounded-xl text-sm font-medium text-text-primary hover:bg-bg-muted hover:border-accent/50 transition-colors"
           >
             Hecho, cerrar
           </button>
@@ -252,8 +252,8 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
 function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40" onClick={onClose} />
-      <div className="fixed inset-x-4 bottom-0 sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md z-50 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 sm:border rounded-t-3xl sm:rounded-2xl shadow-2xl p-6">
+      <div className="fixed inset-0 bg-overlay backdrop-blur-sm z-40" onClick={onClose} />
+      <div className="fixed inset-x-4 bottom-0 sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-md z-50 bg-bg-elevated border-t border-border sm:border rounded-t-3xl sm:rounded-2xl shadow-raised p-6">
         {children}
       </div>
     </>

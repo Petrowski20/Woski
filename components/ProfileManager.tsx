@@ -29,15 +29,15 @@ function SettingsRow({ icon, label, onClick, href }: {
   const inner = (
     <div className="flex items-center gap-3 flex-1">
       <span className="text-lg w-6 text-center">{icon}</span>
-      <span className="text-sm font-medium text-gray-800 dark:text-gray-200">{label}</span>
+      <span className="text-sm font-medium text-text-primary">{label}</span>
     </div>
   )
   const chevron = (
-    <svg className="w-4 h-4 text-gray-300 dark:text-slate-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg className="w-4 h-4 text-text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
   )
-  const cls = 'flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors'
+  const cls = 'flex items-center justify-between px-5 py-3.5 hover:bg-bg-muted/60 transition-colors'
 
   if (href) return (
     <Link href={href} className={cls}>{inner}{chevron}</Link>
@@ -150,11 +150,11 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
             className="relative group cursor-pointer"
             aria-label={t('profile.cambiarFoto')}
           >
-            <div className="relative w-24 h-24 rounded-full overflow-hidden bg-blue-100 dark:bg-blue-900 border-4 border-white dark:border-slate-800 shadow-lg flex items-center justify-center">
+            <div className="relative w-24 h-24 rounded-full overflow-hidden bg-accent/15 border-4 border-bg-elevated shadow-glow-accent ring-1 ring-accent/40 flex items-center justify-center">
               {avatarUrl ? (
                 <Image src={avatarUrl} alt="Avatar" fill sizes="96px" className="object-cover" />
               ) : (
-                <span className="text-4xl font-black text-blue-600 dark:text-blue-400">{initial}</span>
+                <span className="font-display text-4xl font-bold text-accent">{initial}</span>
               )}
             </div>
             <div className="absolute inset-0 rounded-full bg-black/25 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -181,30 +181,30 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
           />
 
           <div className="text-center">
-            <p className="font-bold text-xl text-gray-900 dark:text-white leading-tight">{initialProfile.nickname}</p>
-            {userEmail && <p className="text-sm text-gray-400 dark:text-slate-500 mt-0.5">{userEmail}</p>}
+            <p className="font-display font-bold text-xl text-text-primary leading-tight">{initialProfile.nickname}</p>
+            {userEmail && <p className="text-sm text-text-muted mt-0.5">{userEmail}</p>}
           </div>
         </div>
 
         {/* Estadísticas */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-5 py-3 border-b border-gray-50 dark:border-slate-800">
+        <div className="bg-bg-elevated rounded-panel shadow-card border border-border overflow-hidden">
+          <p className="font-display text-xs font-bold text-text-muted uppercase tracking-display px-5 py-3 border-b border-border">
             {t('profile.estadisticas')}
           </p>
-          <div className="divide-y divide-gray-50 dark:divide-slate-800">
+          <div className="divide-y divide-border">
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('profile.puntosTotales')}</span>
-              <span className="font-black text-blue-600 dark:text-blue-400 text-lg">
+              <span className="text-sm text-text-muted">{t('profile.puntosTotales')}</span>
+              <span className="font-display font-bold text-accent text-lg">
                 {initialProfile.total_points}
-                <span className="text-xs font-normal text-gray-400 dark:text-slate-500 ml-1">pts</span>
+                <span className="text-xs font-normal text-text-muted ml-1">pts</span>
               </span>
             </div>
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('profile.rol')}</span>
+              <span className="text-sm text-text-muted">{t('profile.rol')}</span>
               <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
                 initialProfile.role === 'ADMIN'
-                  ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400'
-                  : 'bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400'
+                  ? 'bg-secondary/15 text-secondary ring-1 ring-inset ring-secondary/30'
+                  : 'bg-bg-muted text-text-muted ring-1 ring-inset ring-border'
               }`}>
                 {initialProfile.role}
               </span>
@@ -213,17 +213,17 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
         </div>
 
         {/* Preferencias */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-5 py-3 border-b border-gray-50 dark:border-slate-800">
+        <div className="bg-bg-elevated rounded-panel shadow-card border border-border overflow-hidden">
+          <p className="font-display text-xs font-bold text-text-muted uppercase tracking-display px-5 py-3 border-b border-border">
             {t('profile.preferencias')}
           </p>
-          <div className="divide-y divide-gray-50 dark:divide-slate-800">
+          <div className="divide-y divide-border">
 
             {/* Idioma */}
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('profile.idioma')}</span>
+              <span className="text-sm text-text-muted">{t('profile.idioma')}</span>
               {!mounted ? (
-                <div className="h-7 w-[72px] bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
+                <div className="h-7 w-[72px] bg-bg-muted rounded-lg animate-pulse" />
               ) : (
                 <div className="flex gap-1.5">
                   {(['es', 'en', 'ro'] as Lang[]).map((l) => (
@@ -232,8 +232,8 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
                       onClick={() => handleLang(l)}
                       className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-all ${
                         lang === l
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-white dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          ? 'bg-accent-gradient text-on-accent border-accent shadow-glow-accent'
+                          : 'bg-bg-muted/60 text-text-muted border-border hover:border-accent/50 hover:text-text-primary'
                       }`}
                     >
                       {l.toUpperCase()}
@@ -245,9 +245,9 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
 
             {/* Tema */}
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('profile.tema')}</span>
+              <span className="text-sm text-text-muted">{t('profile.tema')}</span>
               {!mounted ? (
-                <div className="h-9 w-[116px] bg-gray-100 dark:bg-slate-800 rounded-lg animate-pulse" />
+                <div className="h-9 w-[116px] bg-bg-muted rounded-lg animate-pulse" />
               ) : (
                 <div className="flex gap-1.5">
                   {([
@@ -261,8 +261,8 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
                       title={label}
                       className={`w-9 h-9 rounded-lg text-base border transition-all flex items-center justify-center ${
                         theme === val
-                          ? 'bg-blue-600 border-blue-600 shadow-sm'
-                          : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600'
+                          ? 'bg-accent-gradient border-accent shadow-glow-accent'
+                          : 'bg-bg-muted/60 border-border hover:border-accent/50'
                       }`}
                     >
                       {icon}
@@ -275,11 +275,11 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
         </div>
 
         {/* Cuenta */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
-          <p className="text-[10px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider px-5 py-3 border-b border-gray-50 dark:border-slate-800">
+        <div className="bg-bg-elevated rounded-panel shadow-card border border-border overflow-hidden">
+          <p className="font-display text-xs font-bold text-text-muted uppercase tracking-display px-5 py-3 border-b border-border">
             {t('profile.cuenta')}
           </p>
-          <div className="divide-y divide-gray-50 dark:divide-slate-800">
+          <div className="divide-y divide-border">
             <SettingsRow icon="🏆" label={t('profile.misLigas')}        href="/ligas" />
             <SettingsRow icon="🔒" label={t('profile.cambiarPassword')} href="/perfil/contrasena" />
           </div>
@@ -288,7 +288,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
         {/* Cerrar sesión */}
         <button
           onClick={handleLogout}
-          className="w-full py-3 text-sm font-semibold text-red-600 dark:text-red-400 bg-white dark:bg-slate-900 hover:bg-red-50 dark:hover:bg-red-900/20 border border-gray-100 dark:border-slate-800 rounded-2xl shadow-sm transition-colors"
+          className="w-full py-3 text-sm font-semibold text-danger bg-bg-elevated hover:bg-danger/10 border border-border hover:border-danger/40 rounded-panel shadow-card transition-colors"
         >
           {t('profile.cerrarSesion')}
         </button>

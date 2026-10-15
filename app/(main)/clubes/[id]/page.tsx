@@ -84,7 +84,7 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
         <div className="mt-2 flex items-center gap-4">
           <ClubLogo url={club.logo_url} name={club.name} size={56} />
           <div className="min-w-0">
-            <h1 className="text-2xl font-bold text-text-primary truncate">{club.name}</h1>
+            <h1 className="heading-display text-2xl font-bold text-text-primary truncate">{club.name}</h1>
             <p className="text-sm text-text-muted">
               Tu rol: {ROLE_LABEL[myRole]} · Código para invitar:{' '}
               <span className="font-mono font-semibold text-text-primary tracking-widest">{club.join_code}</span>
@@ -94,8 +94,8 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
       </div>
 
       {/* Pools */}
-      <section className="bg-bg-elevated rounded-xl border border-border p-4">
-        <h2 className="text-sm font-semibold text-text-primary mb-3">Pools</h2>
+      <section className="bg-bg-elevated rounded-card shadow-card border border-border p-4">
+        <h2 className="heading-display text-sm font-semibold text-text-primary mb-3">Pools</h2>
         {pools.length === 0 ? (
           <p className="text-sm text-text-muted">Este club todavía no juega ninguna competición.</p>
         ) : (
@@ -127,8 +127,8 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
       </section>
 
       {/* Miembros */}
-      <section className="bg-bg-elevated rounded-xl border border-border p-4">
-        <h2 className="text-sm font-semibold text-text-primary mb-3">Miembros ({members.length})</h2>
+      <section className="bg-bg-elevated rounded-card shadow-card border border-border p-4">
+        <h2 className="heading-display text-sm font-semibold text-text-primary mb-3">Miembros ({members.length})</h2>
         <ul className="divide-y divide-border">
           {members.map(m => {
             const nickname = m.profiles?.nickname ?? 'Usuario'
@@ -139,7 +139,7 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${
-                    m.role === 'member' ? 'bg-bg-muted text-text-muted' : 'bg-accent/15 text-accent'
+                    m.role === 'member' ? 'bg-bg-muted text-text-muted ring-1 ring-inset ring-border' : 'bg-accent/15 text-accent ring-1 ring-inset ring-accent/30'
                   }`}>
                     {ROLE_LABEL[m.role]}
                   </span>

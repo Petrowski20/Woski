@@ -9,10 +9,10 @@ export default function PredictionsProgressCard({ predicted, total }: Props) {
   const complete = total > 0 && remaining === 0
 
   return (
-    <div className="bg-bg-elevated rounded-xl shadow-sm border border-border p-5">
-      <h2 className="font-bold text-text-primary border-b border-border pb-3 mb-4 flex items-center justify-between">
+    <div className="bg-bg-elevated rounded-card shadow-card border border-border p-5">
+      <h2 className="heading-display font-bold text-text-primary border-b border-border pb-3 mb-4 flex items-center justify-between">
         <span>Tus Predicciones</span>
-        <span className={`text-xs px-2 py-1 rounded-full ${complete ? 'bg-success/10 text-success' : 'bg-accent/10 text-accent'}`}>
+        <span className={`text-xs px-2 py-1 rounded-full ${complete ? 'bg-success/10 text-success ring-1 ring-inset ring-success/30' : 'bg-accent/10 text-accent ring-1 ring-inset ring-accent/30'}`}>
           {complete ? '¡Completado!' : `Faltan ${remaining}`}
         </span>
       </h2>
@@ -30,7 +30,7 @@ export default function PredictionsProgressCard({ predicted, total }: Props) {
           aria-valuenow={predicted}
           aria-label="Partidos pronosticados"
         >
-          <div className="bg-accent h-2 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+          <div className="bg-accent bg-accent-gradient shadow-glow-accent h-2 rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
         </div>
         <p className="text-xs text-text-muted mt-2">
           💡 Puedes editar cada predicción hasta 1 hora antes del inicio del partido.

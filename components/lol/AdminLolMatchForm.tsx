@@ -76,9 +76,9 @@ export default function AdminLolMatchForm({
   }
 
   return (
-    <section className="bg-bg-elevated border border-border rounded-xl p-4 flex flex-col gap-3">
+    <section className="bg-bg-elevated border border-border rounded-card shadow-card p-4 flex flex-col gap-3">
       <div>
-        <h2 className="font-bold text-text-primary">Añadir serie</h2>
+        <h2 className="heading-display font-bold text-text-primary">Añadir serie</h2>
         <p className="text-xs text-text-muted">Fecha y hora en horario de Madrid. La votación debe seguir abierta con esa hora.</p>
       </div>
 

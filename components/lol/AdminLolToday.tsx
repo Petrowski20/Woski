@@ -25,7 +25,7 @@ function Block({ title, tone, count, children }: {
   const badge = tone === 'warning' ? 'bg-warning/10 text-warning' : tone === 'accent' ? 'bg-accent/10 text-accent' : 'bg-bg-muted text-text-muted'
   return (
     <div className="flex flex-col gap-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold text-text-primary">
+      <h3 className="heading-display flex items-center gap-2 text-sm font-semibold text-text-primary">
         {title}
         <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${badge}`}>{count}</span>
       </h3>
@@ -48,8 +48,8 @@ export default function AdminLolToday({ data }: { data: OpsToday }) {
   const now = useNow()
 
   return (
-    <section className="bg-bg-elevated border border-border rounded-xl p-4 flex flex-col gap-5">
-      <h2 className="font-bold text-text-primary">Hoy</h2>
+    <section className="bg-bg-elevated border border-border rounded-card shadow-card p-4 flex flex-col gap-5">
+      <h2 className="heading-display font-bold text-text-primary">Hoy</h2>
 
       <Block title="Votación abierta" tone="accent" count={data.open.length}>
         {data.open.length === 0 ? (

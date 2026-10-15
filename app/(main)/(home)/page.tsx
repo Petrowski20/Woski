@@ -31,7 +31,7 @@ export default async function LolPage({
         </div>
         <div className="flex flex-col items-center gap-3 py-20 text-center">
           <span className="text-5xl" aria-hidden>🗓️</span>
-          <h1 className="text-lg font-bold text-text-primary">No hay ninguna competición en curso ahora mismo</h1>
+          <h1 className="heading-display text-lg font-bold text-text-primary">No hay ninguna competición en curso ahora mismo</h1>
           <p className="text-sm text-text-muted max-w-sm">
             Cuando arranque la próxima competición de League of Legends aparecerá aquí su calendario para que puedas votar.
           </p>

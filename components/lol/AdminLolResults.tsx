@@ -128,7 +128,7 @@ function ParticipationPanel({ match, rows }: { match: LolMatchView; rows: Partic
         <ul className="flex flex-wrap gap-1.5">
           {rows.map(r => (
             <li key={r.nickname}
-                className={`px-2 py-0.5 rounded-full text-xs ${r.hasVoted ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger'}`}>
+                className={`px-2 py-0.5 rounded-full text-xs ${r.hasVoted ? 'bg-success/10 text-success ring-1 ring-inset ring-success/30' : 'bg-danger/10 text-danger ring-1 ring-inset ring-danger/30'}`}>
               {r.hasVoted ? '✓' : '✗'} {r.nickname}
             </li>
           ))}
@@ -197,7 +197,7 @@ function AdminMatchCard({ match, now }: { match: LolMatchView; now: number }) {
         <span className="capitalize">{formatMatchDate(match.date)}</span>
         <span aria-hidden>·</span>
         <span>{match.phaseName} · Bo{match.bestOf}</span>
-        <span className="px-2 py-0.5 rounded-full bg-bg-muted font-semibold">{STATUS_LABEL[match.status]}</span>
+        <span className="px-2 py-0.5 rounded-full bg-bg-muted ring-1 ring-inset ring-border font-semibold">{STATUS_LABEL[match.status]}</span>
         {match.featured && <span className="text-warning font-semibold">⭐ Partido de la jornada</span>}
       </div>
 
@@ -313,9 +313,9 @@ export default function AdminLolResults({
   // de la jornada. La BD vuelve a comprobar el plazo al guardar.
   const [now] = useState(() => Date.now())
   return (
-    <section className="bg-bg-elevated border border-border rounded-xl p-4">
+    <section className="bg-bg-elevated border border-border rounded-card shadow-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-        <h2 className="font-bold text-text-primary">Series · {title}</h2>
+        <h2 className="heading-display font-bold text-text-primary">Series · {title}</h2>
         <RescoreButton editionId={editionId} />
       </div>
       {matches.length === 0 ? (

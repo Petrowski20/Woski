@@ -39,7 +39,7 @@ export default async function AdminLolPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="text-xl font-bold text-text-primary">Operaciones LoL</h1>
+        <h1 className="heading-display text-xl font-bold text-text-primary">Operaciones LoL</h1>
         <p className="text-sm text-text-muted">
           Todo cambio queda registrado. Guardar un resultado, cancelar o mover una serie recalcula los puntos con el motor
           de la base de datos.

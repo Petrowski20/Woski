@@ -43,8 +43,8 @@ export default function ClubForms() {
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <form onSubmit={handleCreate} className="bg-bg-elevated rounded-xl border border-border p-4 flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-text-primary">Crear un club</h2>
+      <form onSubmit={handleCreate} className="bg-bg-elevated rounded-card shadow-card border border-border p-4 flex flex-col gap-3">
+        <h2 className="heading-display text-sm font-semibold text-text-primary">Crear un club</h2>
         <input
           className={inputClass}
           placeholder="Nombre del club"
@@ -64,8 +64,8 @@ export default function ClubForms() {
         </button>
       </form>
 
-      <form onSubmit={handleJoin} className="bg-bg-elevated rounded-xl border border-border p-4 flex flex-col gap-3">
-        <h2 className="text-sm font-semibold text-text-primary">Unirme con código</h2>
+      <form onSubmit={handleJoin} className="bg-bg-elevated rounded-card shadow-card border border-border p-4 flex flex-col gap-3">
+        <h2 className="heading-display text-sm font-semibold text-text-primary">Unirme con código</h2>
         <input
           className={`${inputClass} uppercase tracking-widest`}
           placeholder="ABC123"

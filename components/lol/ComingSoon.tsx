@@ -4,7 +4,7 @@ export default function ComingSoon({ title, description }: { title: string; desc
   return (
     <div className="flex flex-col items-center gap-3 py-20 text-center">
       <span className="text-5xl" aria-hidden>🚧</span>
-      <h1 className="text-lg font-bold text-text-primary">{title}</h1>
+      <h1 className="heading-display text-lg font-bold text-text-primary">{title}</h1>
       <p className="text-sm text-text-muted max-w-sm">{description}</p>
       <Link
         href="/"
