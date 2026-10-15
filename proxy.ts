@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { passwordChangeGate, CHANGE_PASSWORD_PATH } from '@/utils/auth/passwordGate'
 
 const PUBLIC_PATHS = ['/login']
 
@@ -52,6 +53,27 @@ export async function proxy(request: NextRequest) {
     })
 
     return redirectResponse
+  }
+
+  // Contraseña reiniciada por un admin: solo puede cambiarla (o salir).
+  // getUser() lee app_metadata del servidor de Auth, no del JWT, así que
+  // el flag vale también para sesiones abiertas antes del reinicio.
+  const gate = passwordChangeGate({
+    pathname: request.nextUrl.pathname,
+    mustChangePassword: user?.app_metadata?.must_change_password === true,
+    isServerAction,
+  })
+
+  if (gate !== 'pass') {
+    const url = request.nextUrl.clone()
+    url.pathname = CHANGE_PASSWORD_PATH
+    url.search = ''
+    const response = gate === 'redirect'
+      ? NextResponse.redirect(url)
+      : new NextResponse('Cambio de contraseña pendiente', { status: 403 })
+    // Conserva las cookies de sesión que haya refrescado getUser().
+    supabaseResponse.cookies.getAll().forEach(cookie => response.cookies.set(cookie))
+    return response
   }
 
   return supabaseResponse

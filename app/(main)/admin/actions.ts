@@ -521,6 +521,13 @@ export async function setPlayerHiddenAction(
     .single()
   if (profile?.role !== 'ADMIN') return { error: 'Acceso denegado' }
 
+  // Registro en lol_admin_audit y límite de intentos, antes de tocar nada.
+  const { data: auditId, error: auditError } = await supabase.rpc('admin_user_action_begin', {
+    p_target: profileId,
+    p_action: isHidden ? 'user_hide' : 'user_show',
+  })
+  if (auditError) return { error: auditError.message }
+
   const supabaseAdmin = createSVClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -532,8 +539,15 @@ export async function setPlayerHiddenAction(
     .update({ is_hidden: isHidden })
     .eq('id', profileId)
 
+  await supabase.rpc('admin_user_action_end', {
+    p_audit_id: auditId,
+    p_ok: !error,
+    p_error: error?.message ?? null,
+  })
+
   if (error) return { error: error.message }
 
+  revalidatePath('/admin/usuarios')
   revalidatePath('/admin/jugadores')
   revalidatePath('/clasificacion')
   revalidatePath('/')

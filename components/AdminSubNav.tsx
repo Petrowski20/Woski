@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 const LINKS = [
   { href: '/admin', label: '⚽ Partidos', exact: true },
   { href: '/admin/jugadores', label: '👥 Jugadores', exact: false },
+  { href: '/admin/usuarios', label: '🔑 Usuarios', exact: false },
   { href: '/admin/predicciones', label: '✏️ Predicciones', exact: false },
   { href: '/admin/recordatorios', label: '📢 Recordatorios', exact: false },
   { href: '/admin/leagues', label: '🏆 Ligas', exact: false },
