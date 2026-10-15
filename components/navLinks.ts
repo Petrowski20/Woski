@@ -15,4 +15,4 @@ export const NAV_LINKS: NavLink[] = [
   { href: '/lol/historial',    labelKey: 'nav.historial',     icon: '📜' },
 ]
 
-export const ADMIN_HREF = '/admin/lol'
+export const ADMIN_HREF = '/admin'

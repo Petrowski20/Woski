@@ -24,7 +24,7 @@ async function _requireAdmin(): Promise<string | null> {
 
 function _revalidate() {
   revalidatePath('/')
-  revalidatePath('/admin/lol')
+  revalidatePath('/admin')
   revalidatePath('/lol/clasificacion')
 }
 
@@ -168,30 +168,6 @@ export async function updateLolMatchAction(
   }
   _revalidate()
   return { success: true }
-}
-
-// ── Participación ─────────────────────────────────────────────────────────
-
-export interface ParticipationRow {
-  nickname: string
-  hasVoted: boolean
-}
-
-/** Quién ha votado una serie (sí/no). Nunca el voto. */
-export async function getLolMatchParticipationAction(
-  matchId: number,
-): Promise<{ success: true; rows: ParticipationRow[] } | { error: string }> {
-  const authError = await _requireAdmin()
-  if (authError) return { error: authError }
-
-  const supabase = await createClient()
-  const { data, error } = await supabase.rpc('admin_lol_match_participation', { p_match_id: matchId })
-  if (error) return _rpcError('admin_lol_match_participation', error, 'No se ha podido cargar la participación.')
-  const rows = ((data ?? []) as { nickname: string; has_voted: boolean }[]).map(r => ({
-    nickname: r.nickname,
-    hasVoted: r.has_voted,
-  }))
-  return { success: true, rows }
 }
 
 // ── Votos a mano ──────────────────────────────────────────────────────────

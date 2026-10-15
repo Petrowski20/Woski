@@ -325,7 +325,7 @@ export async function updatePlayerPredictionAction(
       )
     if (predErr) return { error: predErr.message }
     revalidatePath(`/jugador/${profileId}`)
-    revalidatePath('/admin/predicciones')
+    revalidatePath('/admin')
     return { success: true }
   }
 
@@ -392,7 +392,7 @@ export async function updatePlayerPredictionAction(
 
   revalidatePath('/')
   revalidatePath('/clasificacion')
-  revalidatePath('/admin/predicciones')
+  revalidatePath('/admin')
   revalidatePath(`/jugador/${profileId}`)
 
   return { success: true }
@@ -547,8 +547,7 @@ export async function setPlayerHiddenAction(
 
   if (error) return { error: error.message }
 
-  revalidatePath('/admin/usuarios')
-  revalidatePath('/admin/jugadores')
+  revalidatePath('/admin')
   revalidatePath('/clasificacion')
   revalidatePath('/')
   return { success: true }

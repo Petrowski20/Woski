@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { updatePlayerPredictionAction } from '@/app/(main)/admin/actions'
 import { getFlagUrl } from '@/utils/getFlagUrl'
+import { adminHref } from '@/utils/admin/tabs'
 
 interface Profile { id: string; nickname: string }
 
@@ -123,7 +124,7 @@ export default function AdminPredictionsEditor({ profiles, matches, predictions,
   function handlePlayerChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const val = e.target.value
     startTransition(() => {
-      router.push(val ? `/admin/predicciones?player=${val}` : '/admin/predicciones')
+      router.push(adminHref('futbol', 'predicciones', { player: val }))
     })
   }
 

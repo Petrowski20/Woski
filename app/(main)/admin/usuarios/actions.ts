@@ -68,6 +68,6 @@ export async function resetUserPasswordAction(targetId: string): Promise<ResetPa
 
   if (error) return { error: `No se pudo reiniciar: ${error.message}` }
 
-  revalidatePath('/admin/usuarios')
+  revalidatePath('/admin')
   return { password }
 }

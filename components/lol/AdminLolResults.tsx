@@ -2,16 +2,16 @@
 
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import Link from 'next/link'
 import {
-  getLolMatchParticipationAction,
   rescoreLolEditionAction,
   setLolFeaturedMatchAction,
   setLolMatchResultAction,
   setLolMatchStatusAction,
   updateLolMatchAction,
-  type ParticipationRow,
 } from '@/app/(main)/admin/lol/actions'
 import { isPredictionLocked, seriesOutcomes } from '@/utils/lol/series'
+import { adminHref } from '@/utils/admin/tabs'
 import type { LolMatchView } from '@/utils/lol/types'
 import { formatMatchDate, formatSeriesScore, toMadridInputValue } from './format'
 
@@ -93,59 +93,12 @@ function EditPanel({ match, onDone }: { match: LolMatchView; onDone: () => void 
   )
 }
 
-// ── Participación ─────────────────────────────────────────────────────────
-
-function ParticipationPanel({ match, rows }: { match: LolMatchView; rows: ParticipationRow[] }) {
-  const missing = rows.filter(r => !r.hasVoted)
-  const voted = rows.length - missing.length
-
-  const copyMissing = async () => {
-    const text = [
-      `Faltan por votar ${match.home.tag} vs ${match.away.tag} (${formatMatchDate(match.date)}):`,
-      ...missing.map(r => `- ${r.nickname}`),
-    ].join('\n')
-    try {
-      await navigator.clipboard.writeText(text)
-      toast.success('Lista copiada')
-    } catch {
-      toast.error('No se ha podido copiar. Selecciona el texto a mano.')
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-2 rounded-lg bg-bg-muted/60 p-3 text-sm">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-text-primary">
-          <strong>{voted}</strong>/{rows.length} han votado · faltan <strong>{missing.length}</strong>
-        </span>
-        <button type="button" onClick={copyMissing} disabled={missing.length === 0} className={btnPlain}>
-          Copiar lista de quienes faltan
-        </button>
-      </div>
-      {rows.length === 0 ? (
-        <p className="text-xs text-text-muted">Aún no hay participantes en esta edición.</p>
-      ) : (
-        <ul className="flex flex-wrap gap-1.5">
-          {rows.map(r => (
-            <li key={r.nickname}
-                className={`px-2 py-0.5 rounded-full text-xs ${r.hasVoted ? 'bg-success/10 text-success ring-1 ring-inset ring-success/30' : 'bg-danger/10 text-danger ring-1 ring-inset ring-danger/30'}`}>
-              {r.hasVoted ? '✓' : '✗'} {r.nickname}
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="text-[11px] text-text-muted">Solo se muestra si ha votado, nunca qué ha votado. Sin usuarios ocultos.</p>
-    </div>
-  )
-}
-
 // ── Tarjeta de una serie ──────────────────────────────────────────────────
 
-function AdminMatchCard({ match, now }: { match: LolMatchView; now: number }) {
+function AdminMatchCard({ match, now, editionId }: { match: LolMatchView; now: number; editionId: number }) {
   const outcomes = seriesOutcomes(match.bestOf)
   const [value, setValue] = useState(match.result ? `${match.result.home}-${match.result.away}` : '')
-  const [panel, setPanel] = useState<'edit' | 'participation' | 'cancel' | null>(null)
-  const [participation, setParticipation] = useState<ParticipationRow[] | null>(null)
+  const [panel, setPanel] = useState<'edit' | 'cancel' | null>(null)
   const [isPending, startTransition] = useTransition()
 
   // Con la votación abierta (la BD lo vuelve a comprobar): editar y partido
@@ -160,25 +113,6 @@ function AdminMatchCard({ match, now }: { match: LolMatchView; now: number }) {
         else {
           toast.success(okMsg)
           after?.()
-        }
-      } catch {
-        toast.error('No hemos podido conectar con el servidor. Inténtalo de nuevo.')
-      }
-    })
-  }
-
-  const toggleParticipation = () => {
-    if (panel === 'participation') {
-      setPanel(null)
-      return
-    }
-    startTransition(async () => {
-      try {
-        const res = await getLolMatchParticipationAction(match.id)
-        if ('error' in res) toast.error(res.error)
-        else {
-          setParticipation(res.rows)
-          setPanel('participation')
         }
       } catch {
         toast.error('No hemos podido conectar con el servidor. Inténtalo de nuevo.')
@@ -227,9 +161,9 @@ function AdminMatchCard({ match, now }: { match: LolMatchView; now: number }) {
           </button>
         )}
         {match.status !== 'CANCELLED' && (
-          <button type="button" onClick={toggleParticipation} disabled={isPending} className={btnPlain}>
-            Participación
-          </button>
+          <Link href={adminHref('lol', 'predicciones', { edicion: editionId, serie: match.id })} className={btnPlain}>
+            Votos
+          </Link>
         )}
         <label
           className={`inline-flex items-center gap-1.5 text-xs ${votingOpen ? 'text-text-primary' : 'text-text-muted'}`}
@@ -273,7 +207,6 @@ function AdminMatchCard({ match, now }: { match: LolMatchView; now: number }) {
         </div>
       )}
       {panel === 'edit' && <EditPanel match={match} onDone={() => setPanel(null)} />}
-      {panel === 'participation' && participation && <ParticipationPanel match={match} rows={participation} />}
     </li>
   )
 }
@@ -304,10 +237,13 @@ export default function AdminLolResults({
   title,
   editionId,
   matches,
+  total,
 }: {
   title: string
   editionId: number
   matches: LolMatchView[]
+  /** Series de la edición sin filtrar. */
+  total: number
 }) {
   // Hora al montar: decide qué series se pueden editar o marcar como partido
   // de la jornada. La BD vuelve a comprobar el plazo al guardar.
@@ -315,14 +251,19 @@ export default function AdminLolResults({
   return (
     <section className="bg-bg-elevated border border-border rounded-card shadow-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-        <h2 className="heading-display font-bold text-text-primary">Series · {title}</h2>
+        <h2 className="heading-display font-bold text-text-primary">
+          Series · {title}{' '}
+          <span className="text-xs font-normal text-text-muted">
+            ({matches.length === total ? total : `${matches.length} de ${total}`})
+          </span>
+        </h2>
         <RescoreButton editionId={editionId} />
       </div>
       {matches.length === 0 ? (
-        <p className="text-sm text-text-muted">Sin series.</p>
+        <p className="text-sm text-text-muted">{total === 0 ? 'Sin series.' : 'Ninguna serie con estos filtros.'}</p>
       ) : (
         <ul className="flex flex-col">
-          {matches.map(m => <AdminMatchCard key={m.id} match={m} now={now} />)}
+          {matches.map(m => <AdminMatchCard key={m.id} match={m} now={now} editionId={editionId} />)}
         </ul>
       )}
     </section>
