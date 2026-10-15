@@ -20,17 +20,19 @@ export default async function LoginPage({
   const subtitle = tServer(lang, isRegister ? 'login.creaCuenta' : 'login.iniciaSesion')
 
   return (
-    <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mx-auto mt-10 mb-20">
-      <div className="text-center mb-6">
-        <BrandLogo size="lg" className="mb-4" />
-        <p className="heading-display text-sm font-semibold text-text-muted">{subtitle}</p>
-      </div>
+    <main className="min-h-[100dvh] flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md bg-bg-elevated border border-border rounded-panel shadow-raised p-6 sm:p-8">
+        <header className="text-center mb-7">
+          <BrandLogo size="lg" />
+          <h1 className="mt-4 text-base font-medium text-text-primary text-balance">{subtitle}</h1>
+        </header>
 
-      <AuthForm
-        isRegister={isRegister}
-        maxBirthDate={maxBirthDate}
-        errorInicial={error}
-      />
-    </div>
+        <AuthForm
+          isRegister={isRegister}
+          maxBirthDate={maxBirthDate}
+          errorInicial={error}
+        />
+      </div>
+    </main>
   )
 }
