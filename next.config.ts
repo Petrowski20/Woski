@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: '/lol', destination: '/', permanent: false }]
   },
+  experimental: {
+    serverActions: {
+      // Logos de equipo: hasta 2 MB de archivo (utils/lol/teamLogo.ts) más
+      // la cabecera multipart. Por defecto son 1 MB. Vercel admite 4,5 MB.
+      bodySizeLimit: '3mb',
+    },
+  },
   images: {
     remotePatterns: [
       {
