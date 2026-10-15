@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { teamTextColor } from '@/utils/lol/teamLogo'
 
 export type TeamLogoSize = 'sm' | 'md' | 'lg'
@@ -19,7 +19,16 @@ const BOX: Record<TeamLogoSize, string> = {
   lg: 'w-14 h-14 rounded-xl text-sm',
 }
 
-// Logo del equipo (bucket team-logos). Sin logo, o si no carga, una
+// Relleno interior de la ficha (~12-15 % del lado: 3/24, 5/40, 8/56).
+const PAD: Record<TeamLogoSize, string> = {
+  sm: 'p-[3px]',
+  md: 'p-[5px]',
+  lg: 'p-2',
+}
+
+// Logo del equipo (bucket team-logos) dentro de una ficha oscura en ambos
+// temas (utilidad logo-tile) con borde del color del equipo; object-contain
+// iguala logos de distintas proporciones. Sin logo, o si no carga, una
 // insignia con las siglas sobre el color del equipo; si no tiene color, el
 // del lado (team-a / team-b) o el neutro del tema.
 export default function TeamLogo({ team, size = 'md', side, className = '' }: Props) {
@@ -28,14 +37,19 @@ export default function TeamLogo({ team, size = 'md', side, className = '' }: Pr
 
   if (team.logoUrl && failed !== team.logoUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element -- logos pequeños de tamaño fijo, sin optimizar (igual que las banderas)
-      <img
-        src={team.logoUrl}
-        alt={team.name}
-        className={`${box} object-contain`}
-        loading="lazy"
-        onError={() => setFailed(team.logoUrl)}
-      />
+      <span
+        style={team.color ? ({ '--team-color': team.color } as CSSProperties) : undefined}
+        className={`${box} ${PAD[size]} logo-tile inline-flex items-center justify-center`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- logos pequeños de tamaño fijo, sin optimizar (igual que las banderas) */}
+        <img
+          src={team.logoUrl}
+          alt={team.name}
+          className="h-full w-full object-contain"
+          loading="lazy"
+          onError={() => setFailed(team.logoUrl)}
+        />
+      </span>
     )
   }
 
