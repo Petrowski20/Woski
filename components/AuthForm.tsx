@@ -5,10 +5,10 @@ import { login, signup } from '@/app/(auth)/login/actions'
 import { useLang } from '@/contexts/LangContext'
 
 const inputClass =
-  'rounded-lg px-3 py-2 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm w-full'
+  'rounded-lg px-3 py-2 border border-border bg-bg-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors text-sm w-full'
 
 const passwordInputClass =
-  'rounded-lg px-3 py-2 pr-10 border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-brand-blue text-sm w-full'
+  'rounded-lg px-3 py-2 pr-10 border border-border bg-bg-muted text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-colors text-sm w-full'
 
 type Props = {
   isRegister: boolean
@@ -67,11 +67,11 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex flex-col w-full gap-4 bg-white dark:bg-slate-900 p-6 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800"
+      className="flex flex-col w-full gap-4 bg-bg-elevated p-6 rounded-card shadow-raised border border-border"
     >
       {/* Email */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-semibold text-gray-600" htmlFor="email">
+        <label className="text-xs font-semibold text-text-muted" htmlFor="email">
           {t('auth.email')}
         </label>
         <input
@@ -87,7 +87,7 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
       {isRegister && (
         <>
           <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-gray-600" htmlFor="nickname">
+            <label className="text-xs font-semibold text-text-muted" htmlFor="nickname">
               {t('auth.nickname')}
             </label>
             <input
@@ -100,7 +100,7 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
           </div>
 
           <div className="flex flex-col gap-1 min-w-0 overflow-hidden">
-            <label className="text-xs font-semibold text-gray-600" htmlFor="birthDate">
+            <label className="text-xs font-semibold text-text-muted" htmlFor="birthDate">
               {t('auth.birthDate')}
             </label>
             <input
@@ -111,14 +111,14 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
               max={maxBirthDate}
               required
             />
-            <p className="text-xs text-gray-400">{t('auth.birthDateHint')}</p>
+            <p className="text-xs text-text-muted">{t('auth.birthDateHint')}</p>
           </div>
         </>
       )}
 
       {/* Contraseña */}
       <div className="flex flex-col gap-1">
-        <label className="text-xs font-semibold text-gray-600" htmlFor="password">
+        <label className="text-xs font-semibold text-text-muted" htmlFor="password">
           {t('auth.password')}
         </label>
         <div className="relative">
@@ -136,7 +136,7 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
             onClick={() => setShowPassword((v) => !v)}
             tabIndex={-1}
             aria-label={showPassword ? t('auth.ocultar') : t('auth.mostrar')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-accent transition-colors"
           >
             {showPassword ? <EyeOff /> : <EyeOpen />}
           </button>
@@ -145,7 +145,7 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
 
       {isRegister && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-semibold text-gray-600" htmlFor="confirmPassword">
+          <label className="text-xs font-semibold text-text-muted" htmlFor="confirmPassword">
             {t('auth.confirmPassword')}
           </label>
           <div className="relative">
@@ -165,7 +165,7 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
       <button
         type="submit"
         disabled={isSubmitting}
-        className="bg-gradient-to-r from-brand-blue to-brand-teal hover:from-brand-cyan hover:to-brand-mint rounded-lg px-4 py-2.5 text-white font-semibold text-sm mt-2 shadow-md transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        className="bg-accent bg-accent-gradient hover:brightness-110 rounded-lg px-4 py-2.5 text-on-accent font-semibold text-sm mt-2 shadow-glow-accent transition-all disabled:opacity-60 disabled:cursor-not-allowed disabled:shadow-none disabled:brightness-100"
       >
         {isSubmitting
           ? (isRegister ? t('auth.creando') : t('auth.entrando'))
@@ -176,14 +176,14 @@ export default function AuthForm({ isRegister, maxBirthDate, errorInicial }: Pro
       <div className="text-center mt-2">
         <a
           href={isRegister ? '/login' : '/login?view=register'}
-          className="text-xs text-brand-blue hover:underline"
+          className="text-xs text-accent hover:underline"
         >
           {isRegister ? t('auth.yaRegistrado') : t('auth.noRegistrado')}
         </a>
       </div>
 
       {formError && (
-        <p className="p-3 bg-red-50 text-red-600 text-center text-xs rounded-lg border border-red-100 mt-2 font-medium">
+        <p className="p-3 bg-danger/10 text-danger text-center text-xs rounded-lg border border-danger/40 mt-2 font-medium">
           ⚠️ {formError}
         </p>
       )}

@@ -25,12 +25,12 @@ export default async function LoginPage({
           alt="PollaMundialista"
           width={280}
           height={82}
-          className="mx-auto mb-4 dark:brightness-0 dark:invert"
+          className="mx-auto mb-4 dark:brightness-0 dark:invert dark:drop-shadow-[0_0_12px_var(--glow-accent-soft)]"
           style={{ width: 'auto', height: 'auto' }}
           unoptimized
           priority
         />
-        <p className="text-sm text-gray-500">{subtitle}</p>
+        <p className="heading-display text-sm font-semibold text-text-muted">{subtitle}</p>
       </div>
 
       <AuthForm
