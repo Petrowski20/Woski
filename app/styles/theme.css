@@ -1,67 +1,150 @@
 /* ============================================================
-   TOKENS DE TEMA — única fuente de verdad para colores.
+   TOKENS DE TEMA — única fuente de verdad para colores, sombras,
+   radios y tipografía de la piel.
 
    Se declaran en @theme para que Tailwind v4 genere utilidades
-   (bg-bg-elevated, text-text-muted, bg-team-a, border-border…).
-   Las utilidades referencian la variable CSS, así que el modo
-   oscuro solo tiene que redefinir las variables bajo .dark
-   (mismo mecanismo que usa el sitio: next-themes con class="dark").
+   (bg-bg-elevated, text-text-muted, bg-team-a, border-border,
+   shadow-card, rounded-card, font-display, tracking-display…).
+   Las utilidades referencian la variable CSS, así que cada tema
+   solo tiene que redefinir las variables bajo .dark
+   (next-themes con class="dark" en <html>).
 
-   Para cambiar la paleta completa basta con editar este archivo.
+   El valor por defecto (:root) es el tema CLARO; el oscuro (neón)
+   es el tema por defecto de la app (ThemeProvider) y se activa
+   con .dark. Para cambiar la paleta completa basta con editar
+   este archivo.
    ============================================================ */
 
 @theme {
   /* Equipos: colores genéricos "izquierda" / "derecha" de una tarjeta.
      No son colores reales de ningún equipo. */
-  --color-team-a: #2563eb;
-  --color-team-b: #dc2626;
+  --color-team-a: #1d4ed8;
+  --color-team-b: #b13a0b;
   --color-on-team: #ffffff;
 
   /* Fondos */
-  --color-bg-surface: #f9fafb;   /* fondo general de la página */
-  --color-bg-elevated: #ffffff;  /* tarjetas, paneles, modales */
-  --color-bg-muted: #f3f4f6;     /* inputs, pistas de slider, píldoras inactivas */
+  --color-bg-surface: #f6f2eb;   /* fondo general de la página (cálido) */
+  --color-bg-elevated: #fffdf9;  /* tarjetas, paneles, modales */
+  --color-bg-muted: #efe9df;     /* inputs, pistas de slider, píldoras inactivas */
 
   /* Texto */
-  --color-text-primary: #111827;
-  --color-text-muted: #6b7280;
+  --color-text-primary: #1c1917;
+  --color-text-muted: #57514c;
 
   /* Bordes */
-  --color-border: #e5e7eb;
+  --color-border: #e0d7c8;
 
-  /* Acento (acciones primarias, selección) */
-  --color-accent: #0284c7;
+  /* Acento primario (acciones primarias, selección) */
+  --color-accent: #0f766e;        /* teal-700 */
+  --color-accent-deep: #155e75;   /* final del degradado del botón primario */
   --color-on-accent: #ffffff;
 
+  /* Acento secundario (destacados, resplandor naranja) */
+  --color-secondary: #b13a0b;     /* naranja profundo para texto AA; el resplandor usa orange-600 */
+  --color-on-secondary: #ffffff;
+
   /* Estados */
-  --color-success: #059669;
-  --color-warning: #d97706;
-  --color-danger: #dc2626;
+  --color-success: #047857;
+  --color-warning: #975a07;
+  --color-danger: #b91c1c;
 
   /* Fondo de modales */
-  --color-overlay: rgb(15 23 42 / 0.55);
+  --color-overlay: rgb(28 25 23 / 0.5);
+
+  /* Tipografía: títulos con fuente condensada técnica (next/font, ver app/layout.tsx) */
+  --font-display: var(--font-rajdhani), "Arial Narrow", system-ui, sans-serif;
+  --tracking-display: 0.08em;
+
+  /* Radios (mismos valores que los rounded-* que sustituyen: no cambian tamaños) */
+  --radius-control: 0.5rem;   /* inputs y botones (= rounded-lg) */
+  --radius-card: 0.75rem;     /* tarjetas (= rounded-xl) */
+  --radius-panel: 1rem;       /* modales y paneles grandes (= rounded-2xl) */
+
+  /* Sombras. Los valores viven en variables --skin-* para que cada tema
+     los redefina (en claro: sombras suaves, sin brillo). */
+  --shadow-card: var(--skin-shadow-card);
+  --shadow-raised: var(--skin-shadow-raised);
+  --shadow-glow-accent: var(--skin-glow-accent);
+  --shadow-glow-secondary: var(--skin-glow-secondary);
+}
+
+/* Valores de piel que no son utilidades (sombras, fondo global) — tema claro */
+:root {
+  color-scheme: light;
+
+  --skin-shadow-card: 0 1px 2px rgb(68 52 31 / 0.06), 0 1px 3px rgb(68 52 31 / 0.05);
+  --skin-shadow-raised: 0 10px 30px -10px rgb(68 52 31 / 0.25);
+  --skin-glow-accent: 0 1px 2px rgb(15 118 110 / 0.25);
+  --skin-glow-secondary: 0 1px 2px rgb(194 65 12 / 0.25);
+
+  /* Fondo global (components/AppBackground.tsx) */
+  --bg-grid-line: rgb(87 81 76 / 0.035);
+  --bg-glow-1: rgb(13 148 136 / 0.10);   /* teal, esquina superior izquierda */
+  --bg-glow-2: rgb(234 88 12 / 0.08);    /* orange-600, esquina inferior derecha */
+
+  /* Logotipo: sin brillo en claro */
+  --logo-glow: none;
 }
 
 .dark {
-  --color-team-a: #60a5fa;
-  --color-team-b: #f87171;
-  --color-on-team: #0f172a;
+  color-scheme: dark;
 
-  --color-bg-surface: #020617;
-  --color-bg-elevated: #0f172a;
-  --color-bg-muted: #1e293b;
+  --color-team-a: #4da3ff;
+  --color-team-b: #ff7a59;
+  --color-on-team: #050b16;
 
-  --color-text-primary: #f3f4f6;
-  --color-text-muted: #9ca3af;
+  --color-bg-surface: #050b16;   /* azul marino casi negro */
+  --color-bg-elevated: #0b1526;
+  --color-bg-muted: #12203a;
 
-  --color-border: #1e293b;
+  --color-text-primary: #e8eef8;
+  --color-text-muted: #93a3bf;   /* gris azulado */
 
-  --color-accent: #38bdf8;
-  --color-on-accent: #0f172a;
+  --color-border: #1e3152;
+
+  --color-accent: #22d3ee;       /* cian neón */
+  --color-accent-deep: #3b82f6;  /* azul: final del degradado */
+  --color-on-accent: #03111f;
+
+  --color-secondary: #fb923c;    /* naranja neón */
+  --color-on-secondary: #1a0b02;
 
   --color-success: #34d399;
   --color-warning: #fbbf24;
   --color-danger: #f87171;
 
-  --color-overlay: rgb(0 0 0 / 0.7);
+  --color-overlay: rgb(2 6 16 / 0.75);
+
+  --skin-shadow-card:
+    0 0 0 1px rgb(34 211 238 / 0.04),
+    0 0 24px -10px rgb(34 211 238 / 0.35),
+    0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --skin-shadow-raised:
+    0 0 0 1px rgb(34 211 238 / 0.08),
+    0 0 40px -12px rgb(34 211 238 / 0.35),
+    0 24px 48px -16px rgb(0 0 0 / 0.8);
+  --skin-glow-accent: 0 0 18px -2px rgb(34 211 238 / 0.55), 0 0 2px rgb(34 211 238 / 0.6);
+  --skin-glow-secondary: 0 0 18px -2px rgb(251 146 60 / 0.5), 0 0 2px rgb(251 146 60 / 0.6);
+
+  --bg-grid-line: rgb(56 189 248 / 0.05);
+  --bg-glow-1: rgb(34 211 238 / 0.16);
+  --bg-glow-2: rgb(251 146 60 / 0.12);
+
+  --logo-glow: drop-shadow(0 0 8px rgb(34 211 238 / 0.45));
+}
+
+/* ============================================================
+   UTILIDADES DE PIEL
+   ============================================================ */
+
+/* Degradado del botón primario (cian → azul en oscuro, teal → cian profundo en claro) */
+@utility bg-accent-gradient {
+  background-image: linear-gradient(90deg, var(--color-accent), var(--color-accent-deep));
+}
+
+/* Títulos: fuente condensada, mayúsculas y tracking amplio */
+@utility heading-display {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-display);
 }

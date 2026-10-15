@@ -19,6 +19,57 @@ body {
   min-height: 100vh;
 }
 
+@layer base {
+  /* Foco visible por teclado en todo lo interactivo. Los componentes que
+     dibujan su propio anillo (focus:ring-*) lo sustituyen con outline-none. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  }
+}
+
+/* Movimiento reducido: sin animaciones ni transiciones largas */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Avisos (sonner): colores de los tokens. Sonner inyecta sus estilos en
+   tiempo de ejecución; el prefijo html gana en especificidad. */
+html [data-sonner-toaster][data-sonner-theme] {
+  --normal-bg: var(--color-bg-elevated);
+  --normal-border: var(--color-border);
+  --normal-text: var(--color-text-primary);
+  --success-bg: color-mix(in srgb, var(--color-success) 12%, var(--color-bg-elevated));
+  --success-border: color-mix(in srgb, var(--color-success) 45%, transparent);
+  --success-text: var(--color-success);
+  --error-bg: color-mix(in srgb, var(--color-danger) 12%, var(--color-bg-elevated));
+  --error-border: color-mix(in srgb, var(--color-danger) 45%, transparent);
+  --error-text: var(--color-danger);
+  --warning-bg: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-elevated));
+  --warning-border: color-mix(in srgb, var(--color-warning) 45%, transparent);
+  --warning-text: var(--color-warning);
+  --info-bg: color-mix(in srgb, var(--color-accent) 12%, var(--color-bg-elevated));
+  --info-border: color-mix(in srgb, var(--color-accent) 45%, transparent);
+  --info-text: var(--color-accent);
+  --border-radius: var(--radius-card);
+  font-family: inherit;
+}
+
+html [data-sonner-toaster] [data-sonner-toast] {
+  box-shadow: var(--skin-shadow-raised);
+}
+
 /* Podio del campeón (clasificación final) */
 @keyframes podium-rise {
   from { opacity: 0; transform: translateY(24px) scale(.95); }
