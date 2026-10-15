@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useMemo, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { useLang } from '@/contexts/LangContext'
-import { removeLolTeamLogoAction, updateLolTeamAction, uploadLolTeamLogoAction } from '@/app/(main)/admin/lol/teamActions'
+import { previewLolTeamLogoAction, removeLolTeamLogoAction, updateLolTeamAction, uploadLolTeamLogoAction } from '@/app/(main)/admin/lol/teamActions'
 import { checkTeamLogo, TEAM_LOGO_MAX_BYTES } from '@/utils/lol/teamLogo'
 import TeamLogo from './TeamLogo'
 import type { AdminTeamRow, TeamActionResult, TeamAuditRow } from './adminTeamsTypes'
@@ -135,38 +135,69 @@ function DetailsForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string
 /** Logo: elegir archivo, avisar de errores, previsualizar, subir o quitar. */
 function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string }) {
   const [file, setFile] = useState<File | null>(null)
+  // PNG ya procesado por el servidor (data URL): lo mismo que se guardará.
   const [preview, setPreview] = useState<string | null>(null)
   const [dims, setDims] = useState<string | null>(null)
   const [problem, setProblem] = useState<string | null>(null)
+  const [processing, setProcessing] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   const [inputKey, setInputKey] = useState(0)
   const [isPending, startTransition] = useTransition()
-
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
+  // Si se elige otro archivo mientras se procesa el anterior, gana el último.
+  const pickSeq = useRef(0)
 
   const reset = () => {
+    pickSeq.current++
     setFile(null)
     setPreview(null)
     setDims(null)
     setProblem(null)
+    setProcessing(false)
     setInputKey(k => k + 1)
   }
 
   const pick = async (f: File | null) => {
     reset()
     if (!f) return
+    const seq = pickSeq.current
+    // Aviso rápido sin enviar nada; el servidor vuelve a comprobarlo todo.
     if (f.size > TEAM_LOGO_MAX_BYTES) {
       setProblem(errorText(t, lang, { error: 'TOO_BIG' }, f.size))
       return
     }
     const check = checkTeamLogo(new Uint8Array(await f.arrayBuffer()))
+    if (seq !== pickSeq.current) return
     if (!check.ok) {
       setProblem(errorText(t, lang, { error: check.code, width: check.width, height: check.height }, f.size))
       return
     }
     setFile(f)
-    setDims(`${check.format.toUpperCase()} · ${check.width}×${check.height} px · ${Math.ceil(f.size / 1024)} KB`)
-    setPreview(URL.createObjectURL(f))
+    setProcessing(true)
+    const fd = new FormData()
+    fd.set('file', f)
+    try {
+      const res = await previewLolTeamLogoAction(fd)
+      if (seq !== pickSeq.current) return
+      if ('error' in res) {
+        setFile(null)
+        setProblem(errorText(t, lang, res, f.size))
+        return
+      }
+      setPreview(res.dataUrl)
+      setDims(t('adminTeams.processedInfo', {
+        format: check.format.toUpperCase(),
+        w: res.source.width,
+        h: res.source.height,
+        kb: Math.ceil(f.size / 1024),
+        out: Math.ceil(res.bytes / 1024),
+      }))
+    } catch {
+      if (seq !== pickSeq.current) return
+      setFile(null)
+      setProblem(t('adminTeams.errors.NETWORK'))
+    } finally {
+      if (seq === pickSeq.current) setProcessing(false)
+    }
   }
 
   const upload = () => {
@@ -240,6 +271,10 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
 
       {problem && (
         <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-inset ring-danger/30">{problem}</p>
+      )}
+
+      {processing && (
+        <p role="status" className="text-xs text-text-muted">{t('adminTeams.processing')}</p>
       )}
 
       {preview && (
