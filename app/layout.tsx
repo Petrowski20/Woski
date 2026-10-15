@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Rajdhani } from "next/font/google";
 import "./globals.css";
+import AppBackground from "@/components/AppBackground";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { LangProvider } from "@/contexts/LangContext";
 import { getServerLang } from "@/utils/i18n-server";
@@ -29,6 +30,7 @@ export default async function RootLayout({
   return (
     <html lang={lang} className={rajdhani.variable} suppressHydrationWarning>
       <body className={inter.className}>
+        <AppBackground />
         <ThemeProvider>
           <LangProvider initialLang={lang}>
             {children}
