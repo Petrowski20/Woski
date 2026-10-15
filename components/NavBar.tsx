@@ -28,8 +28,10 @@ export default async function NavBar() {
     avatarUrl = profile?.avatar_url ?? null;
   }
 
+  // Sin backdrop-filter en la barra: crearía un bloque contenedor para sus hijos
+  // fixed (menú móvil, overlay y cierre del desplegable) y los encerraría en ella.
   return (
-    <nav className="bg-bg-surface/80 backdrop-blur-md border-b border-border sticky top-0 z-40 shadow-card">
+    <nav className="bg-bg-surface/95 border-b border-border sticky top-0 z-40 shadow-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
 
