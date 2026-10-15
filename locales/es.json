@@ -175,11 +175,23 @@
     "yaRegistrado": "¿Ya tienes cuenta? Inicia sesión",
     "noRegistrado": "¿No tienes cuenta? Regístrate aquí",
     "mostrar": "Mostrar contraseña",
-    "ocultar": "Ocultar contraseña"
+    "ocultar": "Ocultar contraseña",
+    "errores": {
+      "titulo": "No hemos podido continuar",
+      "credenciales": "El correo o la contraseña no son correctos.",
+      "noCoinciden": "Las contraseñas no coinciden.",
+      "menorEdad": "Debes tener al menos 16 años para participar.",
+      "nickEnUso": "Ese nombre de usuario ya está en uso. Prueba con otro.",
+      "emailEnUso": "Ya hay una cuenta con ese correo. Inicia sesión.",
+      "emailInvalido": "Revisa el correo: no parece válido.",
+      "passwordCorta": "La contraseña es demasiado corta.",
+      "demasiados": "Demasiados intentos. Espera un momento y vuelve a probar.",
+      "generico": "Algo ha fallado. Inténtalo de nuevo."
+    }
   },
   "login": {
-    "creaCuenta": "Crea tu cuenta de jugador",
-    "iniciaSesion": "Inicia sesión para predecir"
+    "creaCuenta": "Crea tu cuenta y juega los Worlds con tu grupo",
+    "iniciaSesion": "Entra y predice los Worlds con tu grupo"
   },
   "profile": {
     "estadisticas": "Estadísticas",
@@ -257,7 +269,7 @@
     }
   },
   "footer": {
-    "copyright": "© 2026 POLLAMUNDIAL. Picales putero caboverdiano.",
+    "copyright": "© 2026 Woski",
     "calendario": "Calendario FIFA",
     "simulador": "Simulador",
     "rtve": "RTVE Play",

@@ -175,11 +175,23 @@
     "yaRegistrado": "Ai deja un cont? Autentifică-te",
     "noRegistrado": "Nu ai cont? Înregistrează-te",
     "mostrar": "Arată parola",
-    "ocultar": "Ascunde parola"
+    "ocultar": "Ascunde parola",
+    "errores": {
+      "titulo": "Nu am putut continua",
+      "credenciales": "Emailul sau parola nu sunt corecte.",
+      "noCoinciden": "Parolele nu coincid.",
+      "menorEdad": "Trebuie să ai cel puțin 16 ani pentru a participa.",
+      "nickEnUso": "Numele de utilizator este deja folosit. Încearcă altul.",
+      "emailEnUso": "Există deja un cont cu acest email. Autentifică-te.",
+      "emailInvalido": "Verifică emailul: nu pare valid.",
+      "passwordCorta": "Parola este prea scurtă.",
+      "demasiados": "Prea multe încercări. Așteaptă puțin și încearcă din nou.",
+      "generico": "Ceva n-a mers. Încearcă din nou."
+    }
   },
   "login": {
-    "creaCuenta": "Creează-ți contul de jucător",
-    "iniciaSesion": "Autentifică-te pentru a prezice"
+    "creaCuenta": "Creează-ți contul și joacă Worlds cu grupul tău",
+    "iniciaSesion": "Intră și prezice Worlds cu grupul tău"
   },
   "profile": {
     "estadisticas": "Statistici",
@@ -257,7 +269,7 @@
     }
   },
   "footer": {
-    "copyright": "© 2026 POLLAMUNDIAL. Creat de popor și pentru popor.",
+    "copyright": "© 2026 Woski",
     "calendario": "Calendar FIFA",
     "simulador": "Simulator",
     "rtve": "RTVE Play",

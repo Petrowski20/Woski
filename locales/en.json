@@ -175,11 +175,23 @@
     "yaRegistrado": "Already have an account? Sign in",
     "noRegistrado": "Don't have an account? Sign up here",
     "mostrar": "Show password",
-    "ocultar": "Hide password"
+    "ocultar": "Hide password",
+    "errores": {
+      "titulo": "We couldn’t continue",
+      "credenciales": "The email or password is incorrect.",
+      "noCoinciden": "The passwords don’t match.",
+      "menorEdad": "You must be at least 16 to play.",
+      "nickEnUso": "That username is taken. Try another one.",
+      "emailEnUso": "There’s already an account with that email. Sign in instead.",
+      "emailInvalido": "Check the email: it doesn’t look valid.",
+      "passwordCorta": "The password is too short.",
+      "demasiados": "Too many attempts. Wait a moment and try again.",
+      "generico": "Something went wrong. Please try again."
+    }
   },
   "login": {
-    "creaCuenta": "Create your player account",
-    "iniciaSesion": "Sign in to predict"
+    "creaCuenta": "Create your account and play Worlds with your group",
+    "iniciaSesion": "Sign in and predict Worlds with your group"
   },
   "profile": {
     "estadisticas": "Statistics",
@@ -257,7 +269,7 @@
     }
   },
   "footer": {
-    "copyright": "© 2026 POLLAMUNDIAL. Created by the people, for the people.",
+    "copyright": "© 2026 Woski",
     "calendario": "FIFA Calendar",
     "simulador": "Simulator",
     "rtve": "RTVE Play",

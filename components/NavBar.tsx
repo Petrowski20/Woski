@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Image from 'next/image';
+import BrandLogo from '@/components/BrandLogo';
 import { createClient } from '@/utils/supabase/server';
 import UserDropdown from '@/components/UserDropdown';
 import MobileMenu from '@/components/MobileMenu';
@@ -37,27 +37,8 @@ export default async function NavBar() {
 
           <div className="flex space-x-8">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="flex items-center">
-                <Image
-                  src="/logo.svg"
-                  alt="Woski"
-                  width={36}
-                  height={35}
-                  className="block md:hidden w-auto h-auto dark:brightness-0 dark:invert dark:drop-shadow-[0_0_8px_var(--glow-accent-soft)]"
-                  style={{ width: 'auto', height: 'auto' }}
-                  unoptimized
-                  priority
-                />
-                <Image
-                  src="/titulo.svg"
-                  alt="Woski"
-                  width={160}
-                  height={47}
-                  className="hidden md:block w-auto h-auto dark:brightness-0 dark:invert dark:drop-shadow-[0_0_8px_var(--glow-accent-soft)]"
-                  style={{ width: 'auto', height: 'auto' }}
-                  unoptimized
-                  priority
-                />
+              <Link href="/" className="flex items-center rounded-md" aria-label="Woski, inicio">
+                <BrandLogo size="sm" />
               </Link>
             </div>
 

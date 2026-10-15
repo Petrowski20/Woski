@@ -1,6 +1,8 @@
-import Image from 'next/image'
+import BrandLogo from '@/components/BrandLogo'
 import AuthForm from '@/components/AuthForm'
 import { getServerLang, tServer } from '@/utils/i18n-server'
+
+export const metadata = { title: 'Entrar · Woski' }
 
 export default async function LoginPage({
   searchParams,
@@ -20,16 +22,7 @@ export default async function LoginPage({
   return (
     <div className="flex-1 flex flex-col w-full px-8 sm:max-w-md justify-center gap-2 mx-auto mt-10 mb-20">
       <div className="text-center mb-6">
-        <Image
-          src="/titulo.svg"
-          alt="PollaMundialista"
-          width={280}
-          height={82}
-          className="mx-auto mb-4 dark:brightness-0 dark:invert dark:drop-shadow-[0_0_12px_var(--glow-accent-soft)]"
-          style={{ width: 'auto', height: 'auto' }}
-          unoptimized
-          priority
-        />
+        <BrandLogo size="lg" className="mb-4" />
         <p className="heading-display text-sm font-semibold text-text-muted">{subtitle}</p>
       </div>
 
