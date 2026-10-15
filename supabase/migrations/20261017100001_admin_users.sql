@@ -117,6 +117,11 @@ BEGIN
     RAISE EXCEPTION 'No puedes reiniciar tu propia contraseña desde el panel' USING ERRCODE = '42501';
   END IF;
 
+  IF p_action = 'user_password_reset'
+     AND EXISTS (SELECT 1 FROM public.profiles WHERE id = p_target AND role::text = 'ADMIN') THEN
+    RAISE EXCEPTION 'No se puede reiniciar la contraseña de otro administrador' USING ERRCODE = '42501';
+  END IF;
+
   -- Dos peticiones simultáneas del mismo admin no se cuelan las dos.
   PERFORM pg_advisory_xact_lock(hashtextextended('admin_user_action:' || v_actor || ':' || p_action, 0));
 

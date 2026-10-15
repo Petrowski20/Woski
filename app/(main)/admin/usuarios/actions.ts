@@ -35,7 +35,17 @@ export async function resetUserPasswordAction(targetId: string): Promise<ResetPa
     return { error: 'No puedes reiniciar tu propia contraseña desde el panel. Cámbiala en tu perfil.' }
   }
 
-  // Registro y límite de intentos (también rechaza reiniciarse a sí mismo).
+  const { data: target } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', targetId)
+    .maybeSingle()
+  if (!target) return { error: 'Usuario no encontrado' }
+  if (target.role === 'ADMIN') {
+    return { error: 'No se puede reiniciar la contraseña de otro administrador.' }
+  }
+
+  // Registro y límite de intentos (la base de datos repite las dos comprobaciones).
   const { data: auditId, error: auditError } = await supabase.rpc('admin_user_action_begin', {
     p_target: targetId,
     p_action: 'user_password_reset',

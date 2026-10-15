@@ -2,7 +2,7 @@
 -- límite de intentos (20261017100001_admin_users).
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(32);
+SELECT plan(34);
 
 DO $$
 DECLARE
@@ -68,6 +68,10 @@ SELECT alike(t.run_as('service_role', NULL, pg_temp.begin_sql('usr-user', 'user_
              '42501: %', 'service_role tampoco: el registro necesita autor');
 SELECT alike(pg_temp.u('usr-admin', pg_temp.begin_sql('usr-admin', 'user_password_reset')),
              '42501: No puedes reiniciar tu propia contraseña%', 'un admin no se reinicia a sí mismo');
+SELECT alike(pg_temp.u('usr-admin', pg_temp.begin_sql('usr-admin2', 'user_password_reset')),
+             '42501: No se puede reiniciar la contraseña de otro administrador%', 'un admin no reinicia a otro ADMIN');
+SELECT is((SELECT count(*) FROM lol_admin_audit WHERE target_profile_id = t.uid('usr-admin2')), 0::bigint,
+          'el intento rechazado no deja registro ni gasta intentos');
 SELECT alike(pg_temp.u('usr-admin', pg_temp.begin_sql('usr-user', 'user_set_role')),
              '22023: %', 'acción desconocida (p. ej. cambiar rol) rechazada');
 SELECT alike(pg_temp.u('usr-admin', format('SELECT admin_user_action_begin(%L, %L)', gen_random_uuid(), 'user_hide')),

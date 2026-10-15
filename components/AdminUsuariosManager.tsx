@@ -169,6 +169,13 @@ export default function AdminUsuariosManager({ users, currentUserId }: Props) {
                     )}
                     {isSelf ? (
                       <span className="text-xs text-gray-400">desde tu perfil</span>
+                    ) : u.role === 'ADMIN' ? (
+                      <span
+                        className="text-xs text-gray-400"
+                        title="La contraseña de un administrador no se puede reiniciar desde el panel"
+                      >
+                        admin: no se puede reiniciar
+                      </span>
                     ) : (
                       <button
                         onClick={() => setConfirmUser(u)}
