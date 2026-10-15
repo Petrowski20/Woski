@@ -15,6 +15,8 @@ export interface VoteRow {
   profileId: string
   nickname: string
   hidden: boolean
+  voted: boolean
+  /** null si no ha votado o si la votación sigue abierta (la BD no lo devuelve). */
   vote: SeriesScore | null
   savedAt: string | null
   adminEntered: boolean
@@ -41,6 +43,7 @@ const btnPlain = `${btn} border border-border text-text-primary hover:border-acc
 const timeFmt = new Intl.DateTimeFormat('es-ES', {
   day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: 'Europe/Madrid',
 })
+const hourFmt = new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Madrid' })
 
 /** Formulario de un voto (añadir o corregir) para un jugador concreto o elegible. */
 function VoteForm({
@@ -139,6 +142,8 @@ function VoteItem({ row, match, editing, onEdit, onDone }: {
   onEdit: () => void
   onDone: () => void
 }) {
+  // Votación abierta: se sabe que votó y cuándo, pero no qué; no hay nada que editar.
+  const secret = row.voted && !row.vote
   return (
     <li className="py-2.5 flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -148,23 +153,29 @@ function VoteItem({ row, match, editing, onEdit, onDone }: {
         <span className="ml-auto flex items-center gap-3">
           {row.vote ? (
             <strong className="text-sm text-text-primary tabular-nums">{formatSeriesScore(row.vote, match.home.tag, match.away.tag)}</strong>
+          ) : secret ? (
+            <span className="text-sm text-success">
+              Votó{row.savedAt && <> a las <time dateTime={row.savedAt} title={timeFmt.format(new Date(row.savedAt))}>{hourFmt.format(new Date(row.savedAt))}</time></>}
+            </span>
           ) : (
             <span className="text-sm text-danger">Sin voto</span>
           )}
           {match.status === 'FINISHED' && row.vote && (
             <span className="text-xs font-bold tabular-nums text-accent">{row.points ?? 0} pts</span>
           )}
-          <button type="button" onClick={onEdit} className={btnPlain} aria-expanded={editing}>
-            {row.vote ? 'Editar' : 'Añadir'}
-          </button>
+          {!secret && (
+            <button type="button" onClick={onEdit} className={btnPlain} aria-expanded={editing}>
+              {row.vote ? 'Editar' : 'Añadir'}
+            </button>
+          )}
         </span>
       </div>
-      {row.savedAt && (
+      {row.savedAt && !secret && (
         <p className="text-xs text-text-muted -mt-1">
           Guardado <time dateTime={row.savedAt}>{timeFmt.format(new Date(row.savedAt))}</time>
         </p>
       )}
-      {editing && <VoteForm match={match} profileId={row.profileId} initial={row.vote} onDone={onDone} />}
+      {editing && !secret && <VoteForm match={match} profileId={row.profileId} initial={row.vote} onDone={onDone} />}
     </li>
   )
 }
@@ -185,8 +196,9 @@ export default function AdminLolPredictions({
   const [onlySeries, setOnlySeries] = useState(true)
   const [now] = useState(() => Date.now())
 
-  const voted = votes.filter(v => v.vote)
-  const missing = votes.filter(v => !v.vote)
+  const voted = votes.filter(v => v.voted)
+  const missing = votes.filter(v => !v.voted)
+  // La lista ya incluye a todo el que tiene voto: "otro jugador" solo ofrece a quien no ha votado.
   const listed = new Set(votes.map(v => v.profileId))
   const others = players.filter(p => !listed.has(p.id))
   const open = !isPredictionLocked(match.status, match.locksAt, now)

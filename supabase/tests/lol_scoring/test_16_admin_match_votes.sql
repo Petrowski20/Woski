@@ -1,9 +1,9 @@
 -- Votos de una serie para la pestaña Predicciones del admin
--- (20261018100001_admin_lol_match_votes): quién votó, qué y cuándo,
--- también con la votación abierta; solo ADMIN o sesión SQL.
+-- (20261018100001_admin_lol_match_votes): quién votó y cuándo; qué
+-- votó solo tras el cierre de la votación; solo ADMIN o sesión SQL.
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(17);
+SELECT plan(22);
 
 DO $$
 DECLARE
@@ -38,11 +38,16 @@ $$;
 -- ---------------- Contenido ----------------
 SELECT results_eq(
   $$ SELECT nickname, has_voted, pred_home, pred_away, is_hidden FROM admin_lol_match_votes((SELECT mo FROM ctx)) $$,
-  $$ VALUES ('mv-ana', true, 2, 1, false), ('mv-hidden', true, 0, 2, true), ('mv-bea', false, NULL::integer, NULL::integer, false) $$,
-  'serie abierta: primero quienes votaron (con su voto), luego quienes faltan');
-SELECT is((SELECT pred_winner_id FROM admin_lol_match_votes((SELECT mo FROM ctx)) WHERE nickname = 'mv-ana'),
-          (SELECT pred_winner_id FROM predictions WHERE profile_id = t.uid('mv-ana') AND match_id = (SELECT mo FROM ctx)),
-          'devuelve el ganador guardado');
+  $$ VALUES ('mv-ana', true, NULL::integer, NULL::integer, false), ('mv-hidden', true, NULL, NULL, true), ('mv-bea', false, NULL, NULL, false) $$,
+  'serie abierta: primero quienes votaron (sin su voto), luego quienes faltan');
+SELECT ok((SELECT pred_winner_id IS NULL AND points_earned IS NULL FROM admin_lol_match_votes((SELECT mo FROM ctx)) WHERE nickname = 'mv-ana'),
+          'serie abierta: sin ganador ni puntos');
+SELECT results_eq(
+  $$ SELECT nickname, pred_home, pred_away, pred_winner_id FROM admin_lol_match_votes((SELECT mf FROM ctx)) WHERE has_voted ORDER BY nickname $$,
+  $$ SELECT p.nickname, pr.pred_home_goals::integer, pr.pred_away_goals::integer, pr.pred_winner_id::integer
+     FROM predictions pr JOIN profiles p ON p.id = pr.profile_id
+     WHERE pr.match_id = (SELECT mf FROM ctx) ORDER BY p.nickname $$,
+  'serie cerrada: devuelve marcador y ganador guardados');
 SELECT ok((SELECT saved_at IS NOT NULL FROM admin_lol_match_votes((SELECT mo FROM ctx)) WHERE nickname = 'mv-ana'),
           'devuelve la hora de guardado');
 SELECT is((SELECT count(*) FROM admin_lol_match_votes((SELECT mo FROM ctx)) WHERE nickname = 'mv-hidden-novote'), 0::bigint,
@@ -62,7 +67,7 @@ SELECT lives_ok($$ SELECT admin_set_lol_prediction(t.uid('mv-bea'), (SELECT mo F
                 'carga manual (sesión SQL)');
 SELECT results_eq(
   $$ SELECT has_voted, pred_home, pred_away, admin_entered FROM admin_lol_match_votes((SELECT mo FROM ctx)) WHERE nickname = 'mv-bea' $$,
-  $$ VALUES (true, 2, 0, true) $$, 'el voto cargado a mano aparece marcado');
+  $$ VALUES (true, NULL::integer, NULL::integer, true) $$, 'el voto cargado a mano aparece marcado (sin el voto: serie abierta)');
 SELECT is((SELECT admin_entered FROM admin_lol_match_votes((SELECT mo FROM ctx)) WHERE nickname = 'mv-ana'), false,
           'un voto normal no aparece como cargado a mano');
 
@@ -77,10 +82,24 @@ SELECT is(pg_temp.u('mv-ana', format('SELECT count(*) FROM admin_lol_match_votes
 SELECT alike(t.run_as('service_role', NULL, format('SELECT count(*) FROM admin_lol_match_votes(%s)', (SELECT mo FROM ctx))),
              '42501:%', 'service_role tampoco (sin autor identificado)');
 SELECT is(pg_temp.u('mv-admin', format('SELECT count(*) FROM admin_lol_match_votes(%s)', (SELECT mo FROM ctx))),
-          '3', 'un ADMIN ve los votos de la serie abierta');
+          '3', 'un ADMIN ve quién está en la lista de la serie abierta');
+SELECT is(pg_temp.u('mv-admin', format(
+            'SELECT count(*) FROM admin_lol_match_votes(%s) WHERE pred_home IS NOT NULL OR pred_away IS NOT NULL OR pred_winner_id IS NOT NULL OR points_earned IS NOT NULL',
+            (SELECT mo FROM ctx))),
+          '0', 'un ADMIN no recibe el voto ajeno de una serie abierta');
+SELECT is(pg_temp.u('mv-admin', format('SELECT count(*) FROM admin_lol_match_votes(%s) WHERE has_voted AND saved_at IS NOT NULL', (SELECT mo FROM ctx))),
+          '3', 'un ADMIN sí recibe quién votó y cuándo en la serie abierta');
 -- La RLS sigue ocultando los votos ajenos de la serie abierta fuera de la función.
 SELECT is(pg_temp.u('mv-admin', format('SELECT count(*) FROM predictions WHERE match_id = %s', (SELECT mo FROM ctx))),
           '0', 'leyendo la tabla, el ADMIN sigue sin ver votos ajenos de una serie abierta');
+
+-- Al llegar el cierre de la votación, el ADMIN ya recibe el voto.
+UPDATE matches SET match_date = now() - interval '1 minute' WHERE id = (SELECT mo FROM ctx);
+SELECT is(pg_temp.u('mv-admin', format('SELECT pred_home || ''-'' || pred_away FROM admin_lol_match_votes(%s) WHERE nickname = ''mv-ana''', (SELECT mo FROM ctx))),
+          '2-1', 'tras el cierre, un ADMIN recibe el voto ajeno');
+SELECT is(pg_temp.u('mv-ana', format('SELECT count(*) FROM admin_lol_match_votes(%s)', (SELECT mo FROM ctx))),
+          '42501: Solo un administrador puede hacer esto', 'tras el cierre, un jugador normal sigue sin poder llamarla');
+
 SELECT is((SELECT provolatile FROM pg_proc WHERE proname = 'admin_lol_match_votes'), 's'::"char",
           'la función es de solo lectura (STABLE)');
 

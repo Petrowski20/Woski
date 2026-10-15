@@ -8,7 +8,8 @@ import { getEditionMatches, getLolEditions, lolToday } from '../../../lol/data'
 import { editionOptions, pickAdminEdition, requestTime } from './shared'
 
 // LoL · Predicciones (antes "Cargar voto a mano" en /admin/lol): por serie,
-// quién ha votado y qué (admin_lol_match_votes), añadir o corregir votos con
+// quién ha votado y, tras el cierre, qué (admin_lol_match_votes; con la
+// votación abierta la BD no devuelve el voto ajeno), añadir o corregir votos con
 // admin_set_lol_prediction (auditado) y el registro lol_prediction_audit.
 
 const STATUS_LABEL: Record<LolMatchView['status'], string> = {
@@ -97,6 +98,7 @@ export default async function LolPrediccionesTab({
     profileId: v.profile_id,
     nickname: v.nickname,
     hidden: v.is_hidden,
+    voted: v.has_voted,
     vote: v.has_voted && v.pred_home !== null && v.pred_away !== null ? { home: v.pred_home, away: v.pred_away } : null,
     savedAt: v.saved_at,
     adminEntered: v.admin_entered,

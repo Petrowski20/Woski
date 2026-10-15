@@ -3,9 +3,14 @@
 --
 --  admin_lol_match_participation solo dice si alguien ha votado.
 --  Para corregir o cargar votos a mano (admin_set_lol_prediction)
---  el admin necesita ver QUÉ votó cada uno y cuándo, también con
---  la votación abierta, que la RLS de predictions oculta hasta el
---  cierre (predictions_lol_select_after_close).
+--  el admin necesita ver quién ha votado y cuándo.
+--
+--  Mientras la votación está abierta (m.prediction_locks_at > now())
+--  el voto ajeno es secreto también para el admin, igual que en la
+--  RLS de predictions (predictions_lol_select_after_close): solo se
+--  devuelven nick, has_voted, hora de guardado y si fue a mano;
+--  marcador, ganador y puntos van a NULL. Tras el cierre se
+--  devuelve todo.
 --
 --  Solo lectura. Comprueba el rol con lol_require_admin_actor()
 --  (ADMIN identificado o sesión SQL; nunca service_role ni
@@ -39,12 +44,13 @@ AS $$
 #variable_conflict use_column
 DECLARE
   v_edition_id integer;
+  v_open       boolean;
 BEGIN
   PERFORM public.lol_require_admin_actor();
   IF NOT public.is_lol_match(p_match_id) THEN
     RAISE EXCEPTION 'La serie % no existe o no es de LoL', p_match_id USING ERRCODE = '22023';
   END IF;
-  SELECT ph.edition_id INTO v_edition_id
+  SELECT ph.edition_id, m.prediction_locks_at > now() INTO v_edition_id, v_open
   FROM public.matches m JOIN public.phases ph ON ph.id = m.phase_id
   WHERE m.id = p_match_id;
 
@@ -58,12 +64,12 @@ BEGIN
          p.nickname,
          p.is_hidden,
          pr.id IS NOT NULL,
-         pr.pred_home_goals,
-         pr.pred_away_goals,
-         pr.pred_winner_id,
+         CASE WHEN v_open THEN NULL ELSE pr.pred_home_goals END,
+         CASE WHEN v_open THEN NULL ELSE pr.pred_away_goals END,
+         CASE WHEN v_open THEN NULL ELSE pr.pred_winner_id END,
          pr.updated_at,
          COALESCE(pr.metadata ? 'admin_entered', false),
-         pr.points_earned::integer
+         CASE WHEN v_open THEN NULL ELSE pr.points_earned::integer END
   FROM people
   JOIN public.profiles p          ON p.id = people.profile_id
   LEFT JOIN public.predictions pr ON pr.profile_id = p.id AND pr.match_id = p_match_id
