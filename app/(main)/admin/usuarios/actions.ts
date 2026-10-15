@@ -2,7 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server'
 import { createAdminClient } from '@/utils/supabase/admin'
-import { generateTempPassword } from '@/utils/auth/password'
+import { generateTempPassword } from '@/utils/auth/tempPassword'
 import { revalidatePath } from 'next/cache'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i

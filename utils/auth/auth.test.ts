@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { generateTempPassword, validateNewPassword, TEMP_PASSWORD_LENGTH } from './password'
+import { validateNewPassword } from './password'
+import { generateTempPassword, TEMP_PASSWORD_LENGTH } from './tempPassword'
 import { passwordChangeGate, CHANGE_PASSWORD_PATH } from './passwordGate'
 
 // ---------------- contraseña temporal ----------------

@@ -57,11 +57,6 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
-  const [showPwModal,  setShowPwModal]  = useState(false)
-  const [newPw,        setNewPw]        = useState('')
-  const [confirmPw,    setConfirmPw]    = useState('')
-  const [isChangingPw, setIsChangingPw] = useState(false)
-
   useEffect(() => { setMounted(true) }, [])
 
   const handleTheme = (themeVal: string) => {
@@ -133,24 +128,6 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
     toast.success(t('profile.avatar.success'))
     setIsUploading(false)
     if (fileRef.current) fileRef.current.value = ''
-  }
-
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (newPw.length < 6) { toast.error(t('profile.password.min6')); return }
-    if (newPw !== confirmPw) { toast.error(t('profile.password.noCoinciden')); return }
-
-    setIsChangingPw(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.updateUser({ password: newPw })
-    setIsChangingPw(false)
-
-    if (error) { toast.error(error.message); return }
-
-    toast.success(t('profile.password.success'))
-    setShowPwModal(false)
-    setNewPw('')
-    setConfirmPw('')
   }
 
   const initial = initialProfile.nickname.charAt(0).toUpperCase()
@@ -304,7 +281,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
           </p>
           <div className="divide-y divide-gray-50 dark:divide-slate-800">
             <SettingsRow icon="🏆" label={t('profile.misLigas')}        href="/ligas" />
-            <SettingsRow icon="🔒" label={t('profile.cambiarPassword')} onClick={() => setShowPwModal(true)} />
+            <SettingsRow icon="🔒" label={t('profile.cambiarPassword')} href="/perfil/contrasena" />
           </div>
         </div>
 
@@ -318,71 +295,6 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
 
       </div>
 
-      {/* Modal contraseña */}
-      {showPwModal && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"
-            onClick={() => setShowPwModal(false)}
-          />
-          <div className="fixed inset-x-4 bottom-0 sm:inset-auto sm:left-1/2 sm:-translate-x-1/2 sm:top-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-sm z-50 bg-white dark:bg-slate-900 border-t border-gray-100 dark:border-slate-800 sm:border rounded-t-3xl sm:rounded-2xl shadow-2xl p-6 animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="font-bold text-gray-900 dark:text-white">{t('profile.password.title')}</h3>
-              <button
-                onClick={() => setShowPwModal(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 text-2xl leading-none w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"
-              >
-                ×
-              </button>
-            </div>
-
-            <form onSubmit={handleChangePassword} className="flex flex-col gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-                  {t('profile.password.nueva')}
-                </label>
-                <input
-                  type="password"
-                  value={newPw}
-                  onChange={(e) => setNewPw(e.target.value)}
-                  placeholder={t('profile.password.nuevaPlaceholder')}
-                  autoFocus
-                  className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-slate-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5">
-                  {t('profile.password.confirmar')}
-                </label>
-                <input
-                  type="password"
-                  value={confirmPw}
-                  onChange={(e) => setConfirmPw(e.target.value)}
-                  placeholder={t('profile.password.confirmarPlaceholder')}
-                  className="w-full border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent placeholder:text-gray-400 dark:placeholder:text-slate-500"
-                />
-              </div>
-
-              <div className="flex gap-2 mt-1">
-                <button
-                  type="button"
-                  onClick={() => { setShowPwModal(false); setNewPw(''); setConfirmPw('') }}
-                  className="flex-1 py-2.5 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
-                >
-                  {t('profile.password.cancelar')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={isChangingPw}
-                  className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
-                >
-                  {isChangingPw ? t('profile.password.guardando') : t('profile.password.guardar')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </>
-      )}
     </>
   )
 }
