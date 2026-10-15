@@ -61,14 +61,16 @@
   },
   "ligas": {
     "title": "Ligi Private",
-    "subtitle": "Creează o ligă pentru a concura cu prietenii sau alătură-te cu un cod.",
+    "subtitle": "Ligile în care joci deja.",
     "myLeagues": "Ligile tale ({n})",
     "noLeagues": "Nu faci parte din nicio ligă încă",
-    "noLeaguesHint": "Creează prima ligă sau alătură-te cu un cod.",
+    "noLeaguesHint": "Pentru a juca cu prietenii, creează un club sau alătură-te unuia.",
     "admin": "Admin",
     "code": "Cod:",
     "desde": "Din {date}",
-    "ereCreador": "Ești creatorul"
+    "ereCreador": "Ești creatorul",
+    "frozen": "Ligile nu mai acceptă membri noi: pentru a juca cu prietenii, creează un club sau alătură-te unuia cu codul lui.",
+    "goToClubs": "Mergi la Cluburi"
   },
   "leagueDetail": {
     "miembros": "Membri ({n})",

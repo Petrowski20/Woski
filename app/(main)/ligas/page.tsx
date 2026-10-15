@@ -1,6 +1,6 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
-import LeagueManager from '@/components/LeagueManager'
+import Link from 'next/link'
 import LeagueCard from '@/components/LeagueCard'
 import { getServerLang, tServer } from '@/utils/i18n-server'
 
@@ -15,7 +15,8 @@ export default async function LigasPage() {
 
   const { data: rows } = await supabase
     .from('pool_members')
-    .select('joined_at, pools(id, name, description, join_code, created_by)')
+    // pools.join_code ya no es legible para el cliente (ligas congeladas).
+    .select('joined_at, pools(id, name, description, created_by)')
     .eq('profile_id', user.id)
     .order('joined_at', { ascending: false })
 
@@ -30,7 +31,8 @@ export default async function LigasPage() {
 
   const leagues: League[] = (rows ?? [])
     .map((r: any) => ({
-      ...(r.pools as Omit<League, 'joined_at'>),
+      ...(r.pools as Omit<League, 'joined_at' | 'join_code'>),
+      join_code: null,
       joined_at: r.joined_at as string,
     }))
     .filter((l: any) => l?.id)
@@ -42,7 +44,12 @@ export default async function LigasPage() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t('ligas.subtitle')}</p>
       </div>
 
-      <LeagueManager />
+      <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-[#FFD6D1] dark:border-slate-800 p-6 text-sm text-gray-600 dark:text-gray-300">
+        {t('ligas.frozen')}{' '}
+        <Link href="/clubes" className="font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+          {t('ligas.goToClubs')}
+        </Link>
+      </div>
 
       <div className="mt-8">
         <h2 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-4">

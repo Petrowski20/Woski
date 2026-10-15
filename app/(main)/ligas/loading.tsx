@@ -8,17 +8,9 @@ export default function LigasLoading() {
         <div className="h-4 w-80 bg-gray-100 dark:bg-slate-800 rounded mt-2" />
       </div>
 
-      {/* LeagueManager skeleton: dos botones/tabs + formulario */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-5 space-y-4">
-        <div className="flex gap-2">
-          <div className="h-9 w-32 bg-gray-200 dark:bg-slate-700 rounded-lg" />
-          <div className="h-9 w-32 bg-gray-100 dark:bg-slate-800 rounded-lg" />
-        </div>
-        <div className="space-y-3">
-          <div className="h-10 bg-gray-100 dark:bg-slate-800 rounded-lg" />
-          <div className="h-10 bg-gray-100 dark:bg-slate-800 rounded-lg" />
-          <div className="h-10 w-28 bg-gray-200 dark:bg-slate-700 rounded-lg" />
-        </div>
+      {/* Aviso de ligas congeladas */}
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-100 dark:border-slate-800 p-6">
+        <div className="h-4 w-3/4 bg-gray-100 dark:bg-slate-800 rounded" />
       </div>
 
       {/* Título sección */}
@@ -40,11 +32,6 @@ export default function LigasLoading() {
             <div className="space-y-1.5">
               <div className="h-3.5 bg-gray-100 dark:bg-slate-800 rounded w-full" />
               <div className="h-3.5 bg-gray-100 dark:bg-slate-800 rounded w-3/4" />
-            </div>
-            {/* Código */}
-            <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-800 rounded-lg px-3 py-2">
-              <div className="h-3 w-12 bg-gray-200 dark:bg-slate-700 rounded" />
-              <div className="h-4 flex-1 bg-gray-200 dark:bg-slate-700 rounded" />
             </div>
             {/* Footer */}
             <div className="flex items-center justify-between pt-1 border-t border-gray-50 dark:border-slate-800/50">
