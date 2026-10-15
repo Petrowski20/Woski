@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { lolEditionStatus } from '@/utils/lol/editionStatus'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
 
@@ -453,7 +454,8 @@ export async function getEditionStandings(
 // ── Perfil ─────────────────────────────────────────────────────────────────
 
 /**
- * Resumen de LoL del usuario en cada edición activa, para /perfil. Todo sale
+ * Resumen de LoL del usuario por edición, para /perfil: las ediciones en
+ * curso y las que empiezan pronto siempre; las finalizadas solo si jugó. Todo sale
  * de la BD: puntos, posición, rachas y plenos de get_lol_standings (global y
  * de cada pool) y el desglose por serie de get_my_lol_breakdowns (vía
  * getEditionMatches). Aquí solo se cuentan filas, no se puntúa nada.
@@ -462,9 +464,11 @@ export async function getProfileLolSummary(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<ProfileLolEdition[]> {
-  const editions = await getActiveLolEditions(supabase)
+  const editions = await getLolEditions(supabase)
+  const today = todayMadrid()
+  const now = Date.now()
 
-  return Promise.all(editions.map(async (edition): Promise<ProfileLolEdition> => {
+  const all = await Promise.all(editions.map(async (edition): Promise<ProfileLolEdition> => {
     const [global, pools, matches] = await Promise.all([
       getEditionStandings(supabase, edition.id, null),
       getUserEditionPools(supabase, edition.id, userId),
@@ -490,6 +494,7 @@ export async function getProfileLolSummary(
 
     return {
       edition,
+      status: lolEditionStatus(edition, matches, today, now),
       standing: global.find(r => r.profileId === userId) ?? null,
       participants: global.length,
       pools: poolStandings,
@@ -498,4 +503,9 @@ export async function getProfileLolSummary(
       exactPlayed: withExact.length,
     }
   }))
+
+  const ORDER = { active: 0, upcoming: 1, finished: 2 } as const
+  return all
+    .filter(e => e.status !== 'finished' || e.standing !== null || e.scored.length > 0)
+    .sort((a, b) => ORDER[a.status] - ORDER[b.status])
 }

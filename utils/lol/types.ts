@@ -1,4 +1,5 @@
 import type { BestOf, MatchStatus, SeriesScore } from './series'
+import type { LolEditionStatus } from './editionStatus'
 
 export interface LolEditionOption {
   id: number
@@ -122,7 +123,9 @@ export interface StandingRow extends RankingRow {
 
 /** Resumen de LoL de una edición para el perfil (sin cálculos propios: BD). */
 export interface ProfileLolEdition {
-  edition: LolEditionOption
+  edition: LolEditionInfo
+  /** Activa / Finalizada / Empieza pronto (utils/lol/editionStatus). */
+  status: LolEditionStatus
   /** Mi fila en la clasificación global; null si aún no participo. */
   standing: StandingRow | null
   participants: number
