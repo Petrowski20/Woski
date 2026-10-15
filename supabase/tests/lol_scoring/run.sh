@@ -7,7 +7,8 @@
 #  Supabase). No toca la base "postgres" del contenedor ni el remoto.
 #
 #  Esquema = el de producción con su deriva:
-#    1. auth: copia del esquema auth del propio contenedor.
+#    1. auth: copia del esquema auth del propio contenedor;
+#       storage: fixtures/storage_schema.sql (storage-api).
 #    2. Dump de solo esquema de producción del 22/09
 #       (backup_pre_domain_model_20260922.sql, no versionado:
 #       matches.id y predictions.match_id smallint, sin
@@ -59,6 +60,9 @@ CREATE EXTENSION IF NOT EXISTS pgtap WITH SCHEMA extensions;
 -- El dump hace ALTER PUBLICATION supabase_realtime (existe en Supabase).
 CREATE PUBLICATION supabase_realtime;
 SQL
+
+echo "== storage (esquema de Supabase Storage, sin datos)"
+psql_admin -d "$DB" < "$HERE/fixtures/storage_schema.sql" >/dev/null
 
 echo "== Dump de producción (solo esquema)"
 # vault y pg_stat_statements no hacen falta para estos tests.
