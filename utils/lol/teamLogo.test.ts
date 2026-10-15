@@ -64,11 +64,11 @@ test('logo: vacío y demasiado grande', () => {
   assert.equal(checkTeamLogo(justFits).ok, true)
 })
 
-test('logo: dimensiones máximas 512×512', () => {
-  assert.equal(checkTeamLogo(pngHeader(512, 512)).ok, true)
-  assert.deepEqual(checkTeamLogo(pngHeader(513, 200)), { ok: false, code: 'DIMENSIONS', width: 513, height: 200 })
-  assert.deepEqual(checkTeamLogo(pngHeader(200, 4000)), { ok: false, code: 'DIMENSIONS', width: 200, height: 4000 })
-  assert.deepEqual(checkTeamLogo(webpVp8x(1024, 1024)), { ok: false, code: 'DIMENSIONS', width: 1024, height: 1024 })
+test('logo: dimensiones máximas de entrada 4096×4096', () => {
+  assert.equal(checkTeamLogo(pngHeader(4096, 4096)).ok, true)
+  assert.deepEqual(checkTeamLogo(pngHeader(4097, 200)), { ok: false, code: 'DIMENSIONS', width: 4097, height: 200 })
+  assert.deepEqual(checkTeamLogo(pngHeader(200, 40000)), { ok: false, code: 'DIMENSIONS', width: 200, height: 40000 })
+  assert.deepEqual(checkTeamLogo(webpVp8x(8192, 8192)), { ok: false, code: 'DIMENSIONS', width: 8192, height: 8192 })
 })
 
 test('logo: firma buena pero cabecera rota o cortada', () => {

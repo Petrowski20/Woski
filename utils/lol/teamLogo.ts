@@ -1,14 +1,22 @@
 // Validación de logos de equipo (bucket team-logos). Lee la firma real del
 // archivo (magic bytes) y las dimensiones de la cabecera: no se fía de la
 // extensión ni del content-type. Sin dependencias de Node ni de Next: la usa
-// el servidor antes de subir y el navegador para avisar antes de enviar.
+// el servidor antes de procesar (teamLogoProcess.ts) y el navegador para
+// avisar antes de enviar. Los límites son de ENTRADA: el servidor recorta,
+// escala y guarda siempre un PNG de TEAM_LOGO_SIZE×TEAM_LOGO_SIZE.
 
 export const TEAM_LOGO_BUCKET = 'team-logos'
-export const TEAM_LOGO_MAX_BYTES = 512 * 1024
-export const TEAM_LOGO_MAX_SIDE = 512
+export const TEAM_LOGO_MAX_BYTES = 2 * 1024 * 1024
+/** Lado máximo de entrada: frena bombas de descompresión antes de decodificar. */
+export const TEAM_LOGO_MAX_SIDE = 4096
+
+/** Lienzo de salida (cuadrado, transparente) y margen interior uniforme. */
+export const TEAM_LOGO_SIZE = 256
+export const TEAM_LOGO_MARGIN = 0.06
 
 export type TeamLogoFormat = 'png' | 'webp'
-export type TeamLogoErrorCode = 'EMPTY' | 'TOO_BIG' | 'TYPE' | 'CORRUPT' | 'DIMENSIONS'
+/** BLANK: totalmente transparente (vacía tras recortar los bordes). */
+export type TeamLogoErrorCode = 'EMPTY' | 'TOO_BIG' | 'TYPE' | 'CORRUPT' | 'DIMENSIONS' | 'BLANK'
 
 export type TeamLogoCheck =
   | { ok: true; format: TeamLogoFormat; contentType: `image/${TeamLogoFormat}`; width: number; height: number }
