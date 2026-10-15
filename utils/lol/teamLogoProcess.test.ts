@@ -113,7 +113,8 @@ test('procesado: muy pequeña (8×8) → se amplía al lado útil', async () => 
 
 test('procesado: WebP de entrada → PNG de salida', async () => {
   const input = await circle(400, 400, 200, 200, 150, 'webp')
-  assert.equal(checkTeamLogo(input).ok && checkTeamLogo(input).format, 'webp')
+  const check = checkTeamLogo(input)
+  assert.equal(check.ok && check.format, 'webp')
   const res = await ok(input)
   assert.equal((await sharp(res.bytes).metadata()).format, 'png')
   near((await visibleBox(res.bytes)).width, TEAM_LOGO_INNER, 2)
