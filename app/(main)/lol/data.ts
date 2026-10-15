@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
-import type { LolEditionOption, LolMatchView, PoolOption, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
+import type { LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -392,6 +392,7 @@ export async function getEditionStandings(
     perfect_days: number
     negative_days: number
     current_streak: number
+    best_streak: number | null
     rank_position: number
     movement: number | null
   }[]).map(r => ({
@@ -405,6 +406,55 @@ export async function getEditionStandings(
     perfectDays: Number(r.perfect_days),
     negativeDays: Number(r.negative_days),
     currentStreak: Number(r.current_streak),
+    bestStreak: Number(r.best_streak ?? 0),
     movement: r.movement === null ? null : Number(r.movement),
+  }))
+}
+
+// ── Perfil ─────────────────────────────────────────────────────────────────
+
+/**
+ * Resumen de LoL del usuario en cada edición activa, para /perfil. Todo sale
+ * de la BD: puntos, posición, rachas y plenos de get_lol_standings (global y
+ * de cada pool) y el desglose por serie de get_my_lol_breakdowns (vía
+ * getEditionMatches). Aquí solo se cuentan filas, no se puntúa nada.
+ */
+export async function getProfileLolSummary(
+  supabase: SupabaseClient,
+  userId: string,
+): Promise<ProfileLolEdition[]> {
+  const editions = await getActiveLolEditions(supabase)
+
+  return Promise.all(editions.map(async (edition): Promise<ProfileLolEdition> => {
+    const [global, pools, matches] = await Promise.all([
+      getEditionStandings(supabase, edition.id, null),
+      getUserEditionPools(supabase, edition.id, userId),
+      getEditionMatches(supabase, edition.id, userId),
+    ])
+
+    const poolStandings = await Promise.all(pools.map(async p => {
+      const rows = await getEditionStandings(supabase, edition.id, p.id)
+      return {
+        id: p.id,
+        name: p.name,
+        position: rows.find(r => r.profileId === userId)?.position ?? null,
+        participants: rows.length,
+      }
+    }))
+
+    const scored = matches
+      .filter(m => m.status === 'FINISHED' && m.myPrediction)
+      .sort((a, b) => b.date.localeCompare(a.date))
+    const withExact = scored.filter(m => m.bestOf > 1 && m.myPrediction?.breakdown)
+
+    return {
+      edition,
+      standing: global.find(r => r.profileId === userId) ?? null,
+      participants: global.length,
+      pools: poolStandings,
+      scored,
+      exactHits: withExact.filter(m => m.myPrediction!.breakdown!.correctScore).length,
+      exactPlayed: withExact.length,
+    }
   }))
 }

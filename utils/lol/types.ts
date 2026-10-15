@@ -107,6 +107,22 @@ export interface StandingRow extends RankingRow {
   perfectDays: number
   negativeDays: number
   currentStreak: number
+  /** Racha de aciertos de ganador más larga en la fase en curso. */
+  bestStreak: number
   /** + = sube respecto a la jornada anterior; null si no hay jornada anterior. */
   movement: number | null
+}
+
+/** Resumen de LoL de una edición para el perfil (sin cálculos propios: BD). */
+export interface ProfileLolEdition {
+  edition: LolEditionOption
+  /** Mi fila en la clasificación global; null si aún no participo. */
+  standing: StandingRow | null
+  participants: number
+  pools: { id: number; name: string; position: number | null; participants: number }[]
+  /** Series terminadas que voté, de la más reciente a la más antigua. */
+  scored: LolMatchView[]
+  exactHits: number
+  /** Series Bo3/Bo5 terminadas que voté (las únicas con marcador exacto). */
+  exactPlayed: number
 }

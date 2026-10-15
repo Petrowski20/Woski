@@ -210,6 +210,12 @@
     "oscuro": "Întunecat",
     "temaToast": "Temă: {label}",
     "idiomaToast": "Limbă: {lang}",
+    "clubes": "Cluburi",
+    "sinClub": "Nu ești încă în niciun club",
+    "unirseClub": "Alătură-te unuia",
+    "futbolArchivo": "Fotbal (arhivă)",
+    "futbolArchivoDesc": "Datele tale de la Campionatul Mondial. Se păstrează aici; nu contează pentru LoL.",
+    "puntosFutbol": "Puncte la fotbal",
     "avatar": {
       "success": "Poză de profil actualizată",
       "error": "Eroare la încărcarea imaginii: {msg}",

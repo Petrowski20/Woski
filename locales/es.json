@@ -210,6 +210,12 @@
     "oscuro": "Oscuro",
     "temaToast": "Tema: {label}",
     "idiomaToast": "Idioma: {lang}",
+    "clubes": "Clubes",
+    "sinClub": "Aún no estás en ningún club",
+    "unirseClub": "Únete a uno",
+    "futbolArchivo": "Fútbol (archivo)",
+    "futbolArchivoDesc": "Tus datos del Mundial. Se conservan aquí; no cuentan para LoL.",
+    "puntosFutbol": "Puntos de fútbol",
     "avatar": {
       "success": "Foto de perfil actualizada",
       "error": "Error al subir la imagen: {msg}",

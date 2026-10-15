@@ -20,6 +20,9 @@ interface Profile {
 interface Props {
   initialProfile: Profile
   userEmail: string
+  clubs: { id: number; name: string }[]
+  /** Sección de LoL (componente de servidor con los datos de la BD). */
+  lolSection: React.ReactNode
 }
 
 function SettingsRow({ icon, label, onClick, href }: {
@@ -47,7 +50,7 @@ function SettingsRow({ icon, label, onClick, href }: {
   )
 }
 
-export default function ProfileManager({ initialProfile, userEmail }: Props) {
+export default function ProfileManager({ initialProfile, userEmail, clubs, lolSection }: Props) {
   const fileRef = useRef<HTMLInputElement>(null)
   const { lang, setLang, t } = useLang()
 
@@ -140,7 +143,7 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
 
   return (
     <>
-      <div className="w-full max-w-sm mx-auto flex flex-col gap-4 pb-10">
+      <div className="w-full max-w-2xl mx-auto flex flex-col gap-5 pb-10">
 
         {/* Header: avatar + info */}
         <div className="flex flex-col items-center gap-3 pt-2 pb-1">
@@ -183,34 +186,54 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
           <div className="text-center">
             <p className="font-display font-bold text-xl text-text-primary leading-tight">{initialProfile.nickname}</p>
             {userEmail && <p className="text-sm text-text-muted mt-0.5">{userEmail}</p>}
+            {initialProfile.role === 'ADMIN' && (
+              <span className="inline-block mt-2 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-secondary/15 text-secondary ring-1 ring-inset ring-secondary/30">
+                {initialProfile.role}
+              </span>
+            )}
+          </div>
+
+          {/* Clubes */}
+          <div className="flex flex-wrap items-center justify-center gap-1.5" aria-label={t('profile.clubes')}>
+            {clubs.length > 0 ? (
+              clubs.map(c => (
+                <Link
+                  key={c.id}
+                  href={`/clubes/${c.id}`}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-accent/10 text-accent ring-1 ring-inset ring-accent/30 hover:bg-accent/20 transition-colors"
+                >
+                  🛡️ {c.name}
+                </Link>
+              ))
+            ) : (
+              <p className="text-xs text-text-muted">
+                {t('profile.sinClub')} ·{' '}
+                <Link href="/clubes" className="text-accent font-semibold hover:underline">{t('profile.unirseClub')}</Link>
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Estadísticas */}
-        <div className="bg-bg-elevated rounded-panel shadow-card border border-border overflow-hidden">
-          <p className="font-display text-xs font-bold text-text-muted uppercase tracking-display px-5 py-3 border-b border-border">
-            {t('profile.estadisticas')}
-          </p>
-          <div className="divide-y divide-border">
+        {/* Deportes: LoL primero; el fútbol queda archivado y plegado */}
+        {lolSection}
+
+        <details className="group bg-bg-elevated rounded-panel shadow-card border border-border overflow-hidden">
+          <summary className="flex items-center justify-between gap-3 px-5 py-3 cursor-pointer select-none list-none hover:bg-bg-muted/60 [&::-webkit-details-marker]:hidden">
+            <span className="font-display text-xs font-bold text-text-muted uppercase tracking-display">⚽ {t('profile.futbolArchivo')}</span>
+            <span aria-hidden className="text-text-muted transition-transform group-open:rotate-180">▾</span>
+          </summary>
+          <p className="px-5 pb-3 text-xs text-text-muted">{t('profile.futbolArchivoDesc')}</p>
+          <div className="divide-y divide-border border-t border-border">
             <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-text-muted">{t('profile.puntosTotales')}</span>
-              <span className="font-display font-bold text-accent text-lg">
+              <span className="text-sm text-text-muted">{t('profile.puntosFutbol')}</span>
+              <span className="font-display font-bold text-text-primary text-lg">
                 {initialProfile.total_points}
                 <span className="text-xs font-normal text-text-muted ml-1">pts</span>
               </span>
             </div>
-            <div className="flex items-center justify-between px-5 py-3.5">
-              <span className="text-sm text-text-muted">{t('profile.rol')}</span>
-              <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
-                initialProfile.role === 'ADMIN'
-                  ? 'bg-secondary/15 text-secondary ring-1 ring-inset ring-secondary/30'
-                  : 'bg-bg-muted text-text-muted ring-1 ring-inset ring-border'
-              }`}>
-                {initialProfile.role}
-              </span>
-            </div>
+            <SettingsRow icon="🏆" label={t('profile.misLigas')} href="/ligas" />
           </div>
-        </div>
+        </details>
 
         {/* Preferencias */}
         <div className="bg-bg-elevated rounded-panel shadow-card border border-border overflow-hidden">
@@ -280,7 +303,6 @@ export default function ProfileManager({ initialProfile, userEmail }: Props) {
             {t('profile.cuenta')}
           </p>
           <div className="divide-y divide-border">
-            <SettingsRow icon="🏆" label={t('profile.misLigas')}        href="/ligas" />
             <SettingsRow icon="🔒" label={t('profile.cambiarPassword')} href="/perfil/contrasena" />
           </div>
         </div>

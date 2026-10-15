@@ -210,6 +210,12 @@
     "oscuro": "Dark",
     "temaToast": "Theme: {label}",
     "idiomaToast": "Language: {lang}",
+    "clubes": "Clubs",
+    "sinClub": "You are not in a club yet",
+    "unirseClub": "Join one",
+    "futbolArchivo": "Football (archive)",
+    "futbolArchivoDesc": "Your World Cup data. Kept here; it does not count for LoL.",
+    "puntosFutbol": "Football points",
     "avatar": {
       "success": "Profile picture updated",
       "error": "Error uploading image: {msg}",
