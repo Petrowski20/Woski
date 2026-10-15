@@ -57,8 +57,8 @@ export default function EditionSelector({ editions, selectedId, basePath = '/' }
               title={e.fullName}
               className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide transition-colors ${
                 active
-                  ? 'bg-accent text-on-accent shadow-sm'
-                  : 'bg-bg-muted text-text-muted hover:text-text-primary'
+                  ? 'bg-accent bg-accent-gradient text-on-accent shadow-glow-accent'
+                  : 'bg-bg-muted/60 text-text-muted ring-1 ring-inset ring-border hover:text-text-primary hover:ring-accent/40'
               }`}
             >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

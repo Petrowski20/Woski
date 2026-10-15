@@ -18,7 +18,7 @@ export default function AdminSubNav() {
   const pathname = usePathname()
 
   return (
-    <div className="sticky top-16 z-30 bg-white dark:bg-slate-900 flex gap-1 border-b border-gray-200 dark:border-slate-800 overflow-x-auto scrollbar-hide shadow-sm">
+    <div className="sticky top-16 z-30 bg-bg-surface/90 backdrop-blur-md flex gap-1 border-b border-border overflow-x-auto scrollbar-hide shadow-card">
       {LINKS.map(({ href, label, exact }) => {
         const isActive = exact ? pathname === href : pathname.startsWith(href)
         return (
@@ -27,8 +27,8 @@ export default function AdminSubNav() {
             href={href}
             className={`px-4 py-2.5 text-sm font-semibold rounded-t-lg border-b-2 -mb-px transition-colors shrink-0 ${
               isActive
-                ? 'text-brand-blue border-brand-blue dark:text-brand-teal dark:border-brand-teal bg-white dark:bg-slate-900'
-                : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-slate-800/50'
+                ? 'text-accent border-accent bg-accent/10'
+                : 'text-text-muted border-transparent hover:text-text-primary hover:bg-bg-muted/60'
             }`}
           >
             {label}

@@ -19,7 +19,7 @@ type ActionResult = { success: true } | { error: string }
 
 const fieldClass = 'text-sm bg-bg-muted border border-border rounded-md px-2 py-1 text-text-primary min-w-0'
 const btn = 'px-3 py-1 rounded-md text-xs font-semibold disabled:opacity-50'
-const btnPlain = `${btn} border border-border text-text-primary`
+const btnPlain = `${btn} border border-border text-text-primary hover:border-accent/50 hover:text-accent`
 
 const STATUS_LABEL: Record<LolMatchView['status'], string> = {
   PENDING: 'Pendiente',
@@ -76,7 +76,7 @@ function EditPanel({ match, onDone }: { match: LolMatchView; onDone: () => void 
           </select>
         </label>
         <button type="button" onClick={() => save(false)} disabled={isPending || (!dateChanged && !boChanged)}
-                className={`${btn} bg-accent text-on-accent`}>
+                className={`${btn} bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none`}>
           {isPending ? 'Guardando…' : 'Guardar cambios'}
         </button>
         <button type="button" onClick={onDone} disabled={isPending} className={btnPlain}>Cerrar</button>
@@ -216,7 +216,7 @@ function AdminMatchCard({ match, now }: { match: LolMatchView; now: number }) {
                 </option>
               ))}
             </select>
-            <button type="button" onClick={saveResult} disabled={isPending || !value} className={`${btn} bg-accent text-on-accent`}>
+            <button type="button" onClick={saveResult} disabled={isPending || !value} className={`${btn} bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none`}>
               Guardar resultado
             </button>
           </>

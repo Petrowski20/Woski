@@ -13,7 +13,7 @@ export default function MobileMenu() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        className="md:hidden flex items-center justify-center w-9 h-9 rounded-lg text-text-muted hover:text-accent hover:bg-bg-muted transition-colors"
         aria-label={t('mobile.navegacion')}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -23,21 +23,21 @@ export default function MobileMenu() {
 
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/40 z-50 md:hidden"
+          className="fixed inset-0 bg-overlay z-50 md:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
 
       <div
-        className={`fixed top-0 right-0 h-full w-72 bg-white dark:bg-slate-900 z-50 shadow-2xl transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-0 right-0 h-full w-72 bg-bg-elevated border-l border-border z-50 shadow-raised transform transition-transform duration-300 ease-in-out md:hidden ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-800">
-          <span className="font-bold text-gray-900 dark:text-gray-100 text-sm">{t('mobile.navegacion')}</span>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+          <span className="heading-display font-bold text-text-primary text-sm">{t('mobile.navegacion')}</span>
           <button
             onClick={() => setIsOpen(false)}
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-text-muted hover:text-text-primary hover:bg-bg-muted transition-colors"
             aria-label="✕"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -52,7 +52,7 @@ export default function MobileMenu() {
               key={href}
               href={href}
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-brand-blue transition-colors"
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-text-primary hover:bg-bg-muted hover:text-accent transition-colors"
             >
               <span className="text-base">{icon}</span>
               {t(labelKey)}

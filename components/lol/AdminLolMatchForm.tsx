@@ -132,7 +132,7 @@ export default function AdminLolMatchForm({
         type="button"
         onClick={submit}
         disabled={isPending || !phaseId || !homeTag || !awayTag || !localDateTime}
-        className="self-start px-4 py-1.5 rounded-md text-sm font-semibold bg-accent text-on-accent disabled:opacity-50"
+        className="self-start px-4 py-1.5 rounded-md text-sm font-semibold bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none disabled:opacity-50"
       >
         {isPending ? 'Creando…' : 'Crear serie'}
       </button>

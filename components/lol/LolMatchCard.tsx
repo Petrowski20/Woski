@@ -155,7 +155,7 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
                 type="button"
                 onClick={() => onSave(match.id)}
                 disabled={!dirty || saving}
-                className="self-center mt-1 inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold bg-accent text-on-accent hover:opacity-90 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
+                className="self-center mt-1 inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none hover:brightness-110 disabled:brightness-100 active:scale-95 transition-all disabled:opacity-50 disabled:active:scale-100 disabled:cursor-not-allowed"
               >
                 {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                 {saving ? 'Guardando…' : dirty || !saved ? 'Guardar predicción' : 'Predicción guardada'}

@@ -48,8 +48,8 @@ export default function PoolSelector({ editionId, pools, activePoolId }: Props) 
               aria-busy={loading || undefined}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:cursor-wait ${
                 active
-                  ? 'bg-accent text-on-accent shadow-sm'
-                  : 'bg-bg-muted text-text-muted hover:text-text-primary disabled:opacity-60'
+                  ? 'bg-accent bg-accent-gradient text-on-accent shadow-glow-accent'
+                  : 'bg-bg-muted/60 text-text-muted ring-1 ring-inset ring-border hover:text-text-primary hover:ring-accent/40 disabled:opacity-60'
               }`}
             >
               {loading && <Loader2 className="w-3 h-3 animate-spin" />}

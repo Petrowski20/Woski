@@ -30,7 +30,7 @@ export function MemberRoleButton({
     <button
       type="button"
       disabled={pending}
-      className={`${smallButton} border border-border text-text-muted hover:text-text-primary`}
+      className={`${smallButton} border border-border text-text-muted hover:text-text-primary hover:border-accent/50`}
       onClick={() => start(async () => {
         const result = promote
           ? await promoteMemberAction(clubId, profileId)
@@ -53,7 +53,7 @@ export function PoolMembershipButton({ poolId, joined }: { poolId: number; joine
       disabled={pending}
       className={joined
         ? `${smallButton} border border-border text-text-muted hover:text-danger`
-        : `${smallButton} bg-accent text-on-accent hover:opacity-90`}
+        : `${smallButton} bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none hover:brightness-110 disabled:brightness-100`}
       onClick={() => start(async () => {
         const result = joined ? await leavePoolAction(poolId) : await joinPoolAction(poolId)
         if (result.error !== null) toast.error(result.error)
@@ -107,7 +107,7 @@ export function OpenPoolForm({
       <button
         type="submit"
         disabled={pending}
-        className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50"
+        className="px-4 py-2 rounded-lg text-sm font-semibold bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none hover:brightness-110 disabled:brightness-100 transition-opacity disabled:opacity-50"
       >
         {pending ? 'Abriendo…' : 'Abrir pool'}
       </button>

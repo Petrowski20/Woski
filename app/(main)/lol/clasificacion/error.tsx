@@ -29,7 +29,7 @@ export default function LolClasificacionError({
       <button
         type="button"
         onClick={() => unstable_retry()}
-        className="mt-2 px-5 py-2 rounded-lg text-sm font-semibold bg-accent text-on-accent hover:opacity-90 transition-opacity"
+        className="mt-2 px-5 py-2 rounded-lg text-sm font-semibold bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none hover:brightness-110 disabled:brightness-100 transition-opacity"
       >
         Reintentar
       </button>

@@ -29,7 +29,7 @@ export default async function NavBar() {
   }
 
   return (
-    <nav className="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 sticky top-0 z-40 shadow-sm">
+    <nav className="bg-bg-surface/80 backdrop-blur-md border-b border-border sticky top-0 z-40 shadow-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
 
@@ -41,7 +41,7 @@ export default async function NavBar() {
                   alt="Woski"
                   width={36}
                   height={35}
-                  className="block md:hidden w-auto h-auto dark:brightness-0 dark:invert"
+                  className="block md:hidden w-auto h-auto dark:brightness-0 dark:invert dark:drop-shadow-[0_0_8px_var(--glow-accent-soft)]"
                   style={{ width: 'auto', height: 'auto' }}
                   unoptimized
                   priority
@@ -51,7 +51,7 @@ export default async function NavBar() {
                   alt="Woski"
                   width={160}
                   height={47}
-                  className="hidden md:block w-auto h-auto dark:brightness-0 dark:invert"
+                  className="hidden md:block w-auto h-auto dark:brightness-0 dark:invert dark:drop-shadow-[0_0_8px_var(--glow-accent-soft)]"
                   style={{ width: 'auto', height: 'auto' }}
                   unoptimized
                   priority
@@ -61,7 +61,7 @@ export default async function NavBar() {
 
             <div className="hidden md:flex space-x-4 items-center">
               {NAV_LINKS.map(({ href, labelKey }) => (
-                <Link key={href} href={href} className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-brand-blue px-3 py-2 rounded-md transition-colors">
+                <Link key={href} href={href} className="text-sm font-medium text-text-muted hover:text-accent px-3 py-2 rounded-md transition-colors">
                   {t(labelKey)}
                 </Link>
               ))}
@@ -74,7 +74,7 @@ export default async function NavBar() {
             ) : (
               <Link
                 href="/login"
-                className="text-sm font-semibold text-white bg-gradient-to-r from-brand-blue to-brand-teal hover:from-brand-cyan hover:to-brand-mint px-4 py-2 rounded-lg transition-all shadow-sm"
+                className="text-sm font-semibold text-on-accent bg-accent bg-accent-gradient hover:brightness-110 disabled:brightness-100 px-4 py-2 rounded-lg transition-all shadow-glow-accent"
               >
                 {t('nav.iniciarSesion')}
               </Link>

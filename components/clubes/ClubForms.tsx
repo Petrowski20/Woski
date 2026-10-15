@@ -8,7 +8,7 @@ import { createClubAction, joinClubAction } from '@/app/(main)/clubes/actions'
 const inputClass =
   'w-full px-3 py-2 rounded-lg text-sm bg-bg-muted border border-border text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent/40'
 const buttonClass =
-  'px-4 py-2 rounded-lg text-sm font-semibold bg-accent text-on-accent hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
+  'px-4 py-2 rounded-lg text-sm font-semibold bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none hover:brightness-110 disabled:brightness-100 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed'
 
 /** Crear un club o unirse a uno con código. */
 export default function ClubForms() {

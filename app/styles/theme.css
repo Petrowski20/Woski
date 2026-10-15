@@ -82,8 +82,8 @@
   --bg-glow-1: rgb(13 148 136 / 0.10);   /* teal, esquina superior izquierda */
   --bg-glow-2: rgb(234 88 12 / 0.08);    /* orange-600, esquina inferior derecha */
 
-  /* Logotipo: sin brillo en claro */
-  --logo-glow: none;
+  /* Brillo suave del logotipo (solo se usa con dark:) */
+  --glow-accent-soft: transparent;
 }
 
 .dark {
@@ -130,7 +130,7 @@
   --bg-glow-1: rgb(34 211 238 / 0.16);
   --bg-glow-2: rgb(251 146 60 / 0.12);
 
-  --logo-glow: drop-shadow(0 0 8px rgb(34 211 238 / 0.45));
+  --glow-accent-soft: rgb(34 211 238 / 0.45);
 }
 
 /* ============================================================

@@ -158,7 +158,7 @@ export default function AdminLolManualVote({
         type="button"
         onClick={submit}
         disabled={isPending || !userId || !match || !winner || !score}
-        className="self-start px-4 py-1.5 rounded-md text-sm font-semibold bg-accent text-on-accent disabled:opacity-50"
+        className="self-start px-4 py-1.5 rounded-md text-sm font-semibold bg-accent bg-accent-gradient text-on-accent shadow-glow-accent disabled:shadow-none disabled:opacity-50"
       >
         {isPending ? 'Guardando…' : 'Guardar voto'}
       </button>
