@@ -36,7 +36,7 @@ interface Props {
 function TeamColumn({ team, side }: { team: LolTeamView; side: 'a' | 'b' }) {
   return (
     <div className="flex flex-col items-center gap-1.5 min-w-0 flex-1 text-center">
-      <TeamLogo name={team.name} tag={team.tag} logoUrl={team.logoUrl} side={side} />
+      <TeamLogo team={team} size="lg" side={side} />
       <span className="font-bold text-sm text-text-primary truncate max-w-full">{team.name}</span>
       <span className="text-xs text-text-muted tabular-nums" title="Récord en esta fase">
         {team.record.wins}-{team.record.losses}

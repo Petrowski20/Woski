@@ -109,7 +109,7 @@ export function pickLolEdition(editions: LolEditionOption[], edicion: unknown): 
 
 // ── Partidos de una edición ────────────────────────────────────────────────
 
-interface TeamRow { id: number; name: string; iso_code: string; logo_url: string | null }
+interface TeamRow { id: number; name: string; iso_code: string; logo_url: string | null; color: string | null }
 interface MatchRow {
   id: number
   match_date: string
@@ -233,8 +233,8 @@ export async function getEditionMatches(
     .from('matches')
     .select(`
       id, match_date, prediction_locks_at, status, home_goals, away_goals, metadata, phase_id,
-      home_team:teams!home_team_id (id, name, iso_code, logo_url),
-      away_team:teams!away_team_id (id, name, iso_code, logo_url)
+      home_team:teams!home_team_id (id, name, iso_code, logo_url, color),
+      away_team:teams!away_team_id (id, name, iso_code, logo_url, color)
     `)
     .in('phase_id', [...phaseById.keys()])
     .order('match_date', { ascending: true })
@@ -303,6 +303,7 @@ export async function getEditionMatches(
         name: m.home_team.name,
         tag: m.home_team.iso_code,
         logoUrl: m.home_team.logo_url,
+        color: m.home_team.color,
         record: { ...recordOf(m.phase_id, m.home_team.id) },
       },
       away: {
@@ -310,6 +311,7 @@ export async function getEditionMatches(
         name: m.away_team.name,
         tag: m.away_team.iso_code,
         logoUrl: m.away_team.logo_url,
+        color: m.away_team.color,
         record: { ...recordOf(m.phase_id, m.away_team.id) },
       },
       result:

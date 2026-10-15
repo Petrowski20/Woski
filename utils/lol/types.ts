@@ -20,7 +20,10 @@ export interface LolTeamView {
   name: string
   /** Sigla (teams.iso_code): "G2", "MKOI". Se usa en marcadores ("3-1 G2"). */
   tag: string
+  /** URL pública del bucket team-logos; null → insignia con las siglas. */
   logoUrl: string | null
+  /** teams.color ('#rrggbb') o null. */
+  color: string | null
   /** Récord en la fase del partido (solo partidos ya resueltos). */
   record: { wins: number; losses: number }
 }

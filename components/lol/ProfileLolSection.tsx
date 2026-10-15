@@ -3,6 +3,7 @@ import type { ProfileLolEdition } from '@/utils/lol/types'
 import type { LolEditionStatus } from '@/utils/lol/editionStatus'
 import type { Lang } from '@/contexts/LangContext'
 import { getServerLang, tServer } from '@/utils/i18n-server'
+import TeamLogo from './TeamLogo'
 import PointsBreakdown from './PointsBreakdown'
 import { formatMatchDate, formatSeriesScore } from './format'
 
@@ -125,8 +126,12 @@ function EditionStats({ data, t }: { data: ProfileLolEdition; t: T }) {
                 <li key={m.id} className="px-5 py-3 flex flex-col gap-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-text-primary truncate">
-                        {m.home.name} <span className="text-text-muted font-normal">vs</span> {m.away.name}
+                      <p className="flex items-center gap-1.5 text-sm font-semibold text-text-primary min-w-0">
+                        <TeamLogo team={m.home} size="sm" side="a" />
+                        <span className="truncate">
+                          {m.home.name} <span className="text-text-muted font-normal">vs</span> {m.away.name}
+                        </span>
+                        <TeamLogo team={m.away} size="sm" side="b" />
                       </p>
                       <p className="text-xs text-text-muted">
                         <time dateTime={m.date} className="capitalize">{formatMatchDate(m.date)}</time>
