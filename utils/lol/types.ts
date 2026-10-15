@@ -8,6 +8,12 @@ export interface LolEditionOption {
   startDate: string
 }
 
+/** Edición con sus fechas tal cual (pueden faltar), para admin y perfil. */
+export interface LolEditionInfo extends Omit<LolEditionOption, 'startDate'> {
+  startDate: string | null
+  endDate: string | null
+}
+
 export interface LolTeamView {
   id: number
   name: string
@@ -51,6 +57,7 @@ export interface LolMatchView {
   /** Cierre de la votación (matches.prediction_locks_at, calculado en la BD). */
   locksAt: string
   status: MatchStatus
+  phaseId: number
   phaseName: string
   bestOf: BestOf
   home: LolTeamView

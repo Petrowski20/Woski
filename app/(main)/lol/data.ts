@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
-import type { LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
+import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -55,6 +55,44 @@ export async function getActiveLolEditions(supabase: SupabaseClient): Promise<Lo
       startDate: e.start_date,
     }
   })
+}
+
+/**
+ * Todas las ediciones de LoL (pasadas, en curso y futuras), de la más
+ * reciente a la más antigua. Para el admin y el perfil.
+ */
+export async function getLolEditions(supabase: SupabaseClient): Promise<LolEditionInfo[]> {
+  const { data: competitions, error: compError } = await supabase
+    .from('competitions')
+    .select('id, name, sports!inner(slug)')
+    .eq('sports.slug', LOL_SPORT_SLUG)
+  if (compError) throw new LolDataError('competitions', compError)
+  if (!competitions?.length) return []
+
+  const compName = new Map(competitions.map(c => [c.id as number, c.name as string]))
+  const { data: editions, error } = await supabase
+    .from('editions')
+    .select('id, name, competition_id, start_date, end_date')
+    .in('competition_id', [...compName.keys()])
+    .order('start_date', { ascending: false, nullsFirst: false })
+    .order('id', { ascending: false })
+  if (error) throw new LolDataError('editions', error)
+
+  return (editions ?? []).map(e => {
+    const comp = compName.get(e.competition_id) ?? ''
+    return {
+      id: e.id,
+      label: `${comp} ${e.name}`,
+      fullName: `${comp} ${e.name}`,
+      startDate: e.start_date ?? null,
+      endDate: e.end_date ?? null,
+    }
+  })
+}
+
+/** Hoy (YYYY-MM-DD, Madrid): para decidir qué edición está en curso. */
+export function lolToday(): string {
+  return todayMadrid()
 }
 
 /**
@@ -256,6 +294,7 @@ export async function getEditionMatches(
       date: m.match_date,
       locksAt: m.prediction_locks_at,
       status: m.status,
+      phaseId: m.phase_id,
       phaseName: phase?.name ?? '',
       bestOf,
       home: {
