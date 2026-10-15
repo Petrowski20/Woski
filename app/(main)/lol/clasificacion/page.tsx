@@ -85,7 +85,7 @@ export default async function LolClasificacionPage({
       {/* Leyenda */}
       <div className="bg-bg-muted/60 p-4 rounded-card mb-4 border border-border">
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-muted">
-          <span>🎯 <strong className="text-text-primary">Aciertos</strong> ganadores acertados / series jugadas</span>
+          <span>🎯 <strong className="text-text-primary">Aciertos</strong> ganadores acertados / series jugadas <span className="sm:hidden">(en pantallas anchas)</span></span>
           <span>
             ⭐ <strong className="text-text-primary">Plenos</strong>{' '}
             <span className="text-success font-semibold">jornadas acertando todo</span> |{' '}
@@ -97,6 +97,8 @@ export default async function LolClasificacionPage({
       </div>
 
       <div className="bg-bg-elevated rounded-card shadow-card border border-border overflow-hidden">
+        {/* Scroll interno de la tabla (nunca de la página) por si un dato no cabe */}
+        <div className="overflow-x-auto">
         {ranking.length === 0 ? (
           <p className="text-center text-text-muted text-sm py-12">
             Todavía no hay clasificación: se formará cuando se jueguen los primeros partidos.
@@ -107,7 +109,7 @@ export default async function LolClasificacionPage({
               <tr className="bg-bg-muted/60 border-b border-border font-display text-xs uppercase tracking-display text-text-muted">
                 <th className="px-3 sm:px-4 py-3 text-center w-12">Pos</th>
                 <th className="px-3 sm:px-4 py-3 text-left">Usuario</th>
-                <th className="px-2 sm:px-3 py-3 text-center">Aciertos</th>
+                <th className="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">Aciertos</th>
                 <th className="px-2 sm:px-3 py-3 text-center">Plenos</th>
                 <th className="px-3 py-3 text-center hidden sm:table-cell">Racha</th>
                 <th className="px-3 sm:px-4 py-3 text-right sm:pr-6">Total</th>
@@ -132,7 +134,7 @@ export default async function LolClasificacionPage({
                         <MovementBadge m={row.movement} />
                       </div>
                     </td>
-                    <td className="px-3 sm:px-4 py-3">
+                    <td className="px-3 sm:px-4 py-3 w-full max-w-0">
                       <Link
                         href={`/jugador/${row.profileId}`}
                         className="flex items-center gap-2 min-w-0 group"
@@ -144,7 +146,7 @@ export default async function LolClasificacionPage({
                         {isMe && <span className="text-xs text-accent font-normal shrink-0">(Tú)</span>}
                       </Link>
                     </td>
-                    <td className="px-2 sm:px-3 py-3 text-center text-text-muted tabular-nums whitespace-nowrap">
+                    <td className="px-2 sm:px-3 py-3 text-center text-text-muted tabular-nums whitespace-nowrap hidden sm:table-cell">
                       {row.correctWinners}/{row.finishedSeries}
                     </td>
                     <td className="px-2 sm:px-3 py-3 text-center tabular-nums whitespace-nowrap">
@@ -165,6 +167,7 @@ export default async function LolClasificacionPage({
             </tbody>
           </table>
         )}
+        </div>
       </div>
     </div>
   )
