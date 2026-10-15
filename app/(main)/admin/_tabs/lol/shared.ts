@@ -1,5 +1,10 @@
 import type { LolEditionInfo } from '@/utils/lol/types'
 
+/** Hora de la petición (las pestañas se pintan en el servidor en cada visita). */
+export function requestTime(): number {
+  return Date.now()
+}
+
 /** ¿Está en curso hoy (YYYY-MM-DD, Madrid)? Mismo criterio que getActiveLolEditions. */
 export function isEditionActive(e: LolEditionInfo, today: string): boolean {
   return e.startDate !== null && e.endDate !== null && e.startDate <= today && e.endDate >= today

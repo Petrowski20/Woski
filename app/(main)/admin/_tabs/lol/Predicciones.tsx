@@ -5,7 +5,7 @@ import { formatMatchDate, formatSeriesScore } from '@/components/lol/format'
 import { isPredictionLocked } from '@/utils/lol/series'
 import type { LolMatchView } from '@/utils/lol/types'
 import { getEditionMatches, getLolEditions, lolToday } from '../../../lol/data'
-import { editionOptions, pickAdminEdition } from './shared'
+import { editionOptions, pickAdminEdition, requestTime } from './shared'
 
 // LoL · Predicciones (antes "Cargar voto a mano" en /admin/lol): por serie,
 // quién ha votado y qué (admin_lol_match_votes), añadir o corregir votos con
@@ -70,7 +70,7 @@ export default async function LolPrediccionesTab({
   const all = await getEditionMatches(supabase, edition.id, userId)
   // admin_set_lol_prediction no admite series canceladas.
   const matches = all.filter(m => m.status !== 'CANCELLED')
-  const now = Date.now()
+  const now = requestTime()
   const match = matches.find(m => String(m.id) === serie) ?? defaultSeries(matches, now)
 
   const [votesRes, playersRes, auditRes] = await Promise.all([

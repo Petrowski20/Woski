@@ -6,7 +6,7 @@ import AdminLolFilters from '@/components/lol/AdminLolFilters'
 import type { OpsToday } from '@/components/lol/adminOpsTypes'
 import type { LolMatchView } from '@/utils/lol/types'
 import { getEditionMatches, getLolEditions, LOL_SPORT_SLUG, lolToday } from '../../../lol/data'
-import { editionOptions, pickAdminEdition } from './shared'
+import { editionOptions, pickAdminEdition, requestTime } from './shared'
 
 // LoL · Partidos (antes /admin/lol): panel "Hoy", crear serie y la lista de
 // series de una edición con todas sus acciones (resultado, editar, cancelar,
@@ -69,7 +69,7 @@ export default async function LolPartidosTab({
   const faseValue = phases.some(p => String(p.id) === fase) ? fase! : ''
   const estadoValue = ESTADOS.some(e => e.value === estado) ? estado! : ''
 
-  const now = Date.now()
+  const now = requestTime()
   const filtered = matches.filter(m =>
     (!faseValue || String(m.phaseId) === faseValue) && matchesEstado(m, estadoValue, now),
   )
