@@ -78,7 +78,9 @@ export default function AdminLolManualVote({
         </p>
       </div>
 
-      <div className="grid gap-2 sm:grid-cols-2">
+      {/* grid-cols-1 = minmax(0, 1fr): sin él, la pista implícita crece con la opción
+          más larga de los select y la tarjeta desborda en móvil. */}
+      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-xs text-text-muted">
           Usuario
           <select className={fieldClass} value={userId} onChange={e => setUserId(e.target.value)} disabled={isPending}>
