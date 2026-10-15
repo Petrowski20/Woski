@@ -3,8 +3,9 @@
 import { createHash } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
-import { checkTeamLogo, teamLogoObjectName, TEAM_LOGO_BUCKET, TEAM_LOGO_MAX_BYTES } from '@/utils/lol/teamLogo'
-import type { TeamActionResult } from '@/components/lol/adminTeamsTypes'
+import { teamLogoObjectName, TEAM_LOGO_BUCKET, TEAM_LOGO_MAX_BYTES } from '@/utils/lol/teamLogo'
+import { processTeamLogo, type ProcessedTeamLogo } from '@/utils/lol/teamLogoProcess'
+import type { TeamActionError, TeamActionResult, TeamLogoPreviewResult } from '@/components/lol/adminTeamsTypes'
 
 // Equipos de LoL en /admin (pestaña Equipos). Igual que actions.ts:
 // 1. comprueba en el servidor que la sesión es ADMIN, y
@@ -12,9 +13,10 @@ import type { TeamActionResult } from '@/components/lol/adminTeamsTypes'
 //    team-logos (solo ADMIN) y las funciones admin_* vuelven a comprobar el
 //    rol, validan y dejan registro en lol_admin_audit.
 // El archivo se valida aquí por su firma real (no por extensión ni
-// content-type) y se guarda con el hash de su contenido como nombre.
+// content-type) y se procesa (utils/lol/teamLogoProcess): lo que se guarda
+// es el PNG resultante, con el hash de ESE contenido como nombre.
 
-async function _requireAdmin(): Promise<TeamActionResult | null> {
+async function _requireAdmin(): Promise<TeamActionError | null> {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'AUTH' }
@@ -72,31 +74,62 @@ export async function updateLolTeamAction(input: UpdateTeamInput): Promise<TeamA
   return { success: true }
 }
 
+/** Lee el archivo del FormData y lo procesa. Comprueba el tamaño antes de leerlo entero. */
+async function _processUpload(file: FormDataEntryValue | null): Promise<Extract<ProcessedTeamLogo, { ok: true }> | TeamActionError> {
+  if (!(file instanceof File)) return { error: 'INVALID' }
+  if (file.size === 0) return { error: 'EMPTY' }
+  if (file.size > TEAM_LOGO_MAX_BYTES) return { error: 'TOO_BIG' }
+  try {
+    const res = await processTeamLogo(new Uint8Array(await file.arrayBuffer()))
+    if (!res.ok) return { error: res.code, width: res.width, height: res.height }
+    return res
+  } catch (e) {
+    console.error('[admin equipos] procesar logo', e)
+    return { error: 'SERVER' }
+  }
+}
+
+/**
+ * Vista previa (FormData: file): el mismo procesado que al guardar, sin
+ * subir nada. Devuelve el PNG resultante como data URL. Solo ADMIN.
+ */
+export async function previewLolTeamLogoAction(formData: FormData): Promise<TeamLogoPreviewResult> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+
+  const res = await _processUpload(formData.get('file'))
+  if (!('ok' in res)) return res
+  return {
+    success: true,
+    dataUrl: `data:image/png;base64,${Buffer.from(res.bytes).toString('base64')}`,
+    bytes: res.bytes.length,
+    source: res.source,
+    trimmed: res.trimmed,
+  }
+}
+
 /**
  * Sube un logo (FormData: teamId, file) y lo asigna al equipo. Comprueba
- * tamaño, firma PNG/WebP y dimensiones; el nombre es el sha256 del
- * contenido, así que el mismo archivo nunca se duplica ni se sobrescribe.
+ * tamaño y firma PNG/WebP, lo procesa (recorte, escala a 256×256 con
+ * margen, PNG sin metadatos) y guarda el resultado; el nombre es el sha256
+ * del PNG procesado, así que el mismo logo nunca se duplica ni se sobrescribe.
  */
 export async function uploadLolTeamLogoAction(formData: FormData): Promise<TeamActionResult & { logoUrl?: string }> {
   const denied = await _requireAdmin()
   if (denied) return denied
 
   const teamId = Number(formData.get('teamId'))
-  const file = formData.get('file')
-  if (!Number.isInteger(teamId) || teamId <= 0 || !(file instanceof File)) return { error: 'INVALID' }
-  if (file.size === 0) return { error: 'EMPTY' }
-  if (file.size > TEAM_LOGO_MAX_BYTES) return { error: 'TOO_BIG' }
+  if (!Number.isInteger(teamId) || teamId <= 0) return { error: 'INVALID' }
+  const processed = await _processUpload(formData.get('file'))
+  if (!('ok' in processed)) return processed
+  const { bytes } = processed
 
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  const check = checkTeamLogo(bytes)
-  if (!check.ok) return { error: check.code, width: check.width, height: check.height }
-
-  const name = teamLogoObjectName(createHash('sha256').update(bytes).digest('hex'), check.format)
+  const name = teamLogoObjectName(createHash('sha256').update(bytes).digest('hex'), processed.format)
   const supabase = await createClient()
   const bucket = supabase.storage.from(TEAM_LOGO_BUCKET)
 
   const { error: upError } = await bucket.upload(name, bytes, {
-    contentType: check.contentType,
+    contentType: processed.contentType,
     cacheControl: '31536000',
     upsert: false,
   })

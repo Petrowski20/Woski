@@ -17,6 +17,21 @@ export type TeamActionResult =
   | { success: true }
   | { error: TeamErrorCode; detail?: string; width?: number; height?: number }
 
+export type TeamActionError = Extract<TeamActionResult, { error: TeamErrorCode }>
+
+/** Vista previa del logo ya procesado por el servidor (PNG 256×256). */
+export type TeamLogoPreviewResult =
+  | {
+      success: true
+      dataUrl: string
+      /** Peso del PNG procesado. */
+      bytes: number
+      /** Dimensiones del archivo original y de la caja tras recortar. */
+      source: { width: number; height: number }
+      trimmed: { width: number; height: number }
+    }
+  | TeamActionError
+
 export interface AdminTeamRow {
   id: number
   name: string
