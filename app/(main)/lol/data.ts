@@ -434,10 +434,12 @@ export async function getProfileLolSummary(
 
     const poolStandings = await Promise.all(pools.map(async p => {
       const rows = await getEditionStandings(supabase, edition.id, p.id)
+      const mine = rows.find(r => r.profileId === userId)
       return {
         id: p.id,
         name: p.name,
-        position: rows.find(r => r.profileId === userId)?.position ?? null,
+        position: mine?.position ?? null,
+        points: mine?.points ?? 0,
         participants: rows.length,
       }
     }))

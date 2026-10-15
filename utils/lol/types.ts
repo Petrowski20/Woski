@@ -119,7 +119,8 @@ export interface ProfileLolEdition {
   /** Mi fila en la clasificación global; null si aún no participo. */
   standing: StandingRow | null
   participants: number
-  pools: { id: number; name: string; position: number | null; participants: number }[]
+  /** En un pool solo cuentan las series desde que entraste (lo decide la BD). */
+  pools: { id: number; name: string; position: number | null; points: number; participants: number }[]
   /** Series terminadas que voté, de la más reciente a la más antigua. */
   scored: LolMatchView[]
   exactHits: number

@@ -92,13 +92,14 @@ function EditionCard({ data }: { data: ProfileLolEdition }) {
 
           {pools.length > 0 && (
             <div className="px-5 py-3 border-b border-border">
-              <p className="font-display text-xs font-bold uppercase tracking-display text-text-muted mb-2">Mis pools</p>
+              <p className="font-display text-xs font-bold uppercase tracking-display text-text-muted">Mis pools</p>
+              <p className="text-xs text-text-muted mb-2">Cuentan las series desde que entraste en cada pool.</p>
               <ul className="flex flex-col gap-1.5">
                 {pools.map(p => (
                   <li key={p.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="text-text-primary truncate">🏆 {p.name}</span>
                     <span className="shrink-0 tabular-nums text-text-muted">
-                      {p.position ? <><strong className="text-text-primary">#{p.position}</strong> de {p.participants}</> : 'sin clasificar'}
+                      {p.position ? <><strong className="text-text-primary">#{p.position}</strong> de {p.participants} · {p.points} pts</> : 'sin clasificar'}
                     </span>
                   </li>
                 ))}
