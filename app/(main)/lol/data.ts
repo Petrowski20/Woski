@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { lolEditionStatus } from '@/utils/lol/editionStatus'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
+import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
 import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
@@ -451,6 +452,41 @@ export async function getEditionStandings(
     bestStreak: Number(r.best_streak ?? 0),
     movement: r.movement === null ? null : Number(r.movement),
   }))
+}
+
+// ── Reglas ─────────────────────────────────────────────────────────────────
+
+/**
+ * Reglas vigentes de una edición: las del ruleset de la fase en curso (la
+ * de la última serie ya empezada, o la de la primera serie si aún no ha
+ * empezado ninguna). Solo para explicarlas; los puntos los pone la BD.
+ */
+export async function getEditionRules(
+  supabase: SupabaseClient,
+  editionId: number,
+): Promise<LolRulesSummary | null> {
+  const { data: phases, error } = await supabase
+    .from('phases')
+    .select('id, order, rulesets(config)')
+    .eq('edition_id', editionId)
+    .order('order', { ascending: true })
+  if (error) throw new LolDataError('rules phases', error)
+  if (!phases?.length) return null
+
+  const phaseIds = phases.map(p => p.id as number)
+  const now = new Date().toISOString()
+  const [started, upcoming] = await Promise.all([
+    supabase.from('matches').select('phase_id').in('phase_id', phaseIds).neq('status', 'CANCELLED')
+      .lte('match_date', now).order('match_date', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('matches').select('phase_id').in('phase_id', phaseIds).neq('status', 'CANCELLED')
+      .gt('match_date', now).order('match_date', { ascending: true }).limit(1).maybeSingle(),
+  ])
+  if (started.error) throw new LolDataError('rules current match', started.error)
+  if (upcoming.error) throw new LolDataError('rules next match', upcoming.error)
+
+  const phaseId = (started.data?.phase_id ?? upcoming.data?.phase_id ?? phases[0].id) as number
+  const phase = phases.find(p => p.id === phaseId) ?? phases[0]
+  return parseLolRules((phase.rulesets as unknown as { config: unknown } | null)?.config ?? null)
 }
 
 // ── Perfil ─────────────────────────────────────────────────────────────────
