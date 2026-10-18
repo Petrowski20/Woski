@@ -3,9 +3,9 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useLang } from '@/contexts/LangContext'
-import { NAV_LINKS } from '@/components/navLinks'
+import { NAV_LINKS, ADMIN_HREF } from '@/components/navLinks'
 
-export default function MobileMenu() {
+export default function MobileMenu({ isAdmin }: { isAdmin: boolean }) {
   const [isOpen, setIsOpen] = useState(false)
   const { t } = useLang()
 
@@ -59,6 +59,17 @@ export default function MobileMenu() {
             </Link>
           ))}
 
+          {/* Solo visibilidad: /admin comprueba el rol en el servidor */}
+          {isAdmin && (
+            <Link
+              href={ADMIN_HREF}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-secondary hover:bg-secondary/10 transition-colors"
+            >
+              <span className="text-base">🛡️</span>
+              Admin
+            </Link>
+          )}
         </nav>
       </div>
     </>

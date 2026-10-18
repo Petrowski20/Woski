@@ -3,7 +3,7 @@ import BrandLogo from '@/components/BrandLogo';
 import { createClient } from '@/utils/supabase/server';
 import UserDropdown from '@/components/UserDropdown';
 import MobileMenu from '@/components/MobileMenu';
-import { NAV_LINKS } from '@/components/navLinks';
+import { NAV_LINKS, ADMIN_HREF } from '@/components/navLinks';
 import { getServerLang, tServer } from '@/utils/i18n-server';
 
 export default async function NavBar() {
@@ -48,6 +48,12 @@ export default async function NavBar() {
                   {t(labelKey)}
                 </Link>
               ))}
+              {/* Solo visibilidad: /admin comprueba el rol en el servidor */}
+              {role === 'ADMIN' && (
+                <Link href={ADMIN_HREF} className="text-sm font-semibold text-secondary hover:bg-secondary/10 px-3 py-2 rounded-md transition-colors">
+                  Admin
+                </Link>
+              )}
             </div>
           </div>
 
@@ -62,7 +68,7 @@ export default async function NavBar() {
                 {t('nav.iniciarSesion')}
               </Link>
             )}
-            <MobileMenu />
+            <MobileMenu isAdmin={role === 'ADMIN'} />
           </div>
 
         </div>
