@@ -31,8 +31,9 @@ export default function PointsBreakdown({ breakdown }: { breakdown: ScoreBreakdo
       <Chip key="e" label="Marcador" points={breakdown.baseExact}
             detail={v2 ? tierLabel(breakdown.exactTier, breakdown.exactShare) : null} />
     ),
-    breakdown.streakBonus > 0 && (
-      <Chip key="s" label="Racha" points={breakdown.streakBonus} detail={`${breakdown.streakLength} seguidas`} />
+    // Racha tras esta serie (con count_exact_score el exacto suma 2) y su bonus.
+    v2 && breakdown.streakLength > 0 && (
+      <Chip key="s" label={`Racha ${breakdown.streakLength}`} points={breakdown.streakBonus} />
     ),
     breakdown.featuredBonus > 0 && (
       <Chip key="f" label="Partido de la jornada" points={breakdown.featuredBonus} />

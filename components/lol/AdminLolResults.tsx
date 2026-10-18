@@ -167,7 +167,7 @@ function AdminMatchCard({ match, now, editionId }: { match: LolMatchView; now: n
         )}
         <label
           className={`inline-flex items-center gap-1.5 text-xs ${votingOpen ? 'text-text-primary' : 'text-text-muted'}`}
-          title={votingOpen ? 'Partido de la jornada (+2 al acertar el ganador)' : 'Solo se cambia mientras la votación está abierta'}
+          title={votingOpen ? 'Partido de la jornada (bonus extra al acertar el ganador, según las reglas de la fase)' : 'Solo se cambia mientras la votación está abierta'}
         >
           <input
             type="checkbox"

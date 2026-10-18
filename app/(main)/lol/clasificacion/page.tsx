@@ -4,8 +4,8 @@ import Image from 'next/image'
 import { createClient } from '@/utils/supabase/server'
 import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
-import type { StandingRow } from '@/utils/lol/types'
-import { getActiveLolEditions, pickLolEdition, getEditionStandings, getUserEditionPools } from '../data'
+import { signedPoints } from '@/utils/lol/rules'
+import { getActiveLolEditions, pickLolEdition, getEditionStandings, getEditionRules, getUserEditionPools } from '../data'
 
 export const metadata = { title: 'Clasificación · LoL · Woski' }
 
@@ -65,7 +65,12 @@ export default async function LolClasificacionPage({
   const lastViewed = profileRes.data?.last_viewed_league_id as number | null | undefined
   const activePool = pools.find(p => p.id === lastViewed) ?? null
 
-  const ranking: StandingRow[] = await getEditionStandings(supabase, selected.id, activePool?.id ?? null)
+  const [ranking, rules] = await Promise.all([
+    getEditionStandings(supabase, selected.id, activePool?.id ?? null),
+    getEditionRules(supabase, selected.id),
+  ])
+  // Valor del pleno negativo según el ruleset de la fase en curso.
+  const negativePts = rules?.perfectDay.negative ?? 0
 
   return (
     <div className="w-full max-w-2xl mx-auto">
@@ -85,14 +90,19 @@ export default async function LolClasificacionPage({
       {/* Leyenda */}
       <div className="bg-bg-muted/60 p-4 rounded-card mb-4 border border-border">
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-text-muted">
-          <span>🎯 <strong className="text-text-primary">Aciertos</strong> ganadores acertados / series jugadas <span className="sm:hidden">(en pantallas anchas)</span></span>
+          <span>🎯 <strong className="text-text-primary">Aciertos</strong> ganadores acertados / series desde tu primer voto <span className="sm:hidden">(en pantallas anchas)</span></span>
           <span>
             ⭐ <strong className="text-text-primary">Plenos</strong>{' '}
             <span className="text-success font-semibold">jornadas acertando todo</span> |{' '}
-            <span className="text-danger font-semibold">jornadas sin ningún acierto (−1 pt)</span>
+            <span className="text-danger font-semibold">
+              jornadas sin ningún acierto{negativePts !== 0 && ` (${signedPoints(negativePts)} pt${Math.abs(negativePts) === 1 ? '' : 's'})`}
+            </span>
           </span>
-          <span>🔥 <strong className="text-text-primary">Racha</strong> aciertos seguidos ahora mismo</span>
-          <span>💤 Una serie sin votar cuenta como fallo</span>
+          <span>
+            🔥 <strong className="text-text-primary">Racha</strong> aciertos seguidos ahora mismo
+            {rules?.countExactScore && ' (el marcador exacto suma uno más)'}
+          </span>
+          <span>💤 Desde tu primer voto, una serie sin votar cuenta como fallo</span>
         </div>
       </div>
 

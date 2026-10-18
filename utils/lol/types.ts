@@ -118,7 +118,7 @@ export interface StandingRow extends RankingRow {
   perfectDays: number
   negativeDays: number
   currentStreak: number
-  /** Racha de aciertos de ganador más larga en la fase en curso. */
+  /** Racha más larga en la fase en curso (con count_exact_score, el exacto suma uno más). */
   bestStreak: number
   /** + = sube respecto a la jornada anterior; null si no hay jornada anterior. */
   movement: number | null
