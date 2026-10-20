@@ -5,6 +5,7 @@ import ClasificacionToggle from '@/components/ClasificacionToggle'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getServerLang, tServer } from '@/utils/i18n-server'
+import { profileHref } from '@/utils/profileContext'
 
 // Final del Mundial 2026 — cuando este partido termina, se revela el podio.
 const FINAL_MATCH_ID = 104
@@ -202,7 +203,7 @@ export default async function ClasificacionPage() {
                     </td>
                     <td className="px-4 py-3">
                       <Link
-                        href={`/jugador/${row.profileId}`}
+                        href={profileHref(row.profileId, 'clasificacion')}
                         className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors group"
                       >
                         <Avatar url={row.avatarUrl} initial={row.nickname.charAt(0).toUpperCase()} />
