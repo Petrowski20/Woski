@@ -53,6 +53,20 @@ export interface ScoreBreakdown {
   /** 'sole' (único), 'fallback' (único sin votantes suficientes) o 'min_share:N'. */
   winnerTier: string | null
   exactTier: string | null
+  /**
+   * Solo con streak_bonus.exact_as_prediction: racha y bonus tras cada
+   * predicción de la serie (ganador y, en Bo3/Bo5, marcador). Si no, null.
+   */
+  streakSteps: StreakStep[] | null
+}
+
+export interface StreakStep {
+  prediction: 'winner' | 'exact'
+  hit: boolean
+  /** Racha tras esta predicción. */
+  length: number
+  /** Bonus pagado por esta predicción. */
+  bonus: number
 }
 
 export interface LolMatchView {

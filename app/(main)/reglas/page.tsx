@@ -177,7 +177,8 @@ function V2Rules({ rules }: { rules: LolRulesSummary }) {
         )}
         <Rule points="0" title="Fallo o sin voto">
           <p>
-            Una serie fallada o sin votar no suma puntos y reinicia tu racha. Las series anteriores a tu primer voto
+            Una serie fallada o sin votar no suma puntos y reinicia tu racha
+            {rules.exactAsPrediction && ' (fallar solo el marcador exacto también la reinicia, ver Rachas)'}. Las series anteriores a tu primer voto
             de la competición no cuentan: ni como fallo ni para los plenos.
           </p>
         </Rule>
@@ -186,16 +187,27 @@ function V2Rules({ rules }: { rules: LolRulesSummary }) {
       {/* Rachas */}
       {tiers.length > 0 && (
         <Section title="Rachas">
-          <p className="text-sm text-text-muted mb-3">
-            {rules.countExactScore
-              ? 'Cada acierto de ganador suma 1 a tu racha, y 1 más si también aciertas el marcador exacto (en Bo1 solo cuenta el ganador). '
-              : 'Cada acierto de ganador seguido alarga tu racha en 1. '}
-            Cada serie que sumes a la racha te da un bonus según cómo quede la racha. La racha se mantiene entre jornadas
-            y solo se reinicia al cambiar de fase o al fallar el ganador o no votar una serie.
-            {rules.countExactScore
-              ? ' Fallar solo el marcador exacto no la reinicia.'
-              : ' El marcador exacto no cuenta para la racha.'}
-          </p>
+          {rules.exactAsPrediction ? (
+            <p className="text-sm text-text-muted mb-3">
+              Cada serie son dos predicciones, ganador y marcador exacto, y cuentan para la racha en ese orden (en Bo1
+              solo hay ganador). Cada acierto suma 1 a tu racha y paga en ese momento el bonus del tramo en el que queda,
+              así que una serie con ganador y marcador acertados puede pagar dos bonus. Cada fallo, o no votar una serie,
+              la deja a 0; si fallas el ganador, el marcador cuenta también como fallado. La racha se mantiene entre
+              jornadas y se reinicia al cambiar de fase. En la clasificación, entre paréntesis, la mejor racha de la fase.
+            </p>
+          ) : (
+            <p className="text-sm text-text-muted mb-3">
+              {rules.countExactScore
+                ? 'Cada acierto de ganador suma 1 a tu racha, y 1 más si también aciertas el marcador exacto (en Bo1 solo cuenta el ganador). '
+                : 'Cada acierto de ganador seguido alarga tu racha en 1. '}
+              Cada serie que sumes a la racha te da un bonus según cómo quede la racha. La racha se mantiene entre jornadas
+              y solo se reinicia al cambiar de fase o al fallar el ganador o no votar una serie.
+              {rules.countExactScore
+                ? ' Fallar solo el marcador exacto no la reinicia.'
+                : ' El marcador exacto no cuenta para la racha.'}
+              {' En la clasificación, entre paréntesis, la mejor racha de la fase.'}
+            </p>
+          )}
           <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 text-center">
             {streakRanges(tiers).map(({ range, bonus }) => (
               <div key={range} className="rounded-lg bg-accent/10 border border-accent/25 py-2">
@@ -204,11 +216,21 @@ function V2Rules({ rules }: { rules: LolRulesSummary }) {
               </div>
             ))}
           </div>
-          <p className="text-xs text-text-muted mt-3">
-            Ejemplo: con 4 aciertos de ganador seguidos (sin exactos) sumas {example.join(', ')} de bonus, encima de los
-            puntos de cada acierto
-            {rules.countExactScore ? '. Si alguno es además exacto, tu racha sube más deprisa.' : '.'}
-          </p>
+          {rules.exactAsPrediction ? (
+            <p className="text-xs text-text-muted mt-3">
+              Ejemplo: aciertas ganador y marcador en dos series seguidas. Tu racha pasa por 1, 2, 3 y 4 y sumas{' '}
+              {example.join(', ')} de bonus ({signedPoints(streakBonusFor(tiers, 1) + streakBonusFor(tiers, 2))} en la
+              primera serie y {signedPoints(streakBonusFor(tiers, 3) + streakBonusFor(tiers, 4))} en la segunda), encima
+              de los puntos de cada acierto. Si en la siguiente aciertas el ganador pero no el marcador, cobras el bonus
+              de una racha de 5 ({signedPoints(streakBonusFor(tiers, 5))}) y la racha vuelve a 0.
+            </p>
+          ) : (
+            <p className="text-xs text-text-muted mt-3">
+              Ejemplo: con 4 aciertos de ganador seguidos (sin exactos) sumas {example.join(', ')} de bonus, encima de los
+              puntos de cada acierto
+              {rules.countExactScore ? '. Si alguno es además exacto, tu racha sube más deprisa.' : '.'}
+            </p>
+          )}
         </Section>
       )}
 
@@ -235,7 +257,7 @@ function V2Rules({ rules }: { rules: LolRulesSummary }) {
 const TIEBREAK = [
   { title: 'Puntos', desc: 'Gana quien más puntos tenga.' },
   { title: 'Plenos positivos', desc: 'Jornadas en las que votaste todas las series y acertaste todos los ganadores.' },
-  { title: 'Mejor racha de la fase', desc: 'La racha más larga en la fase en curso.' },
+  { title: 'Mejor racha de la fase', desc: 'La racha más alta que has alcanzado en la fase en curso.' },
   { title: 'Antigüedad', desc: 'Si todo lo anterior empata, va antes la cuenta más antigua.' },
 ]
 

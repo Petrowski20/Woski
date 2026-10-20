@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { lolEditionStatus } from '@/utils/lol/editionStatus'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
-import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
+import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -177,6 +177,7 @@ interface BreakdownRow {
   explanation: {
     winner?: { share?: number | null; tier?: string | null }
     exact?: { share?: number | null; tier?: string | null }
+    streak?: { steps?: StreakStep[] }
   } | null
 }
 
@@ -206,6 +207,7 @@ export async function getMyBreakdowns(
       exactShare: r.explanation?.exact?.share ?? null,
       winnerTier: r.explanation?.winner?.tier ?? null,
       exactTier: r.explanation?.exact?.tier ?? null,
+      streakSteps: Array.isArray(r.explanation?.streak?.steps) ? r.explanation.streak.steps : null,
     })
   }
   return byMatch

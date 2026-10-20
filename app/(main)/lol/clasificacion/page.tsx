@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { createClient } from '@/utils/supabase/server'
 import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
-import { signedPoints } from '@/utils/lol/rules'
+import { formatStreak, signedPoints, streakLegend } from '@/utils/lol/rules'
 import { getActiveLolEditions, pickLolEdition, getEditionStandings, getEditionRules, getUserEditionPools } from '../data'
 
 export const metadata = { title: 'Clasificación · LoL · Woski' }
@@ -99,8 +99,7 @@ export default async function LolClasificacionPage({
             </span>
           </span>
           <span>
-            🔥 <strong className="text-text-primary">Racha</strong> aciertos seguidos ahora mismo
-            {rules?.countExactScore && ' (el marcador exacto suma uno más)'}
+            🔥 <strong className="text-text-primary">Racha</strong> {streakLegend(rules)}
           </span>
           <span>💤 Desde tu primer voto, una serie sin votar cuenta como fallo</span>
         </div>
@@ -121,13 +120,14 @@ export default async function LolClasificacionPage({
                 <th className="px-3 sm:px-4 py-3 text-left">Usuario</th>
                 <th className="px-2 sm:px-3 py-3 text-center hidden sm:table-cell">Aciertos</th>
                 <th className="px-2 sm:px-3 py-3 text-center">Plenos</th>
-                <th className="px-3 py-3 text-center hidden sm:table-cell">Racha</th>
+                <th className="px-2 sm:px-3 py-3 text-center">Racha</th>
                 <th className="px-3 sm:px-4 py-3 text-right sm:pr-6">Total</th>
               </tr>
             </thead>
             <tbody>
               {ranking.map(row => {
                 const isMe = row.profileId === user.id
+                const streak = formatStreak(row.currentStreak, row.bestStreak)
                 return (
                   <tr
                     key={row.profileId}
@@ -164,8 +164,12 @@ export default async function LolClasificacionPage({
                       <span className="text-text-muted/60 mx-1">|</span>
                       <span className="font-semibold text-danger">{row.negativeDays}</span>
                     </td>
-                    <td className="px-3 py-3 text-center text-text-muted tabular-nums hidden sm:table-cell">
-                      {row.currentStreak}
+                    {/* Actual y mejor de la fase; en móvil, el máximo debajo */}
+                    <td className="px-2 sm:px-3 py-3 text-center text-text-muted tabular-nums whitespace-nowrap">
+                      <span className="font-semibold text-text-primary">{streak.current}</span>
+                      {streak.best && (
+                        <span className="block sm:inline sm:ml-1 text-[10px] sm:text-xs leading-tight">{streak.best}</span>
+                      )}
                     </td>
                     <td className="px-3 sm:px-4 py-3 text-right sm:pr-6 font-display text-base font-bold text-accent tabular-nums whitespace-nowrap">
                       {row.points}

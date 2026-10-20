@@ -2,7 +2,7 @@
 // (página de reglas, leyenda de la clasificación). No puntúa nada: los
 // valores salen tal cual del config y, donde el config no los tiene,
 // son los mismos que usa la BD (lol_score_breakdown y lol_standings_at,
-// migraciones 20261014120002 y 20261020100001).
+// migraciones 20261014120002, 20261020100001 y 20261021100001).
 
 export interface ShareTier {
   minShare: number
@@ -32,6 +32,8 @@ export interface LolRulesSummary {
   /** De menor a mayor from. */
   streakTiers: StreakTier[]
   countExactScore: boolean
+  /** Ganador y marcador como dos predicciones de racha (exige countExactScore). */
+  exactAsPrediction: boolean
   perfectDay: { positive: number; negative: number }
   featuredBonus: number
   /** v1: puntos fijos. */
@@ -76,6 +78,8 @@ export function parseLolRules(config: unknown): LolRulesSummary {
           .sort((a, z) => a.from - z.from)
       : [],
     countExactScore: v2 && streak.count_exact_score === true,
+    // Igual que la BD: sin count_exact_score el flag no aplica.
+    exactAsPrediction: v2 && streak.count_exact_score === true && streak.exact_as_prediction === true,
     // v1: pleno negativo −1 y positivo 0, fijos en lol_standings_at.
     perfectDay: v2
       ? { positive: num(perfect.positive, 0), negative: num(perfect.negative, 0) }
@@ -90,6 +94,24 @@ export function streakBonusFor(tiers: StreakTier[], length: number): number {
   let bonus = 0
   for (const t of tiers) if (t.from <= length) bonus = t.bonus
   return bonus
+}
+
+/** Cómo funciona la racha con este config (leyenda de la clasificación). */
+export function streakLegend(rules: Pick<LolRulesSummary, 'countExactScore' | 'exactAsPrediction'> | null): string {
+  const best = 'Entre paréntesis, la mejor racha de la fase.'
+  if (rules?.exactAsPrediction) {
+    return 'Cada serie son dos predicciones, ganador y marcador exacto. Cada acierto suma +1 a la racha y paga su bonus; ' +
+      `cada fallo (o no votar) la corta. ${best}`
+  }
+  if (rules?.countExactScore) {
+    return 'Cada ganador acertado suma +1 a la racha y el marcador exacto +1 más; fallar el ganador (o no votar) la corta. ' + best
+  }
+  return `Cada ganador acertado suma +1 a la racha; fallarlo (o no votar) la corta. ${best}`
+}
+
+/** Columna Racha: "N (máx. M)", o "0" si ambas son 0. */
+export function formatStreak(current: number, best: number): { current: string; best: string | null } {
+  return { current: String(current), best: current === 0 && best === 0 ? null : `(máx. ${best})` }
 }
 
 /** "−2", "+1", "0" para mostrar puntos con signo. */
