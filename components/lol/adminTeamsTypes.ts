@@ -21,6 +21,8 @@ export interface AdminTeamRow {
   id: number
   name: string
   tag: string
+  /** teams.slug ("lol-g2"); para avisar de un slug ocupado al crear. */
+  slug: string | null
   color: string | null
   logoUrl: string | null
   /** Series de LoL en las que juega (para saber si está en uso). */
@@ -32,7 +34,7 @@ export interface TeamAuditRow {
   at: string
   team: string
   actor: string
-  action: 'update_team' | 'set_team_logo' | 'remove_team_logo'
-  /** Campos que cambiaron, antes y después (logo: URL). */
-  changes: { field: 'name' | 'tag' | 'color' | 'logo'; before: string | null; after: string | null }[]
+  action: 'create_team' | 'update_team' | 'set_team_logo' | 'remove_team_logo'
+  /** Campos que cambiaron, antes y después (logo: URL; en un alta, antes = null). */
+  changes: { field: 'name' | 'tag' | 'color' | 'logo' | 'region' | 'country'; before: string | null; after: string | null }[]
 }

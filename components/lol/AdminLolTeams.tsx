@@ -3,14 +3,30 @@
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { useLang } from '@/contexts/LangContext'
-import { removeLolTeamLogoAction, updateLolTeamAction, uploadLolTeamLogoAction } from '@/app/(main)/admin/lol/teamActions'
+import {
+  createLolTeamAction,
+  createLolTeamsAction,
+  removeLolTeamLogoAction,
+  updateLolTeamAction,
+  uploadLolTeamLogoAction,
+} from '@/app/(main)/admin/lol/teamActions'
 import { checkTeamLogo, TEAM_LOGO_MAX_BYTES } from '@/utils/lol/teamLogo'
+import {
+  cleanNewTeam,
+  LOL_REGIONS,
+  NEW_TAG_RE,
+  newTeamProblems,
+  parseTeamBatch,
+  teamSlug,
+  type BatchProblem,
+  type BatchRow,
+} from '@/utils/lol/teamCreate'
 import TeamLogo from './TeamLogo'
 import type { AdminTeamRow, TeamActionResult, TeamAuditRow } from './adminTeamsTypes'
 
 // Pestaña Equipos de /admin (LoL). Valida en el navegador para avisar antes
 // de enviar (mismas reglas que el servidor y la BD, que vuelven a validar) y
-// guarda con teamActions.ts.
+// guarda con teamActions.ts: alta (uno o en lote), datos y logo.
 
 const fieldClass = 'text-sm bg-bg-muted border border-border rounded-md px-2 py-1.5 text-text-primary min-w-0 w-full'
 const btn = 'px-3 py-1.5 rounded-md text-xs font-semibold disabled:opacity-50 shrink-0'
@@ -35,6 +51,125 @@ function errorText(t: T, lang: string, res: Extract<TeamActionResult, { error: s
   // Los mensajes de validación de la BD están en castellano.
   if ((res.error === 'INVALID' || res.error === 'DUPLICATE_TAG') && res.detail && lang === 'es') return res.detail
   return t(key)
+}
+
+/** Color opcional: casilla, selector y campo #rrggbb. */
+function ColorField({ useColor, setUseColor, color, setColor, disabled, t }: {
+  useColor: boolean
+  setUseColor: (v: boolean) => void
+  color: string
+  setColor: (v: string) => void
+  disabled: boolean
+  t: T
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+      <span className="text-xs text-text-muted">{t('adminTeams.color')}</span>
+      <label className="inline-flex items-center gap-1.5 text-xs text-text-primary">
+        <input type="checkbox" checked={useColor} onChange={e => setUseColor(e.target.checked)} disabled={disabled} />
+        {t('adminTeams.useColor')}
+      </label>
+      {useColor ? (
+        <span className="inline-flex items-center gap-2">
+          <input
+            type="color"
+            aria-label={t('adminTeams.color')}
+            value={COLOR_RE.test(color.toLowerCase()) ? color.toLowerCase() : '#000000'}
+            onChange={e => setColor(e.target.value)}
+            disabled={disabled}
+            className="h-8 w-10 cursor-pointer rounded border border-border bg-bg-muted p-0.5"
+          />
+          <input
+            className={`${fieldClass} !w-24 font-mono`}
+            value={color}
+            onChange={e => setColor(e.target.value.trim())}
+            maxLength={7}
+            aria-label={`${t('adminTeams.color')} (#rrggbb)`}
+            disabled={disabled}
+            spellCheck={false}
+          />
+        </span>
+      ) : (
+        <span className="text-xs text-text-muted">{t('adminTeams.noColor')}</span>
+      )}
+    </div>
+  )
+}
+
+/** Archivo de logo elegido y validado en el navegador (PNG/WebP, ≤512 KB, ≤512×512, por su firma real). */
+function useLogoPick(t: T, lang: string) {
+  const [file, setFile] = useState<File | null>(null)
+  const [preview, setPreview] = useState<string | null>(null)
+  const [dims, setDims] = useState<string | null>(null)
+  const [problem, setProblem] = useState<string | null>(null)
+  const [inputKey, setInputKey] = useState(0)
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
+
+  const reset = () => {
+    setFile(null)
+    setPreview(null)
+    setDims(null)
+    setProblem(null)
+    setInputKey(k => k + 1)
+  }
+
+  const pick = async (f: File | null) => {
+    reset()
+    if (!f) return
+    if (f.size > TEAM_LOGO_MAX_BYTES) {
+      setProblem(errorText(t, lang, { error: 'TOO_BIG' }, f.size))
+      return
+    }
+    const check = checkTeamLogo(new Uint8Array(await f.arrayBuffer()))
+    if (!check.ok) {
+      setProblem(errorText(t, lang, { error: check.code, width: check.width, height: check.height }, f.size))
+      return
+    }
+    setFile(f)
+    setDims(`${check.format.toUpperCase()} · ${check.width}×${check.height} px · ${Math.ceil(f.size / 1024)} KB`)
+    setPreview(URL.createObjectURL(f))
+  }
+
+  return { file, preview, dims, problem, setProblem, inputKey, pick, reset }
+}
+
+/** Botón "Elegir archivo" con el input oculto. */
+function FileButton({ inputKey, onPick, disabled, t }: {
+  inputKey: number
+  onPick: (f: File | null) => void
+  disabled: boolean
+  t: T
+}) {
+  return (
+    <label className={`${btnPlain} cursor-pointer ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
+      {t('adminTeams.chooseFile')}
+      <input
+        key={inputKey}
+        type="file"
+        accept="image/png,image/webp"
+        className="sr-only"
+        onChange={e => onPick(e.target.files?.[0] ?? null)}
+        disabled={disabled}
+      />
+    </label>
+  )
+}
+
+/** Logo en los tres tamaños de la interfaz. */
+function LogoSizes({ team }: { team: { name: string; tag: string; color: string | null; logoUrl: string | null } }) {
+  return (
+    <>
+      {(['lg', 'md', 'sm'] as const).map(size => (
+        <span key={size} className="flex flex-col items-center gap-1">
+          <span className="rounded-lg bg-bg-elevated p-1.5 ring-1 ring-inset ring-border">
+            <TeamLogo team={team} size={size} />
+          </span>
+          <span className="text-[10px] uppercase text-text-muted">{size}</span>
+        </span>
+      ))}
+    </>
+  )
 }
 
 /** Nombre, siglas y color. */
@@ -87,36 +222,7 @@ function DetailsForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string
           />
         </label>
       </div>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span className="text-xs text-text-muted">{t('adminTeams.color')}</span>
-        <label className="inline-flex items-center gap-1.5 text-xs text-text-primary">
-          <input type="checkbox" checked={useColor} onChange={e => setUseColor(e.target.checked)} disabled={isPending} />
-          {t('adminTeams.useColor')}
-        </label>
-        {useColor ? (
-          <span className="inline-flex items-center gap-2">
-            <input
-              type="color"
-              aria-label={t('adminTeams.color')}
-              value={COLOR_RE.test(color.toLowerCase()) ? color.toLowerCase() : '#000000'}
-              onChange={e => setColor(e.target.value)}
-              disabled={isPending}
-              className="h-8 w-10 cursor-pointer rounded border border-border bg-bg-muted p-0.5"
-            />
-            <input
-              className={`${fieldClass} !w-24 font-mono`}
-              value={color}
-              onChange={e => setColor(e.target.value.trim())}
-              maxLength={7}
-              aria-label={`${t('adminTeams.color')} (#rrggbb)`}
-              disabled={isPending}
-              spellCheck={false}
-            />
-          </span>
-        ) : (
-          <span className="text-xs text-text-muted">{t('adminTeams.noColor')}</span>
-        )}
-      </div>
+      <ColorField useColor={useColor} setUseColor={setUseColor} color={color} setColor={setColor} disabled={isPending} t={t} />
       {problems.length > 0 && (
         <ul role="alert" className="text-xs text-danger list-disc pl-4">
           {problems.map(p => <li key={p}>{p}</li>)}
@@ -134,40 +240,9 @@ function DetailsForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string
 
 /** Logo: elegir archivo, avisar de errores, previsualizar, subir o quitar. */
 function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string }) {
-  const [file, setFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
-  const [dims, setDims] = useState<string | null>(null)
-  const [problem, setProblem] = useState<string | null>(null)
+  const { file, preview, dims, problem, setProblem, inputKey, pick, reset } = useLogoPick(t, lang)
   const [confirmRemove, setConfirmRemove] = useState(false)
-  const [inputKey, setInputKey] = useState(0)
   const [isPending, startTransition] = useTransition()
-
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview) }, [preview])
-
-  const reset = () => {
-    setFile(null)
-    setPreview(null)
-    setDims(null)
-    setProblem(null)
-    setInputKey(k => k + 1)
-  }
-
-  const pick = async (f: File | null) => {
-    reset()
-    if (!f) return
-    if (f.size > TEAM_LOGO_MAX_BYTES) {
-      setProblem(errorText(t, lang, { error: 'TOO_BIG' }, f.size))
-      return
-    }
-    const check = checkTeamLogo(new Uint8Array(await f.arrayBuffer()))
-    if (!check.ok) {
-      setProblem(errorText(t, lang, { error: check.code, width: check.width, height: check.height }, f.size))
-      return
-    }
-    setFile(f)
-    setDims(`${check.format.toUpperCase()} · ${check.width}×${check.height} px · ${Math.ceil(f.size / 1024)} KB`)
-    setPreview(URL.createObjectURL(f))
-  }
 
   const upload = () => {
     if (!file) return
@@ -208,17 +283,7 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
     <div className="flex flex-col gap-2">
       <p className="text-xs text-text-muted">{t('adminTeams.logoHelp')}</p>
       <div className="flex flex-wrap items-center gap-2">
-        <label className={`${btnPlain} cursor-pointer ${isPending ? 'pointer-events-none opacity-50' : ''}`}>
-          {t('adminTeams.chooseFile')}
-          <input
-            key={inputKey}
-            type="file"
-            accept="image/png,image/webp"
-            className="sr-only"
-            onChange={e => pick(e.target.files?.[0] ?? null)}
-            disabled={isPending}
-          />
-        </label>
+        <FileButton inputKey={inputKey} onPick={pick} disabled={isPending} t={t} />
         {file && <span className="text-xs text-text-muted min-w-0 break-all">{file.name}</span>}
         {team.logoUrl && !file && (
           confirmRemove ? (
@@ -248,14 +313,7 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
             {t('adminTeams.preview')} <span className="font-normal text-text-muted">· {dims}</span>
           </p>
           <div className="flex flex-wrap items-end gap-4">
-            {(['lg', 'md', 'sm'] as const).map(size => (
-              <span key={size} className="flex flex-col items-center gap-1">
-                <span className="rounded-lg bg-bg-elevated p-1.5 ring-1 ring-inset ring-border">
-                  <TeamLogo team={shown} size={size} />
-                </span>
-                <span className="text-[10px] uppercase text-text-muted">{size}</span>
-              </span>
-            ))}
+            <LogoSizes team={shown} />
             {team.logoUrl && (
               <span className="flex flex-col items-center gap-1">
                 <span className="rounded-lg bg-bg-elevated p-1.5 ring-1 ring-inset ring-border opacity-70">
@@ -274,6 +332,235 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** Texto de un problema del alta (validación en el navegador). */
+function problemText(t: T, p: BatchProblem): string {
+  switch (p.code) {
+    case 'tagTaken': return t('adminTeams.errors.tagTaken', { tag: p.tag, name: p.name })
+    case 'slugTaken': return t('adminTeams.errors.slugTaken', { slug: p.slug, name: p.name })
+    case 'dupInBatch': return t('adminTeams.errors.dupInBatch', { line: p.line })
+    default: return t(`adminTeams.errors.${p.code}`)
+  }
+}
+
+function RegionSelect({ value, onChange, disabled, t }: { value: string; onChange: (v: string) => void; disabled: boolean; t: T }) {
+  return (
+    <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+      {t('adminTeams.region')}
+      <select className={fieldClass} value={value} onChange={e => onChange(e.target.value)} disabled={disabled} required>
+        <option value="">{t('adminTeams.chooseRegion')}</option>
+        {LOL_REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
+      </select>
+    </label>
+  )
+}
+
+/** Alta de un equipo: nombre, siglas, región, país y color opcionales, y logo opcional. */
+function CreateTeamForm({ teams, onDone, t, lang }: { teams: AdminTeamRow[]; onDone: () => void; t: T; lang: string }) {
+  const [name, setName] = useState('')
+  const [tag, setTag] = useState('')
+  const [region, setRegion] = useState('')
+  const [country, setCountry] = useState('')
+  const [useColor, setUseColor] = useState(false)
+  const [color, setColor] = useState('#3b82f6')
+  const [touched, setTouched] = useState(false)
+  const logo = useLogoPick(t, lang)
+  const [isPending, startTransition] = useTransition()
+
+  const input = cleanNewTeam({ name, tag, region, country, color: useColor ? color : '' })
+  const problems = newTeamProblems(input, teams)
+  const shown = { name: input.name || '?', tag: input.tag || '?', color: input.color || null, logoUrl: logo.preview }
+
+  const create = () => {
+    setTouched(true)
+    if (problems.length > 0) return
+    startTransition(async () => {
+      try {
+        const res = await createLolTeamAction(input)
+        if ('error' in res) {
+          toast.error(errorText(t, lang, res))
+          return
+        }
+        if (logo.file && res.teamId) {
+          const fd = new FormData()
+          fd.set('teamId', String(res.teamId))
+          fd.set('file', logo.file)
+          const up = await uploadLolTeamLogoAction(fd)
+          if ('error' in up) {
+            toast.warning(t('adminTeams.createdNoLogo', { tag: input.tag, error: errorText(t, lang, up, logo.file.size) }))
+            onDone()
+            return
+          }
+        }
+        toast.success(t('adminTeams.created', { tag: input.tag }))
+        onDone()
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-text-muted">
+        {t('adminTeams.addHelp', { slug: teamSlug(NEW_TAG_RE.test(input.tag) ? input.tag : t('adminTeams.tag')) })}
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_7rem] gap-2">
+        <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+          {t('adminTeams.name')}
+          <input className={fieldClass} value={name} onChange={e => setName(e.target.value)} maxLength={60} disabled={isPending} autoFocus />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+          {t('adminTeams.tag')}
+          <input
+            className={`${fieldClass} uppercase font-semibold tracking-wide`}
+            value={tag}
+            onChange={e => setTag(e.target.value.toUpperCase())}
+            maxLength={5}
+            disabled={isPending}
+            autoCapitalize="characters"
+            spellCheck={false}
+          />
+        </label>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        <RegionSelect value={region} onChange={setRegion} disabled={isPending} t={t} />
+        <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+          {t('adminTeams.country')}
+          <input
+            className={`${fieldClass} uppercase`}
+            value={country}
+            onChange={e => setCountry(e.target.value.toUpperCase())}
+            maxLength={2}
+            placeholder="ES"
+            title={t('adminTeams.countryHelp')}
+            disabled={isPending}
+            autoCapitalize="characters"
+            spellCheck={false}
+          />
+        </label>
+      </div>
+      <ColorField useColor={useColor} setUseColor={setUseColor} color={color} setColor={setColor} disabled={isPending} t={t} />
+
+      <div className="flex flex-col gap-2 border-t border-border pt-3">
+        <p className="text-xs font-semibold text-text-primary">{t('adminTeams.logoOptional')}</p>
+        <p className="text-xs text-text-muted">{t('adminTeams.logoHelp')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <FileButton inputKey={logo.inputKey} onPick={logo.pick} disabled={isPending} t={t} />
+          {logo.file && (
+            <>
+              <span className="text-xs text-text-muted min-w-0 break-all">{logo.file.name}</span>
+              <button type="button" onClick={logo.reset} disabled={isPending} className={btnPlain}>{t('adminTeams.removeFile')}</button>
+            </>
+          )}
+        </div>
+        {logo.problem && (
+          <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-inset ring-danger/30">{logo.problem}</p>
+        )}
+        <div className="flex flex-col gap-2 rounded-lg bg-bg-muted/60 p-3">
+          <p className="text-xs font-semibold text-text-primary">
+            {t('adminTeams.preview')}{logo.dims && <span className="font-normal text-text-muted"> · {logo.dims}</span>}
+          </p>
+          <div className="flex flex-wrap items-end gap-4"><LogoSizes team={shown} /></div>
+        </div>
+      </div>
+
+      {touched && problems.length > 0 && (
+        <ul role="alert" className="text-xs text-danger list-disc pl-4">
+          {problems.map(p => <li key={p.code}>{problemText(t, p)}</li>)}
+        </ul>
+      )}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={create} disabled={isPending || (touched && problems.length > 0)} className={btnPrimary}>
+          {isPending ? t('adminTeams.creating') : t('adminTeams.create')}
+        </button>
+        <button type="button" onClick={onDone} disabled={isPending} className={btnPlain}>{t('adminTeams.cancel')}</button>
+      </div>
+    </div>
+  )
+}
+
+/** Alta en lote: pegar "Nombre - SIGLAS", revisar la vista previa y confirmar (todos o ninguno). */
+function BatchForm({ teams, onDone, t, lang }: { teams: AdminTeamRow[]; onDone: () => void; t: T; lang: string }) {
+  const [text, setText] = useState('')
+  const [region, setRegion] = useState('')
+  const [isPending, startTransition] = useTransition()
+
+  const rows: BatchRow[] = useMemo(() => parseTeamBatch(text, teams), [text, teams])
+  const ready = rows.filter(r => r.problems.length === 0).length
+  const canCreate = rows.length > 0 && ready === rows.length && region !== ''
+
+  const confirm = () => {
+    startTransition(async () => {
+      try {
+        const res = await createLolTeamsAction(rows.map(r => ({ name: r.name, tag: r.tag })), region)
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else {
+          toast.success(t('adminTeams.batchCreated', { n: res.created ?? rows.length }))
+          onDone()
+        }
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-text-muted">{t('adminTeams.batchHelp')}</p>
+      <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+        {t('adminTeams.batchLabel')}
+        <textarea
+          className={`${fieldClass} min-h-28 font-mono`}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          placeholder={t('adminTeams.batchPlaceholder')}
+          disabled={isPending}
+          spellCheck={false}
+          rows={5}
+        />
+      </label>
+      <div className="max-w-[12rem]"><RegionSelect value={region} onChange={setRegion} disabled={isPending} t={t} /></div>
+
+      {rows.length === 0 ? (
+        <p className="text-xs text-text-muted">{t('adminTeams.batchEmpty')}</p>
+      ) : (
+        <div className="flex flex-col gap-2 rounded-lg bg-bg-muted/60 p-3">
+          <p className="text-xs font-semibold text-text-primary">{t('adminTeams.batchPreview', { ok: ready, n: rows.length })}</p>
+          <ul className="flex flex-col divide-y divide-border text-sm">
+            {rows.map(r => (
+              <li key={r.line} className="flex items-start gap-2 py-1.5 min-w-0">
+                <span className="w-14 shrink-0 text-[11px] text-text-muted tabular-nums pt-0.5">{t('adminTeams.batchLine', { n: r.line })}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="flex flex-wrap items-center gap-x-2 min-w-0">
+                    {r.tag && <span className="font-bold tracking-wide text-text-primary">{r.tag}</span>}
+                    <span className="truncate text-text-primary">{r.name}</span>
+                    {r.problems.length === 0 && <span className="text-[11px] text-text-muted">{teamSlug(r.tag)}</span>}
+                  </p>
+                  {r.problems.map(p => (
+                    <p key={p.code} className="text-xs text-danger">{problemText(t, p)}</p>
+                  ))}
+                </div>
+                <span aria-hidden className={r.problems.length === 0 ? 'text-success' : 'text-danger'}>{r.problems.length === 0 ? '✓' : '✗'}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-text-muted">
+            {ready === rows.length ? t('adminTeams.batchAllOrNothing') : t('adminTeams.batchFix')}
+          </p>
+          {region === '' && <p className="text-xs text-danger">{t('adminTeams.errors.regionRequired')}</p>}
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={confirm} disabled={isPending || !canCreate} className={btnPrimary}>
+          {isPending ? t('adminTeams.creating') : t('adminTeams.batchConfirm', { n: rows.length })}
+        </button>
+        <button type="button" onClick={onDone} disabled={isPending} className={btnPlain}>{t('adminTeams.cancel')}</button>
+      </div>
     </div>
   )
 }
@@ -324,6 +611,7 @@ export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[];
   const { t, lang } = useLang()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<number | null>(null)
+  const [adding, setAdding] = useState<'one' | 'batch' | null>(null)
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -335,6 +623,8 @@ export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[];
     tag: t('adminTeams.tag'),
     color: t('adminTeams.color'),
     logo: t('adminTeams.logo'),
+    region: t('adminTeams.region'),
+    country: t('adminTeams.country'),
   }
   const fmt = timeFmt(lang)
   const value = (field: string, v: string | null) =>
@@ -357,7 +647,26 @@ export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[];
           className={`${fieldClass} sm:max-w-xs`}
         />
         <span className="text-xs text-text-muted">{t('adminTeams.count', { n: shown.length })}</span>
+        <div className="flex gap-2 sm:ml-auto">
+          <button type="button" onClick={() => setAdding(adding === 'one' ? null : 'one')} className={btnPrimary} aria-expanded={adding === 'one'}>
+            + {t('adminTeams.add')}
+          </button>
+          <button type="button" onClick={() => setAdding(adding === 'batch' ? null : 'batch')} className={btnPlain} aria-expanded={adding === 'batch'}>
+            {t('adminTeams.batch')}
+          </button>
+        </div>
       </div>
+
+      {adding && (
+        <section className="bg-bg-elevated border border-accent/40 rounded-card shadow-card p-3 sm:p-4 flex flex-col gap-3 min-w-0">
+          <h2 className="heading-display font-bold text-text-primary">
+            {adding === 'one' ? t('adminTeams.addTitle') : t('adminTeams.batch')}
+          </h2>
+          {adding === 'one'
+            ? <CreateTeamForm teams={teams} onDone={() => setAdding(null)} t={t} lang={lang} />
+            : <BatchForm teams={teams} onDone={() => setAdding(null)} t={t} lang={lang} />}
+        </section>
+      )}
 
       {teams.length === 0 ? (
         <p className="text-sm text-text-muted">{t('adminTeams.noTeams')}</p>
