@@ -11,12 +11,16 @@
 --     fallo deja la racha a 0 (marcador fallado si falla el ganador).
 --   Solo cuentan las series terminadas desde la del primer voto del
 --   jugador en la edición (la primera no cancelada con voto); las
---   pendientes y canceladas no cuentan ni cortan.
+--   pendientes y canceladas no cuentan ni cortan. Cada fase lleva su
+--   propia racha: las series de otra fase (aunque se intercalen en
+--   fechas) ni suman ni cortan.
+-- La mitad de las ediciones con varias fases las intercala en fechas
+-- (grupos que juegan a la vez); el resto las pone seguidas.
 -- Se compara con lol_score_breakdown, points_earned y lol_standings_at
 -- (global y en un pool, a cada fecha de corte).
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(15);
+SELECT plan(16);
 
 -- ---------------- Modelo de referencia ----------------
 
@@ -99,7 +103,7 @@ CREATE FUNCTION pg_temp.score(p_bo integer, p_home_wins boolean) RETURNS integer
 $$;
 
 SELECT setseed(0.20261022);
-CREATE TEMP TABLE fz (e integer, pool integer, phases integer, modes text);
+CREATE TEMP TABLE fz (e integer, pool integer, phases integer, modes text, interleaved boolean);
 
 DO $$
 DECLARE
@@ -128,6 +132,10 @@ DECLARE
   pos     integer;
   feat    date;
   st      text;
+  interl  boolean;
+  phs     integer[];
+  order_  integer[];
+  f       integer;
 BEGIN
   FOR sc IN 1..120 LOOP
     e := t.edition('fz ' || sc);
@@ -144,11 +152,13 @@ BEGIN
     END LOOP;
 
     n_ph := 1 + floor(random() * 3)::integer;
+    interl := n_ph > 1 AND random() < 0.5;
     modes := '';
     ts := TIMESTAMPTZ '2026-10-01 08:00+00';
     pos := 0;
     feat := NULL;
-    FOR f IN 1..n_ph LOOP
+    phs := '{}'; order_ := '{}';
+    FOR fi IN 1..n_ph LOOP
       mode := (ARRAY['plain', 'exact', 'strict'])[1 + floor(random() * 3)::integer];
       modes := modes || mode || ' ';
       cfg := t.cfg_v2(5, jsonb_build_object('streak_bonus',
@@ -156,41 +166,49 @@ BEGIN
                || CASE mode WHEN 'exact'  THEN '{"count_exact_score": true}'::jsonb
                             WHEN 'strict' THEN '{"count_exact_score": true, "exact_as_prediction": true}'::jsonb
                             ELSE '{}'::jsonb END));
-      ph := t.phase(e, t.ruleset(format('fz%s-f%s', sc, f), cfg), 'F' || f, f);
+      phs := phs || t.phase(e, t.ruleset(format('fz%s-f%s', sc, fi), cfg), 'F' || fi, fi);
       n_ser := 2 + floor(random() * 8)::integer;
-      FOR i IN 1..n_ser LOOP
-        pos := pos + 1;
-        -- 0–5 h tras la anterior (0 = misma hora, desempata el id).
-        ts := ts + make_interval(hours => floor(random() * 6)::integer);
-        bo := (ARRAY[1, 3, 5])[1 + floor(random() * 3)::integer];
-        -- Como mucho un partido de la jornada por día.
-        IF random() < 0.15 AND feat IS DISTINCT FROM (ts AT TIME ZONE 'Europe/Berlin')::date THEN
-          m := t.match(ph, ts, bo, 'AAA', 'BBB', true);
-          feat := (ts AT TIME ZONE 'Europe/Berlin')::date;
-        ELSE
-          m := t.match(ph, ts, bo, 'AAA', 'BBB');
-        END IF;
-        hw  := random() < 0.5;
-        res := pg_temp.score(bo, hw);
-        FOR p IN 1..5 LOOP
-          IF pos >= joins[p] AND (pos = joins[p] OR random() < 0.75) THEN
-            r := random();
-            pred := CASE WHEN r < 0.45 THEN res                       -- exacto
-                         WHEN r < 0.70 THEN pg_temp.score(bo, hw)     -- ganador (exacto o no)
-                         ELSE pg_temp.score(bo, NOT hw) END;          -- ganador fallado
-            PERFORM t.vote(players[p], m, pred[1], pred[2]);
-          END IF;
-        END LOOP;
-        r := random();
-        st := CASE WHEN r < 0.84 THEN 'FINISHED' WHEN r < 0.92 THEN 'CANCELLED' ELSE 'PENDING' END;
-        IF st = 'FINISHED' THEN PERFORM t.finish(m, res[1], res[2]);
-        ELSIF st = 'CANCELLED' THEN UPDATE matches SET status = 'CANCELLED' WHERE id = m;
+      order_ := order_ || array_fill(fi, ARRAY[n_ser]);
+    END LOOP;
+    -- Intercaladas: las series de todas las fases, barajadas.
+    IF interl THEN
+      SELECT array_agg(x ORDER BY random()) INTO order_ FROM unnest(order_) x;
+    END IF;
+    FOR i IN 1..array_length(order_, 1) LOOP
+      f  := order_[i];
+      ph := phs[f];
+      -- Seguidas: cada fase empieza al día siguiente de la anterior.
+      IF NOT interl AND i > 1 AND f <> order_[i - 1] THEN ts := ts + interval '1 day'; END IF;
+      pos := pos + 1;
+      -- 0–5 h tras la anterior (0 = misma hora, desempata el id).
+      ts := ts + make_interval(hours => floor(random() * 6)::integer);
+      bo := (ARRAY[1, 3, 5])[1 + floor(random() * 3)::integer];
+      -- Como mucho un partido de la jornada por día.
+      IF random() < 0.15 AND feat IS DISTINCT FROM (ts AT TIME ZONE 'Europe/Berlin')::date THEN
+        m := t.match(ph, ts, bo, 'AAA', 'BBB', true);
+        feat := (ts AT TIME ZONE 'Europe/Berlin')::date;
+      ELSE
+        m := t.match(ph, ts, bo, 'AAA', 'BBB');
+      END IF;
+      hw  := random() < 0.5;
+      res := pg_temp.score(bo, hw);
+      FOR p IN 1..5 LOOP
+        IF pos >= joins[p] AND (pos = joins[p] OR random() < 0.75) THEN
+          r := random();
+          pred := CASE WHEN r < 0.45 THEN res                       -- exacto
+                       WHEN r < 0.70 THEN pg_temp.score(bo, hw)     -- ganador (exacto o no)
+                       ELSE pg_temp.score(bo, NOT hw) END;          -- ganador fallado
+          PERFORM t.vote(players[p], m, pred[1], pred[2]);
         END IF;
       END LOOP;
-      ts := ts + interval '1 day';  -- fases seguidas, sin intercalar
+      r := random();
+      st := CASE WHEN r < 0.84 THEN 'FINISHED' WHEN r < 0.92 THEN 'CANCELLED' ELSE 'PENDING' END;
+      IF st = 'FINISHED' THEN PERFORM t.finish(m, res[1], res[2]);
+      ELSIF st = 'CANCELLED' THEN UPDATE matches SET status = 'CANCELLED' WHERE id = m;
+      END IF;
     END LOOP;
     PERFORM rescore_lol_edition(e);
-    INSERT INTO fz VALUES (e, pool, n_ph, btrim(modes));
+    INSERT INTO fz VALUES (e, pool, n_ph, btrim(modes), interl);
   END LOOP;
 END;
 $$;
@@ -241,6 +259,9 @@ SELECT ok((SELECT count(*) FROM (SELECT match_date FROM matches mt JOIN phases p
 SELECT ok((SELECT count(*) FROM matches mt JOIN phases p ON p.id = mt.phase_id
            WHERE p.edition_id IN (SELECT e FROM fz) AND mt.status IN ('CANCELLED', 'PENDING')) > 0,
           'cobertura: canceladas y pendientes intercaladas');
+SELECT ok((SELECT count(*) FROM fz WHERE interleaved) > 0
+          AND (SELECT count(*) FROM fz WHERE NOT interleaved AND phases > 1) > 0,
+          'cobertura: ediciones con fases intercaladas en fechas y con fases seguidas');
 
 -- ---------------- Motor = modelo ----------------
 SELECT is_empty($$
