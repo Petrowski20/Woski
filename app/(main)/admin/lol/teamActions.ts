@@ -6,7 +6,7 @@ import { createClient } from '@/utils/supabase/server'
 import { checkTeamLogo, teamLogoObjectName, TEAM_LOGO_BUCKET, TEAM_LOGO_MAX_BYTES } from '@/utils/lol/teamLogo'
 import type { TeamActionResult } from '@/components/lol/adminTeamsTypes'
 
-// Equipos de LoL en /admin (pestaña Equipos). Igual que actions.ts:
+// Equipos de LoL en /admin (pestaña Equipos): alta, datos y logo. Igual que actions.ts:
 // 1. comprueba en el servidor que la sesión es ADMIN, y
 // 2. escribe con la sesión del admin: Storage aplica las políticas de
 //    team-logos (solo ADMIN) y las funciones admin_* vuelven a comprobar el
@@ -70,6 +70,49 @@ export async function updateLolTeamAction(input: UpdateTeamInput): Promise<TeamA
   if (error) return _rpcError('admin_update_lol_team', error)
   _revalidate()
   return { success: true }
+}
+
+export interface CreateTeamInput {
+  name: string
+  tag: string
+  region: string
+  /** Código de 2 letras o '' sin país. */
+  country: string
+  /** '#rrggbb' o '' sin color. */
+  color: string
+}
+
+/** Alta de un equipo de LoL. La BD valida, genera el slug y registra. El logo se sube después con uploadLolTeamLogoAction. */
+export async function createLolTeamAction(input: CreateTeamInput): Promise<TeamActionResult & { teamId?: number }> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('admin_create_lol_team', {
+    p_name: input.name,
+    p_tag: input.tag,
+    p_region: input.region,
+    p_country: input.country || null,
+    p_color: input.color || null,
+  })
+  if (error) return _rpcError('admin_create_lol_team', error)
+  _revalidate()
+  return { success: true, teamId: Number(data) }
+}
+
+/** Alta en lote: todos o ninguno (admin_create_lol_teams). */
+export async function createLolTeamsAction(rows: { name: string; tag: string }[], region: string): Promise<TeamActionResult & { created?: number }> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+  if (!Array.isArray(rows) || rows.length === 0 || rows.length > 100) return { error: 'INVALID' }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('admin_create_lol_teams', {
+    p_teams: rows.map(r => ({ name: String(r.name), tag: String(r.tag), region })),
+  })
+  if (error) return _rpcError('admin_create_lol_teams', error)
+  _revalidate()
+  return { success: true, created: Array.isArray(data) ? data.length : rows.length }
 }
 
 /**
