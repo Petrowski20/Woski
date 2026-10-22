@@ -7,6 +7,7 @@ import {
   createLolTeamAction,
   createLolTeamsAction,
   removeLolTeamLogoAction,
+  setLolTeamSeedAction,
   updateLolTeamAction,
   uploadLolTeamLogoAction,
 } from '@/app/(main)/admin/lol/teamActions'
@@ -22,7 +23,7 @@ import {
   type BatchRow,
 } from '@/utils/lol/teamCreate'
 import TeamLogo from './TeamLogo'
-import type { AdminTeamRow, TeamActionResult, TeamAuditRow } from './adminTeamsTypes'
+import type { AdminTeamRow, SeedEditionOption, TeamActionResult, TeamAuditRow } from './adminTeamsTypes'
 
 // Pestaña Equipos de /admin (LoL). Valida en el navegador para avisar antes
 // de enviar (mismas reglas que el servidor y la BD, que vuelven a validar) y
@@ -565,10 +566,110 @@ function BatchForm({ teams, onDone, t, lang }: { teams: AdminTeamRow[]; onDone: 
   )
 }
 
-function TeamCard({ team, open, onToggle, t, lang }: {
+const LEAGUE_RE = /^[A-Z0-9]{2,8}$/
+
+/** Seed del equipo en una edición ("LCK #1"): se ve en las tarjetas de esa edición. */
+function SeedForm({ team, editions, t, lang }: { team: AdminTeamRow; editions: SeedEditionOption[]; t: T; lang: string }) {
+  const initial = editions.find(e => e.active)?.id ?? editions[0]?.id ?? null
+  const [editionId, setEditionId] = useState<number | null>(initial)
+  const current = team.seeds.find(x => x.editionId === editionId) ?? null
+  const [league, setLeague] = useState(current?.league ?? '')
+  const [seed, setSeed] = useState(current ? String(current.seed) : '')
+  const [isPending, startTransition] = useTransition()
+
+  const pickEdition = (id: number) => {
+    setEditionId(id)
+    const c = team.seeds.find(x => x.editionId === id)
+    setLeague(c?.league ?? '')
+    setSeed(c ? String(c.seed) : '')
+  }
+
+  const cleanLeague = league.trim().toUpperCase()
+  const n = Number(seed)
+  const problem = cleanLeague === '' && seed === ''
+    ? null
+    : !LEAGUE_RE.test(cleanLeague) || !Number.isInteger(n) || n < 1 || n > 16
+      ? t('adminTeams.errors.seedFormat')
+      : null
+  const unchanged = (current?.league ?? '') === cleanLeague && (current ? String(current.seed) : '') === seed
+
+  const save = (clear: boolean) => {
+    if (editionId === null) return
+    startTransition(async () => {
+      try {
+        const res = await setLolTeamSeedAction({
+          editionId, teamId: team.id, league: clear ? '' : cleanLeague, seed: clear || seed === '' ? null : n,
+        })
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else {
+          toast.success(clear ? t('adminTeams.seedRemoved') : t('adminTeams.seedSaved'))
+          if (clear) { setLeague(''); setSeed('') }
+        }
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+
+  if (editions.length === 0) return <p className="text-xs text-text-muted">{t('adminTeams.seedNoEditions')}</p>
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-text-muted">{t('adminTeams.seedHelp')}</p>
+      <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_4.5rem] gap-2">
+        <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+          {t('adminTeams.seedEdition')}
+          <select className={fieldClass} value={editionId ?? ''} onChange={e => pickEdition(Number(e.target.value))} disabled={isPending}>
+            {editions.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+          {t('adminTeams.seedLeague')}
+          <input
+            className={`${fieldClass} uppercase font-semibold`}
+            value={league}
+            onChange={e => setLeague(e.target.value.toUpperCase())}
+            maxLength={8}
+            placeholder="LCK"
+            disabled={isPending}
+            autoCapitalize="characters"
+            spellCheck={false}
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-text-muted min-w-0">
+          {t('adminTeams.seedNumber')}
+          <input
+            className={`${fieldClass} tabular-nums`}
+            value={seed}
+            onChange={e => setSeed(e.target.value.replace(/[^0-9]/g, ''))}
+            inputMode="numeric"
+            maxLength={2}
+            placeholder="1"
+            disabled={isPending}
+          />
+        </label>
+      </div>
+      {problem && <p role="alert" className="text-xs text-danger">{problem}</p>}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={() => save(false)} disabled={isPending || unchanged || problem !== null || cleanLeague === ''} className={btnPrimary}>
+          {isPending ? t('adminTeams.saving') : t('adminTeams.seedSave')}
+        </button>
+        {current && (
+          <button type="button" onClick={() => save(true)} disabled={isPending} className={btnDanger}>
+            {t('adminTeams.seedRemove')}
+          </button>
+        )}
+        {current && <span className="text-xs text-text-muted">{t('adminTeams.seedCurrent', { seed: `${current.league} #${current.seed}` })}</span>}
+      </div>
+    </div>
+  )
+}
+
+function TeamCard({ team, open, onToggle, editions, t, lang }: {
   team: AdminTeamRow
   open: boolean
   onToggle: () => void
+  editions: SeedEditionOption[]
   t: T
   lang: string
 }) {
@@ -598,6 +699,10 @@ function TeamCard({ team, open, onToggle, t, lang }: {
         <div className="flex flex-col gap-4 border-t border-border pt-3">
           <DetailsForm team={team} t={t} lang={lang} />
           <div className="border-t border-border pt-3">
+            <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.seed')}</p>
+            <SeedForm key={team.seeds.map(x => `${x.editionId}:${x.league}${x.seed}`).join(',')} team={team} editions={editions} t={t} lang={lang} />
+          </div>
+          <div className="border-t border-border pt-3">
             <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.logo')}</p>
             <LogoForm key={team.logoUrl ?? 'none'} team={team} t={t} lang={lang} />
           </div>
@@ -607,7 +712,7 @@ function TeamCard({ team, open, onToggle, t, lang }: {
   )
 }
 
-export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[]; audit: TeamAuditRow[] }) {
+export default function AdminLolTeams({ teams, audit, editions }: { teams: AdminTeamRow[]; audit: TeamAuditRow[]; editions: SeedEditionOption[] }) {
   const { t, lang } = useLang()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<number | null>(null)
@@ -625,6 +730,8 @@ export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[];
     logo: t('adminTeams.logo'),
     region: t('adminTeams.region'),
     country: t('adminTeams.country'),
+    league: t('adminTeams.seedLeague'),
+    seed: t('adminTeams.seedNumber'),
   }
   const fmt = timeFmt(lang)
   const value = (field: string, v: string | null) =>
@@ -680,6 +787,7 @@ export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[];
               team={team}
               open={open === team.id}
               onToggle={() => setOpen(open === team.id ? null : team.id)}
+              editions={editions}
               t={t}
               lang={lang}
             />
@@ -696,7 +804,7 @@ export default function AdminLolTeams({ teams, audit }: { teams: AdminTeamRow[];
             {audit.map(a => (
               <li key={a.id} className="py-2 flex flex-col gap-0.5 min-w-0">
                 <p className="text-text-primary">
-                  <strong>{a.team}</strong> · {t(`adminTeams.audit.${a.action}`)}
+                  <strong>{a.team}</strong> · {t(`adminTeams.audit.${a.action}`)}{a.edition && ` (${a.edition})`}
                 </p>
                 {a.changes.map(c => (
                   <p key={c.field} className="text-xs text-text-muted break-all">

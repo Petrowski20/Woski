@@ -27,6 +27,15 @@ export interface AdminTeamRow {
   logoUrl: string | null
   /** Series de LoL en las que juega (para saber si está en uso). */
   matches: number
+  /** Seed por edición (team_edition_stats.league/seed). */
+  seeds: { editionId: number; league: string; seed: number }[]
+}
+
+/** Edición de LoL para elegir dónde va el seed. */
+export interface SeedEditionOption {
+  id: number
+  label: string
+  active: boolean
 }
 
 export interface TeamAuditRow {
@@ -34,7 +43,9 @@ export interface TeamAuditRow {
   at: string
   team: string
   actor: string
-  action: 'create_team' | 'update_team' | 'set_team_logo' | 'remove_team_logo'
+  action: 'create_team' | 'update_team' | 'set_team_logo' | 'remove_team_logo' | 'set_team_seed'
   /** Campos que cambiaron, antes y después (logo: URL; en un alta, antes = null). */
-  changes: { field: 'name' | 'tag' | 'color' | 'logo' | 'region' | 'country'; before: string | null; after: string | null }[]
+  changes: { field: 'name' | 'tag' | 'color' | 'logo' | 'region' | 'country' | 'league' | 'seed'; before: string | null; after: string | null }[]
+  /** Edición del cambio (solo seed). */
+  edition: string | null
 }

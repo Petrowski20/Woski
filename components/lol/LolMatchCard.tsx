@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Loader2 } from 'lucide-react'
 import { sameScore, type SeriesScore } from '@/utils/lol/series'
 import type { LolMatchView, LolTeamView, SaveErrorCode } from '@/utils/lol/types'
+import type { SwissInfo } from '@/utils/lol/swiss'
 import SeriesSlider from './SeriesSlider'
 import VoteBreakdown from './VoteBreakdown'
 import PointsBreakdown from './PointsBreakdown'
@@ -38,10 +39,32 @@ function TeamColumn({ team, side }: { team: LolTeamView; side: 'a' | 'b' }) {
     <div className="flex flex-col items-center gap-1.5 min-w-0 flex-1 text-center">
       <TeamLogo team={team} size="lg" side={side} />
       <span className="font-bold text-sm text-text-primary truncate max-w-full">{team.name}</span>
+      {team.seed && (
+        <span className="text-[11px] font-semibold text-text-muted tracking-wide" title="Seed en esta competición">{team.seed}</span>
+      )}
       <span className="text-xs text-text-muted tabular-nums" title="Récord en esta fase">
         {team.record.wins}-{team.record.losses}
       </span>
     </div>
+  )
+}
+
+const STAKES: Record<NonNullable<SwissInfo['stakes']>, string> = {
+  qualify: '🎟️ El que gane, clasifica',
+  eliminate: '☠️ El que pierda, eliminado',
+  decider: '⚔️ Todo o nada',
+}
+
+/** Swiss Stage: ronda, balance de los dos equipos antes de la serie y qué se juegan. */
+function SwissRow({ info }: { info: SwissInfo }) {
+  return (
+    <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-text-muted">
+      <span className="px-2 py-0.5 rounded-full bg-bg-muted ring-1 ring-inset ring-border font-semibold text-text-primary">
+        Ronda {info.round}
+        {info.record && <span className="tabular-nums"> · {info.record.wins}-{info.record.losses}</span>}
+      </span>
+      {info.stakes && <span className="font-semibold text-warning">{STAKES[info.stakes]}</span>}
+    </p>
   )
 }
 
@@ -95,6 +118,7 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
       </header>
 
       <div className="p-4 flex flex-col gap-4">
+        {match.swiss && <SwissRow info={match.swiss} />}
         {/* Equipos */}
         <div className="flex items-start gap-3">
           <TeamColumn team={match.home} side="a" />

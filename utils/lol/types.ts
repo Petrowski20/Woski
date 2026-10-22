@@ -1,5 +1,6 @@
 import type { BestOf, MatchStatus, SeriesScore } from './series'
 import type { LolEditionStatus } from './editionStatus'
+import type { SwissInfo } from './swiss'
 
 export interface LolEditionOption {
   id: number
@@ -26,6 +27,8 @@ export interface LolTeamView {
   color: string | null
   /** Récord en la fase del partido (solo partidos ya resueltos). */
   record: { wins: number; losses: number }
+  /** Seed en la edición ("LCK #1", team_edition_stats); null si no hay. */
+  seed: string | null
 }
 
 export interface VoteShare extends SeriesScore {
@@ -83,6 +86,8 @@ export interface LolMatchView {
   result: SeriesScore | null
   /** Partido de la jornada (matches.metadata.featured_match). */
   featured: boolean
+  /** Solo en fases suizas (utils/lol/swiss): ronda, balance previo y qué se juega. */
+  swiss: SwissInfo | null
   myPrediction: (SeriesScore & { points: number | null; breakdown: ScoreBreakdown | null }) | null
   /** Solo presente cuando la votación del partido ya está cerrada. */
   distribution: { total: number; shares: VoteShare[] } | null

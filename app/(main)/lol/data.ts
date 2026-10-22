@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { lolEditionStatus } from '@/utils/lol/editionStatus'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
+import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
 import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
@@ -252,7 +253,7 @@ export async function getEditionMatches(
     .filter(m => m.status !== 'CANCELLED' && isPredictionLocked(m.status, m.prediction_locks_at, now))
     .map(m => m.id)
 
-  const [predsRes, distributions] = await Promise.all([
+  const [predsRes, distributions, seedsRes] = await Promise.all([
     matchIds.length
       ? supabase
           .from('predictions')
@@ -261,8 +262,28 @@ export async function getEditionMatches(
           .in('match_id', matchIds)
       : Promise.resolve({ data: [], error: null }),
     getMyDistributions(supabase, closedIds),
+    supabase.from('team_edition_stats').select('team_id, league, seed').eq('edition_id', editionId).not('seed', 'is', null),
   ])
   if (predsRes.error) throw new LolDataError('my predictions', predsRes.error)
+  // Sin el seed la tarjeta sigue funcionando (p. ej. antes de aplicar la migración).
+  if (seedsRes.error) console.error('[lol] team seeds:', seedsRes.error)
+  const seeds = new Map(((seedsRes.data ?? []) as { team_id: number; league: string | null; seed: number | null }[])
+    .map(r => [r.team_id, formatSeed(r.league, r.seed)]))
+
+  // Swiss Stage: ronda y balance previo de cada serie (fases cuyo nombre lo dice).
+  const swiss = new Map<number, SwissInfo>()
+  for (const [phaseId, phase] of phaseById) {
+    if (!isSwissPhase(phase.name)) continue
+    const info = swissInfo(matches.filter(m => m.phase_id === phaseId).map(m => ({
+      id: m.id,
+      date: m.match_date,
+      status: m.status,
+      homeId: m.home_team.id,
+      awayId: m.away_team.id,
+      result: m.home_goals !== null && m.away_goals !== null ? { home: m.home_goals, away: m.away_goals } : null,
+    })))
+    for (const [id, v] of info) swiss.set(id, v)
+  }
 
   const myPreds = new Map(
     (predsRes.data ?? []).map((p: { match_id: number; pred_home_goals: number; pred_away_goals: number; points_earned: number | null }) => [p.match_id, p]),
@@ -308,6 +329,7 @@ export async function getEditionMatches(
         logoUrl: m.home_team.logo_url,
         color: m.home_team.color,
         record: { ...recordOf(m.phase_id, m.home_team.id) },
+        seed: seeds.get(m.home_team.id) ?? null,
       },
       away: {
         id: m.away_team.id,
@@ -316,12 +338,14 @@ export async function getEditionMatches(
         logoUrl: m.away_team.logo_url,
         color: m.away_team.color,
         record: { ...recordOf(m.phase_id, m.away_team.id) },
+        seed: seeds.get(m.away_team.id) ?? null,
       },
       result:
         m.status === 'FINISHED' && m.home_goals !== null && m.away_goals !== null
           ? { home: m.home_goals, away: m.away_goals }
           : null,
       featured: (m.metadata as { featured_match?: unknown } | null)?.featured_match === true,
+      swiss: swiss.get(m.id) ?? null,
       myPrediction: mine
         ? {
             home: mine.pred_home_goals,

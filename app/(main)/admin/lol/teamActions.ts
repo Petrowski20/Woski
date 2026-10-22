@@ -115,6 +115,31 @@ export async function createLolTeamsAction(rows: { name: string; tag: string }[]
   return { success: true, created: Array.isArray(data) ? data.length : rows.length }
 }
 
+export interface SetSeedInput {
+  editionId: number
+  teamId: number
+  /** Sigla de la liga ("LCK") o '' para quitar el seed. */
+  league: string
+  seed: number | null
+}
+
+/** Seed del equipo en una edición ("LCK #1"). La BD valida y registra. */
+export async function setLolTeamSeedAction(input: SetSeedInput): Promise<TeamActionResult> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_set_lol_team_seed', {
+    p_edition_id: input.editionId,
+    p_team_id: input.teamId,
+    p_league: input.league || null,
+    p_seed: input.league ? input.seed : null,
+  })
+  if (error) return _rpcError('admin_set_lol_team_seed', error)
+  _revalidate()
+  return { success: true }
+}
+
 /**
  * Sube un logo (FormData: teamId, file) y lo asigna al equipo. Comprueba
  * tamaño, firma PNG/WebP y dimensiones; el nombre es el sha256 del
