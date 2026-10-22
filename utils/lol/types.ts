@@ -1,5 +1,8 @@
 import type { BestOf, MatchStatus, SeriesScore } from './series'
 import type { LolEditionStatus } from './editionStatus'
+import type { SwissInfo } from './swiss'
+import type { LolRole } from './roster'
+import type { TeamLogoMode } from './teamLogo'
 
 export interface LolEditionOption {
   id: number
@@ -22,10 +25,14 @@ export interface LolTeamView {
   tag: string
   /** URL pública del bucket team-logos; null → insignia con las siglas. */
   logoUrl: string | null
+  /** teams.logo_mode: color, mono (máscara con el color del tema) o plate (placa oscura). */
+  logoMode: TeamLogoMode
   /** teams.color ('#rrggbb') o null. */
   color: string | null
   /** Récord en la fase del partido (solo partidos ya resueltos). */
   record: { wins: number; losses: number }
+  /** Seed en la edición ("LCK #1", team_edition_stats); null si no hay. */
+  seed: string | null
 }
 
 export interface VoteShare extends SeriesScore {
@@ -83,6 +90,8 @@ export interface LolMatchView {
   result: SeriesScore | null
   /** Partido de la jornada (matches.metadata.featured_match). */
   featured: boolean
+  /** Solo en fases suizas (utils/lol/swiss): ronda, balance previo y qué se juega. */
+  swiss: SwissInfo | null
   myPrediction: (SeriesScore & { points: number | null; breakdown: ScoreBreakdown | null }) | null
   /** Solo presente cuando la votación del partido ya está cerrada. */
   distribution: { total: number; shares: VoteShare[] } | null
@@ -153,4 +162,37 @@ export interface ProfileLolEdition {
   exactHits: number
   /** Series Bo3/Bo5 terminadas que voté (las únicas con marcador exacto). */
   exactPlayed: number
+}
+
+/** Alguien de la plantilla de un equipo en una edición (lol_roster + lol_players). */
+export interface RosterMember {
+  rosterId: number
+  playerId: number
+  nickname: string
+  realName: string | null
+  /** ISO 3166-1 alfa-2 o null. */
+  country: string | null
+  role: LolRole
+  /** Hasta 3 ids de campeón de Data Dragon. */
+  picks: string[]
+}
+
+/** Equipo de una edición para la pestaña Equipos. */
+export interface EditionTeam {
+  id: number
+  name: string
+  tag: string
+  logoUrl: string | null
+  /** teams.logo_mode: color, mono (máscara con el color del tema) o plate (placa oscura). */
+  logoMode: TeamLogoMode
+  color: string | null
+  /** teams.metadata.region / country. */
+  region: string | null
+  country: string | null
+  /** "LCK #1" o null. */
+  seed: string | null
+  seedLeague: string | null
+  seedNumber: number | null
+  /** De Top a Coach. */
+  roster: RosterMember[]
 }
