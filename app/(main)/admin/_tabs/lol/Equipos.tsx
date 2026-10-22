@@ -1,7 +1,9 @@
 import { createClient } from '@/utils/supabase/server'
 import { getServerLang, tServer } from '@/utils/i18n-server'
 import AdminLolTeams from '@/components/lol/AdminLolTeams'
-import type { AdminTeamRow, SeedEditionOption, TeamAuditRow } from '@/components/lol/adminTeamsTypes'
+import type { AdminRosterEntry, AdminTeamRow, SeedEditionOption, TeamAuditRow } from '@/components/lol/adminTeamsTypes'
+import { getChampionCatalog } from '@/utils/lol/champions'
+import { roleOrder } from '@/utils/lol/roster'
 import { getLolEditions, lolToday, LOL_SPORT_SLUG } from '../../../lol/data'
 
 // LoL · Equipos: alta, nombre, siglas, color y logo de cada equipo. Escribe con
@@ -62,7 +64,7 @@ export default async function LolEquiposTab() {
     active: !!e.startDate && e.startDate <= today && (!e.endDate || e.endDate >= today),
   }))
 
-  const [homeRes, awayRes, auditRes, seedsRes] = await Promise.all([
+  const [homeRes, awayRes, auditRes, seedsRes, rosterRes, catalog] = await Promise.all([
     ids.length ? supabase.from('matches').select('home_team_id').in('home_team_id', ids) : Promise.resolve({ data: [], error: null }),
     ids.length ? supabase.from('matches').select('away_team_id').in('away_team_id', ids) : Promise.resolve({ data: [], error: null }),
     supabase
@@ -75,7 +77,24 @@ export default async function LolEquiposTab() {
       ? supabase.from('team_edition_stats').select('edition_id, team_id, league, seed')
           .in('edition_id', editions.map(e => e.id)).not('seed', 'is', null)
       : Promise.resolve({ data: [], error: null }),
+    editions.length
+      ? supabase.from('lol_roster').select('id, edition_id, team_id, role, picks, lol_players(nickname, country)')
+          .in('edition_id', editions.map(e => e.id))
+      : Promise.resolve({ data: [], error: null }),
+    getChampionCatalog(),
   ])
+  if (rosterRes.error) console.error('[admin equipos] roster', rosterRes.error)
+  const rosterByTeam = new Map<number, AdminRosterEntry[]>()
+  for (const r of (rosterRes.data ?? []) as unknown as {
+    id: number; edition_id: number; team_id: number; role: string; picks: string[] | null
+    lol_players: { nickname: string; country: string | null } | null
+  }[]) {
+    const list = rosterByTeam.get(r.team_id) ?? []
+    list.push({ rosterId: r.id, editionId: r.edition_id, role: r.role, picks: r.picks ?? [],
+                nickname: r.lol_players?.nickname ?? '?', country: r.lol_players?.country ?? null })
+    rosterByTeam.set(r.team_id, list)
+  }
+  for (const list of rosterByTeam.values()) list.sort((a, b) => roleOrder(a.role) - roleOrder(b.role) || a.rosterId - b.rosterId)
   if (seedsRes.error) console.error('[admin equipos] seeds', seedsRes.error)
   const seedsByTeam = new Map<number, AdminTeamRow['seeds']>()
   for (const r of (seedsRes.data ?? []) as { edition_id: number; team_id: number; league: string; seed: number }[]) {
@@ -99,6 +118,7 @@ export default async function LolEquiposTab() {
     logoUrl: r.logo_url,
     matches: played.get(r.id) ?? 0,
     seeds: seedsByTeam.get(r.id) ?? [],
+    roster: rosterByTeam.get(r.id) ?? [],
   }))
 
   const audits = (auditRes.data ?? []) as RawAudit[]
@@ -123,5 +143,5 @@ export default async function LolEquiposTab() {
     edition: a.edition_id ? editionName.get(a.edition_id) ?? `#${a.edition_id}` : null,
   }))
 
-  return <AdminLolTeams teams={teams} audit={audit} editions={seedEditions} />
+  return <AdminLolTeams teams={teams} audit={audit} editions={seedEditions} champions={catalog.champions} />
 }

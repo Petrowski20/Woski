@@ -6,7 +6,10 @@ import { useLang } from '@/contexts/LangContext'
 import {
   createLolTeamAction,
   createLolTeamsAction,
+  importLolRosterAction,
+  removeLolRosterEntryAction,
   removeLolTeamLogoAction,
+  setLolRosterPicksAction,
   setLolTeamSeedAction,
   updateLolTeamAction,
   uploadLolTeamLogoAction,
@@ -23,7 +26,9 @@ import {
   type BatchRow,
 } from '@/utils/lol/teamCreate'
 import TeamLogo from './TeamLogo'
-import type { AdminTeamRow, SeedEditionOption, TeamActionResult, TeamAuditRow } from './adminTeamsTypes'
+import type { AdminRosterEntry, AdminTeamRow, SeedEditionOption, TeamActionResult, TeamAuditRow } from './adminTeamsTypes'
+import { ROLE_LABEL, parseRosterPaste, type LolRole, type RosterProblem } from '@/utils/lol/roster'
+import type { Champion } from '@/utils/lol/champions'
 
 // Pestaña Equipos de /admin (LoL). Valida en el navegador para avisar antes
 // de enviar (mismas reglas que el servidor y la BD, que vuelven a validar) y
@@ -665,11 +670,226 @@ function SeedForm({ team, editions, t, lang }: { team: AdminTeamRow; editions: S
   )
 }
 
-function TeamCard({ team, open, onToggle, editions, t, lang }: {
+function rosterProblemText(t: T, p: RosterProblem): string {
+  switch (p.code) {
+    case 'team': return t('adminTeams.errors.rosterTeam', { tag: p.tag })
+    case 'role': return t('adminTeams.errors.rosterRole', { role: p.role })
+    case 'country': return t('adminTeams.errors.rosterCountry', { country: p.country })
+    case 'duplicate': return t('adminTeams.errors.rosterDuplicate', { line: p.line })
+    case 'nickname': return t('adminTeams.errors.rosterNick')
+    default: return t('adminTeams.errors.rosterColumns')
+  }
+}
+
+/** Carga de plantillas pegando desde el Excel, con vista previa y confirmación (todo o nada). */
+function RosterImportForm({ teams, editions, onDone, t, lang }: {
+  teams: AdminTeamRow[]
+  editions: SeedEditionOption[]
+  onDone: () => void
+  t: T
+  lang: string
+}) {
+  const [editionId, setEditionId] = useState<number | null>(editions.find(e => e.active)?.id ?? editions[0]?.id ?? null)
+  const [text, setText] = useState('')
+  const [replace, setReplace] = useState(true)
+  const [isPending, startTransition] = useTransition()
+
+  const tags = useMemo(() => new Set(teams.map(tm => tm.tag.toUpperCase())), [teams])
+  const rows = useMemo(() => parseRosterPaste(text, tags), [text, tags])
+  const ready = rows.filter(r => r.problems.length === 0).length
+  const canLoad = editionId !== null && rows.length > 0 && ready === rows.length
+
+  const confirm = () => {
+    if (editionId === null) return
+    startTransition(async () => {
+      try {
+        const res = await importLolRosterAction(editionId, rows.map(r => ({
+          team: r.team, role: r.role ?? '', nickname: r.nickname, country: r.country, realName: r.realName,
+        })), replace)
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else {
+          toast.success(t('adminTeams.rosterLoaded', { n: res.loaded ?? rows.length }))
+          onDone()
+        }
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+
+  if (editions.length === 0) return <p className="text-sm text-text-muted">{t('adminTeams.seedNoEditions')}</p>
+
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-xs text-text-muted">{t('adminTeams.rosterImportHelp')}</p>
+      <label className="flex flex-col gap-1 text-xs text-text-muted max-w-xs">
+        {t('adminTeams.seedEdition')}
+        <select className={fieldClass} value={editionId ?? ''} onChange={e => setEditionId(Number(e.target.value))} disabled={isPending}>
+          {editions.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+        </select>
+      </label>
+      <textarea
+        className={`${fieldClass} min-h-36 font-mono text-xs`}
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder={'NAVI\tTOP\tMaynter\tUA\nNAVI\tJUNGLE\tRhilech\tTR'}
+        disabled={isPending}
+        spellCheck={false}
+        rows={8}
+        aria-label={t('adminTeams.roster')}
+      />
+      <label className="inline-flex items-start gap-2 text-xs text-text-primary">
+        <input type="checkbox" checked={replace} onChange={e => setReplace(e.target.checked)} disabled={isPending} className="mt-0.5" />
+        {t('adminTeams.rosterReplace')}
+      </label>
+
+      {rows.length === 0 ? (
+        <p className="text-xs text-text-muted">{t('adminTeams.rosterEmpty')}</p>
+      ) : (
+        <div className="flex flex-col gap-2 rounded-lg bg-bg-muted/60 p-3">
+          <p className="text-xs font-semibold text-text-primary">{t('adminTeams.rosterPreview', { ok: ready, n: rows.length })}</p>
+          <ul className="flex flex-col divide-y divide-border text-sm max-h-80 overflow-y-auto">
+            {rows.map(r => (
+              <li key={r.line} className="grid grid-cols-[3rem_3.5rem_4.5rem_minmax(0,1fr)_auto] items-start gap-2 py-1.5">
+                <span className="text-[11px] text-text-muted tabular-nums pt-0.5">{t('adminTeams.batchLine', { n: r.line })}</span>
+                <span className="font-bold text-text-primary truncate">{r.team}</span>
+                <span className="text-xs text-text-muted pt-0.5">{r.role ? ROLE_LABEL[r.role as LolRole] : '—'}</span>
+                <span className="min-w-0">
+                  <span className="block truncate text-text-primary">{r.nickname}{r.country && <span className="text-text-muted"> · {r.country}</span>}</span>
+                  {r.problems.map(p => <span key={p.code} className="block text-xs text-danger">{rosterProblemText(t, p)}</span>)}
+                </span>
+                <span aria-hidden className={r.problems.length === 0 ? 'text-success' : 'text-danger'}>{r.problems.length === 0 ? '✓' : '✗'}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-text-muted">{ready === rows.length ? t('adminTeams.batchAllOrNothing') : t('adminTeams.batchFix')}</p>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={confirm} disabled={isPending || !canLoad} className={btnPrimary}>
+          {isPending ? t('adminTeams.creating') : t('adminTeams.rosterConfirm', { n: rows.length })}
+        </button>
+        <button type="button" onClick={onDone} disabled={isPending} className={btnPlain}>{t('adminTeams.cancel')}</button>
+      </div>
+    </div>
+  )
+}
+
+/** Una persona de la plantilla: sus 3 mejores picks (campeones de Data Dragon) y quitarla. */
+function RosterEntryRow({ entry, champions, t, lang }: { entry: AdminRosterEntry; champions: Champion[]; t: T; lang: string }) {
+  const byId = useMemo(() => new Map(champions.map(c => [c.id, c.name])), [champions])
+  const byName = useMemo(() => new Map(champions.flatMap(c => [[c.name.toLowerCase(), c.id], [c.id.toLowerCase(), c.id]])), [champions])
+  const [picks, setPicks] = useState<string[]>(() => [0, 1, 2].map(i => byId.get(entry.picks[i] ?? '') ?? entry.picks[i] ?? ''))
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const [isPending, startTransition] = useTransition()
+
+  const ids = picks.map(p => p.trim()).filter(Boolean).map(p => byName.get(p.toLowerCase()) ?? (champions.length ? null : p))
+  const unknown = picks.map(p => p.trim()).filter(p => p && champions.length && !byName.has(p.toLowerCase()))
+  const unchanged = ids.join(',') === entry.picks.join(',')
+
+  const save = () => {
+    startTransition(async () => {
+      try {
+        const res = await setLolRosterPicksAction(entry.rosterId, ids.filter((x): x is string => !!x))
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else toast.success(t('adminTeams.picksSaved'))
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+  const remove = () => {
+    startTransition(async () => {
+      try {
+        const res = await removeLolRosterEntryAction(entry.rosterId)
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else toast.success(t('adminTeams.rosterRemoved'))
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      } finally {
+        setConfirmRemove(false)
+      }
+    })
+  }
+
+  return (
+    <li className="flex flex-col gap-1.5 py-2">
+      <p className="text-sm text-text-primary">
+        <span className="inline-block w-16 text-[11px] font-bold uppercase text-text-muted">{ROLE_LABEL[entry.role as LolRole] ?? entry.role}</span>
+        <strong>{entry.nickname}</strong>{entry.country && <span className="text-text-muted"> · {entry.country}</span>}
+      </p>
+      <div className="grid grid-cols-3 gap-1.5">
+        {picks.map((p, i) => (
+          <input
+            key={i}
+            className={fieldClass}
+            value={p}
+            list="lol-champions"
+            onChange={e => setPicks(v => v.map((x, j) => (j === i ? e.target.value : x)))}
+            placeholder={t('adminTeams.picksPlaceholder')}
+            aria-label={`${t('adminTeams.picks')} ${i + 1} · ${entry.nickname}`}
+            disabled={isPending}
+            spellCheck={false}
+          />
+        ))}
+      </div>
+      {unknown.length > 0 && <p role="alert" className="text-xs text-danger">{t('adminTeams.errors.picksUnknown', { name: unknown.join(', ') })}</p>}
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" onClick={save} disabled={isPending || unchanged || unknown.length > 0} className={btnPrimary}>
+          {t('adminTeams.picksSave')}
+        </button>
+        {confirmRemove ? (
+          <>
+            <button type="button" onClick={remove} disabled={isPending} className={btnDanger}>{t('adminTeams.rosterRemoveConfirm')}</button>
+            <button type="button" onClick={() => setConfirmRemove(false)} disabled={isPending} className={btnPlain}>{t('adminTeams.cancel')}</button>
+          </>
+        ) : (
+          <button type="button" onClick={() => setConfirmRemove(true)} disabled={isPending} className={btnDanger}>{t('adminTeams.rosterRemove')}</button>
+        )}
+      </div>
+    </li>
+  )
+}
+
+/** Plantilla del equipo en una edición (se carga desde "Cargar plantillas"). */
+function RosterEditor({ team, editions, champions, t, lang }: {
+  team: AdminTeamRow
+  editions: SeedEditionOption[]
+  champions: Champion[]
+  t: T
+  lang: string
+}) {
+  const [editionId, setEditionId] = useState<number | null>(editions.find(e => e.active)?.id ?? editions[0]?.id ?? null)
+  const entries = team.roster.filter(r => r.editionId === editionId)
+  if (editions.length === 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <label className="flex flex-col gap-1 text-xs text-text-muted max-w-xs">
+        {t('adminTeams.seedEdition')}
+        <select className={fieldClass} value={editionId ?? ''} onChange={e => setEditionId(Number(e.target.value))}>
+          {editions.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+        </select>
+      </label>
+      {entries.length === 0 ? (
+        <p className="text-xs text-text-muted">{t('adminTeams.rosterNone')}</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {entries.map(e => (
+            <RosterEntryRow key={`${e.rosterId}:${e.picks.join(',')}`} entry={e} champions={champions} t={t} lang={lang} />
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+function TeamCard({ team, open, onToggle, editions, champions, t, lang }: {
   team: AdminTeamRow
   open: boolean
   onToggle: () => void
   editions: SeedEditionOption[]
+  champions: Champion[]
   t: T
   lang: string
 }) {
@@ -703,6 +923,10 @@ function TeamCard({ team, open, onToggle, editions, t, lang }: {
             <SeedForm key={team.seeds.map(x => `${x.editionId}:${x.league}${x.seed}`).join(',')} team={team} editions={editions} t={t} lang={lang} />
           </div>
           <div className="border-t border-border pt-3">
+            <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.roster')}</p>
+            <RosterEditor team={team} editions={editions} champions={champions} t={t} lang={lang} />
+          </div>
+          <div className="border-t border-border pt-3">
             <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.logo')}</p>
             <LogoForm key={team.logoUrl ?? 'none'} team={team} t={t} lang={lang} />
           </div>
@@ -712,11 +936,16 @@ function TeamCard({ team, open, onToggle, editions, t, lang }: {
   )
 }
 
-export default function AdminLolTeams({ teams, audit, editions }: { teams: AdminTeamRow[]; audit: TeamAuditRow[]; editions: SeedEditionOption[] }) {
+export default function AdminLolTeams({ teams, audit, editions, champions }: {
+  teams: AdminTeamRow[]
+  audit: TeamAuditRow[]
+  editions: SeedEditionOption[]
+  champions: Champion[]
+}) {
   const { t, lang } = useLang()
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<number | null>(null)
-  const [adding, setAdding] = useState<'one' | 'batch' | null>(null)
+  const [adding, setAdding] = useState<'one' | 'batch' | 'roster' | null>(null)
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -761,19 +990,29 @@ export default function AdminLolTeams({ teams, audit, editions }: { teams: Admin
           <button type="button" onClick={() => setAdding(adding === 'batch' ? null : 'batch')} className={btnPlain} aria-expanded={adding === 'batch'}>
             {t('adminTeams.batch')}
           </button>
+          <button type="button" onClick={() => setAdding(adding === 'roster' ? null : 'roster')} className={btnPlain} aria-expanded={adding === 'roster'}>
+            {t('adminTeams.rosterImport')}
+          </button>
         </div>
       </div>
 
       {adding && (
         <section className="bg-bg-elevated border border-accent/40 rounded-card shadow-card p-3 sm:p-4 flex flex-col gap-3 min-w-0">
           <h2 className="heading-display font-bold text-text-primary">
-            {adding === 'one' ? t('adminTeams.addTitle') : t('adminTeams.batch')}
+            {adding === 'one' ? t('adminTeams.addTitle') : adding === 'batch' ? t('adminTeams.batch') : t('adminTeams.rosterImport')}
           </h2>
           {adding === 'one'
             ? <CreateTeamForm teams={teams} onDone={() => setAdding(null)} t={t} lang={lang} />
-            : <BatchForm teams={teams} onDone={() => setAdding(null)} t={t} lang={lang} />}
+            : adding === 'batch'
+              ? <BatchForm teams={teams} onDone={() => setAdding(null)} t={t} lang={lang} />
+              : <RosterImportForm teams={teams} editions={editions} onDone={() => setAdding(null)} t={t} lang={lang} />}
         </section>
       )}
+
+      {/* Campeones para los picks (Data Dragon). */}
+      <datalist id="lol-champions">
+        {champions.map(c => <option key={c.id} value={c.name} />)}
+      </datalist>
 
       {teams.length === 0 ? (
         <p className="text-sm text-text-muted">{t('adminTeams.noTeams')}</p>
@@ -788,6 +1027,7 @@ export default function AdminLolTeams({ teams, audit, editions }: { teams: Admin
               open={open === team.id}
               onToggle={() => setOpen(open === team.id ? null : team.id)}
               editions={editions}
+              champions={champions}
               t={t}
               lang={lang}
             />

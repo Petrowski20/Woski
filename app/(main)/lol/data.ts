@@ -3,7 +3,8 @@ import { lolEditionStatus } from '@/utils/lol/editionStatus'
 import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
 import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
-import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
+import { roleOrder, type LolRole } from '@/utils/lol/roster'
+import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -572,4 +573,81 @@ export async function getProfileLolSummary(
   return all
     .filter(e => e.status !== 'finished' || e.standing !== null || e.scored.length > 0)
     .sort((a, b) => ORDER[a.status] - ORDER[b.status])
+}
+
+// ── Equipos de una edición ─────────────────────────────────────────────────
+
+/**
+ * Equipos de una edición (los que juegan alguna serie, tienen seed o tienen
+ * plantilla), con su seed y su plantilla. Ordenados por liga y seed; los que
+ * no tienen seed, al final por nombre.
+ */
+export async function getEditionTeams(supabase: SupabaseClient, editionId: number): Promise<EditionTeam[]> {
+  const [phasesRes, seedsRes, rosterRes] = await Promise.all([
+    supabase.from('phases').select('id').eq('edition_id', editionId),
+    supabase.from('team_edition_stats').select('team_id, league, seed').eq('edition_id', editionId),
+    supabase.from('lol_roster')
+      .select('id, team_id, role, picks, lol_players(id, nickname, real_name, country)')
+      .eq('edition_id', editionId),
+  ])
+  if (phasesRes.error) throw new LolDataError('teams phases', phasesRes.error)
+  if (seedsRes.error) throw new LolDataError('teams seeds', seedsRes.error)
+  if (rosterRes.error) throw new LolDataError('teams roster', rosterRes.error)
+
+  const phaseIds = (phasesRes.data ?? []).map(p => p.id as number)
+  const matchesRes = phaseIds.length
+    ? await supabase.from('matches').select('home_team_id, away_team_id').in('phase_id', phaseIds).neq('status', 'CANCELLED')
+    : { data: [], error: null }
+  if (matchesRes.error) throw new LolDataError('teams matches', matchesRes.error)
+
+  type Seed = { team_id: number; league: string | null; seed: number | null }
+  type Roster = { id: number; team_id: number; role: LolRole; picks: string[] | null;
+                  lol_players: { id: number; nickname: string; real_name: string | null; country: string | null } | null }
+  const seeds = new Map(((seedsRes.data ?? []) as Seed[]).filter(r => r.seed !== null).map(r => [r.team_id, r]))
+  const rosters = (rosterRes.data ?? []) as unknown as Roster[]
+
+  const ids = new Set<number>([...seeds.keys(), ...rosters.map(r => r.team_id)])
+  for (const m of (matchesRes.data ?? []) as { home_team_id: number; away_team_id: number }[]) {
+    ids.add(m.home_team_id)
+    ids.add(m.away_team_id)
+  }
+  if (ids.size === 0) return []
+
+  const teamsRes = await supabase.from('teams').select('id, name, iso_code, logo_url, color, metadata').in('id', [...ids])
+  if (teamsRes.error) throw new LolDataError('teams', teamsRes.error)
+
+  const teams = ((teamsRes.data ?? []) as (TeamRow & { metadata: Record<string, unknown> | null })[]).map((t): EditionTeam => {
+    const sd = seeds.get(t.id)
+    const meta = t.metadata ?? {}
+    return {
+      id: t.id,
+      name: t.name,
+      tag: t.iso_code,
+      logoUrl: t.logo_url,
+      color: t.color,
+      region: typeof meta.region === 'string' ? meta.region : null,
+      country: typeof meta.country === 'string' ? meta.country : null,
+      seed: formatSeed(sd?.league, sd?.seed),
+      seedLeague: sd?.league ?? null,
+      seedNumber: sd?.seed ?? null,
+      roster: rosters
+        .filter(r => r.team_id === t.id && r.lol_players)
+        .sort((a, b) => roleOrder(a.role) - roleOrder(b.role) || a.id - b.id)
+        .map(r => ({
+          rosterId: r.id,
+          playerId: r.lol_players!.id,
+          nickname: r.lol_players!.nickname,
+          realName: r.lol_players!.real_name,
+          country: r.lol_players!.country,
+          role: r.role,
+          picks: r.picks ?? [],
+        })),
+    }
+  })
+
+  return teams.sort((a, b) =>
+    (a.seedLeague === null ? 1 : 0) - (b.seedLeague === null ? 1 : 0)
+    || (a.seedLeague ?? '').localeCompare(b.seedLeague ?? '')
+    || (a.seedNumber ?? 0) - (b.seedNumber ?? 0)
+    || a.name.localeCompare(b.name, 'es'))
 }

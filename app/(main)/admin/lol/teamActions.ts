@@ -140,6 +140,67 @@ export async function setLolTeamSeedAction(input: SetSeedInput): Promise<TeamAct
   return { success: true }
 }
 
+export interface RosterRowInput {
+  team: string
+  role: string
+  nickname: string
+  country: string
+  realName: string
+}
+
+/** Carga de plantillas desde el Excel (todo o nada). Con replace, la plantilla de cada equipo del lote se sustituye. */
+export async function importLolRosterAction(
+  editionId: number,
+  rows: RosterRowInput[],
+  replace: boolean,
+): Promise<TeamActionResult & { loaded?: number }> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+  if (!Number.isInteger(editionId) || !Array.isArray(rows) || rows.length === 0 || rows.length > 400) return { error: 'INVALID' }
+
+  const supabase = await createClient()
+  const { data, error } = await supabase.rpc('admin_import_lol_roster', {
+    p_edition_id: editionId,
+    p_rows: rows.map(r => ({
+      team: String(r.team), role: String(r.role), nickname: String(r.nickname),
+      country: String(r.country ?? ''), real_name: String(r.realName ?? ''),
+    })),
+    p_replace: replace === true,
+  })
+  if (error) return _rpcError('admin_import_lol_roster', error)
+  _revalidate()
+  revalidatePath('/lol/equipos', 'layout')
+  return { success: true, loaded: Number(data) }
+}
+
+/** Hasta 3 campeones (id de Data Dragon) de alguien de la plantilla. */
+export async function setLolRosterPicksAction(rosterId: number, picks: string[]): Promise<TeamActionResult> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+  if (!Number.isInteger(rosterId) || !Array.isArray(picks) || picks.length > 3) return { error: 'INVALID' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_set_lol_roster_picks', { p_roster_id: rosterId, p_picks: picks.map(String) })
+  if (error) return _rpcError('admin_set_lol_roster_picks', error)
+  revalidatePath('/admin')
+  revalidatePath('/lol/equipos', 'layout')
+  return { success: true }
+}
+
+/** Quita a alguien de la plantilla de una edición. */
+export async function removeLolRosterEntryAction(rosterId: number): Promise<TeamActionResult> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+  if (!Number.isInteger(rosterId)) return { error: 'INVALID' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_remove_lol_roster_entry', { p_roster_id: rosterId })
+  if (error) return _rpcError('admin_remove_lol_roster_entry', error)
+  revalidatePath('/admin')
+  revalidatePath('/lol/equipos', 'layout')
+  return { success: true }
+}
+
 /**
  * Sube un logo (FormData: teamId, file) y lo asigna al equipo. Comprueba
  * tamaño, firma PNG/WebP y dimensiones; el nombre es el sha256 del

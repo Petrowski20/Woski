@@ -1,6 +1,7 @@
 import type { BestOf, MatchStatus, SeriesScore } from './series'
 import type { LolEditionStatus } from './editionStatus'
 import type { SwissInfo } from './swiss'
+import type { LolRole } from './roster'
 
 export interface LolEditionOption {
   id: number
@@ -158,4 +159,35 @@ export interface ProfileLolEdition {
   exactHits: number
   /** Series Bo3/Bo5 terminadas que voté (las únicas con marcador exacto). */
   exactPlayed: number
+}
+
+/** Alguien de la plantilla de un equipo en una edición (lol_roster + lol_players). */
+export interface RosterMember {
+  rosterId: number
+  playerId: number
+  nickname: string
+  realName: string | null
+  /** ISO 3166-1 alfa-2 o null. */
+  country: string | null
+  role: LolRole
+  /** Hasta 3 ids de campeón de Data Dragon. */
+  picks: string[]
+}
+
+/** Equipo de una edición para la pestaña Equipos. */
+export interface EditionTeam {
+  id: number
+  name: string
+  tag: string
+  logoUrl: string | null
+  color: string | null
+  /** teams.metadata.region / country. */
+  region: string | null
+  country: string | null
+  /** "LCK #1" o null. */
+  seed: string | null
+  seedLeague: string | null
+  seedNumber: number | null
+  /** De Top a Coach. */
+  roster: RosterMember[]
 }
