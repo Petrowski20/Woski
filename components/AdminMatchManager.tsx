@@ -5,6 +5,8 @@ import { toast } from 'sonner'
 import { saveMatchResultAction, saveAllMatchesAction, createMatchAction, getAdminAllPredictionsAction } from '@/app/(main)/admin/actions'
 import type { MatchResult, AdminPrediction } from '@/app/(main)/admin/actions'
 import { getFlagUrl } from '@/utils/getFlagUrl'
+import { pickScrollTarget } from '@/utils/scrollTarget'
+import { useInitialScroll } from '@/utils/useInitialScroll'
 
 interface Team { name: string; flag_emoji: string; iso_code?: string }
 
@@ -583,19 +585,13 @@ export default function AdminMatchManager({
   const [isSavingAll, setIsSavingAll]  = useState(false)
   const [predModal, setPredModal]      = useState<AdminMatch | null>(null)
 
-  const scrollTargetId = useMemo(
-    () => initialMatches.find((m) => m.status !== 'FINISHED')?.id ?? null,
-    [initialMatches],
-  )
-  const scrollTargetRef = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!scrollTargetRef.current) return
-    const t = setTimeout(() => {
-      scrollTargetRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 200)
-    return () => clearTimeout(t)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  // Al abrir, una sola vez: hasta el primer partido sin terminar (utilidad
+  // común con el calendario de LoL). Se fija con los datos iniciales.
+  const [scrollTarget] = useState(() => {
+    const id = pickScrollTarget(initialMatches.map(m => ({ id: m.id, date: m.match_date, status: m.status })))
+    return id === null ? null : `partido-${id}`
+  })
+  useInitialScroll(scrollTarget)
 
   const rowValuesRef = useRef<Record<number, RowValues | null>>(
     Object.fromEntries(
@@ -735,7 +731,8 @@ export default function AdminMatchManager({
           </p>
         ) : (
           initialMatches.map((match) => (
-            <div key={match.id} ref={match.id === scrollTargetId ? scrollTargetRef : undefined}>
+            // scroll-mt-40: deja el partido bajo la barra de navegación y la de /admin, fijas.
+            <div key={match.id} id={`partido-${match.id}`} className="scroll-mt-40">
               <MatchRow match={match} onRowChange={handleRowChange} onViewPredictions={setPredModal} />
             </div>
           ))
