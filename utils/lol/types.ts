@@ -224,10 +224,18 @@ export interface PlayerSeries {
   breakdown: ScoreBreakdown | null
 }
 
-/** Jornada con pleno (get_lol_player_days); points = lo que sumó el pleno. */
+/**
+ * Jornada con series terminadas (get_lol_player_days): pleno (points = lo que
+ * sumó; 0 si no hubo) y foto de la clasificación global al cierre del día.
+ * rank/totalPoints/players son null si la BD aún no tiene la migración que
+ * los devuelve.
+ */
 export interface PlayerDay {
   day: string
   perfect: boolean
   negative: boolean
   points: number
+  rank: number | null
+  totalPoints: number | null
+  players: number | null
 }

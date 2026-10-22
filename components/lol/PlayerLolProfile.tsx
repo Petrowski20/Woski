@@ -3,13 +3,14 @@ import type { PlayerDay, PlayerSeries, StandingRow } from '@/utils/lol/types'
 import { signedPoints } from '@/utils/lol/rules'
 import TeamLogo from './TeamLogo'
 import PointsBreakdown from './PointsBreakdown'
+import RankHistoryChart, { type RankHistoryPoint } from './RankHistoryChart'
 import { PointsPill, Stat } from './ProfileLolSection'
 import { formatMatchDate, formatSeriesScore } from './format'
 
 // Perfil de LoL de un jugador visto por otros (/jugador/[id]). Solo pinta lo
 // que devuelve la BD: la fila de get_lol_standings y el historial de
 // get_lol_player_history / get_lol_player_days (series con la votación ya
-// cerrada). Aquí no se calcula ningún punto.
+// cerrada; plenos y posición por jornada). Aquí no se calcula ningún punto.
 
 export interface PlayerLolProfileProps {
   standing: StandingRow | null
@@ -111,7 +112,11 @@ export default function PlayerLolProfile(props: PlayerLolProfileProps) {
   const exactHits = withExact.filter(s => s.breakdown!.correctScore).length
 
   const shown = selectedPhaseId === null ? series : series.filter(s => s.phaseId === selectedPhaseId)
-  const dayInfo = new Map(days.map(d => [d.day, d]))
+  const dayInfo = new Map(days.filter(d => d.perfect || d.negative).map(d => [d.day, d]))
+  const rankHistory = days.flatMap((d): RankHistoryPoint[] =>
+    d.rank !== null && d.totalPoints !== null && d.players !== null
+      ? [{ day: d.day, rank: d.rank, totalPoints: d.totalPoints, players: d.players }]
+      : [])
   const groups: { day: string; items: PlayerSeries[] }[] = []
   for (const s of shown) {
     const last = groups[groups.length - 1]
@@ -161,6 +166,9 @@ export default function PlayerLolProfile(props: PlayerLolProfileProps) {
           <Stat label="Marcador exacto" value={`${exactHits}/${withExact.length}`} sub="en Bo3 y Bo5 votadas" />
         </div>
       </section>
+
+      {/* Con una sola jornada no hay evolución: la posición ya está en el resumen */}
+      {rankHistory.length > 1 && <RankHistoryChart points={rankHistory} />}
 
       <section aria-labelledby="jugador-historial" className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
