@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, useTransition } from 'react'
+import { useEffect, useId, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { useLang } from '@/contexts/LangContext'
 import {
@@ -10,11 +10,12 @@ import {
   removeLolRosterEntryAction,
   removeLolTeamLogoAction,
   setLolRosterPicksAction,
+  setLolTeamLogoModeAction,
   setLolTeamSeedAction,
   updateLolTeamAction,
   uploadLolTeamLogoAction,
 } from '@/app/(main)/admin/lol/teamActions'
-import { checkTeamLogo, TEAM_LOGO_MAX_BYTES } from '@/utils/lol/teamLogo'
+import { checkTeamLogo, suggestTeamLogoMode, TEAM_LOGO_MAX_BYTES, TEAM_LOGO_MODES, type TeamLogoMode } from '@/utils/lol/teamLogo'
 import {
   cleanNewTeam,
   LOL_REGIONS,
@@ -102,9 +103,31 @@ function ColorField({ useColor, setUseColor, color, setColor, disabled, t }: {
   )
 }
 
-/** Archivo de logo elegido y validado en el navegador (PNG/WebP, ≤512 KB, ≤512×512, por su firma real). */
+/** Modo propuesto para el logo según sus píxeles; si el navegador no puede leerlo, color. */
+async function detectLogoMode(f: Blob): Promise<TeamLogoMode> {
+  try {
+    const bmp = await createImageBitmap(f)
+    const canvas = document.createElement('canvas')
+    canvas.width = bmp.width
+    canvas.height = bmp.height
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) return 'color'
+    ctx.drawImage(bmp, 0, 0)
+    bmp.close()
+    return suggestTeamLogoMode(ctx.getImageData(0, 0, canvas.width, canvas.height).data)
+  } catch {
+    return 'color'
+  }
+}
+
+/**
+ * Archivo de logo elegido y validado en el navegador (PNG/WebP, ≤512 KB, ≤512×512, por su firma real),
+ * con el modo propuesto (mode empieza en el sugerido y el admin lo puede cambiar).
+ */
 function useLogoPick(t: T, lang: string) {
   const [file, setFile] = useState<File | null>(null)
+  const [mode, setMode] = useState<TeamLogoMode>('color')
+  const [suggested, setSuggested] = useState<TeamLogoMode | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [dims, setDims] = useState<string | null>(null)
   const [problem, setProblem] = useState<string | null>(null)
@@ -117,6 +140,8 @@ function useLogoPick(t: T, lang: string) {
     setPreview(null)
     setDims(null)
     setProblem(null)
+    setMode('color')
+    setSuggested(null)
     setInputKey(k => k + 1)
   }
 
@@ -132,12 +157,15 @@ function useLogoPick(t: T, lang: string) {
       setProblem(errorText(t, lang, { error: check.code, width: check.width, height: check.height }, f.size))
       return
     }
+    const guess = await detectLogoMode(f)
+    setMode(guess)
+    setSuggested(guess)
     setFile(f)
     setDims(`${check.format.toUpperCase()} · ${check.width}×${check.height} px · ${Math.ceil(f.size / 1024)} KB`)
     setPreview(URL.createObjectURL(f))
   }
 
-  return { file, preview, dims, problem, setProblem, inputKey, pick, reset }
+  return { file, preview, dims, problem, setProblem, inputKey, pick, reset, mode, setMode, suggested }
 }
 
 /** Botón "Elegir archivo" con el input oculto. */
@@ -162,19 +190,67 @@ function FileButton({ inputKey, onPick, disabled, t }: {
   )
 }
 
-/** Logo en los tres tamaños de la interfaz. */
-function LogoSizes({ team }: { team: { name: string; tag: string; color: string | null; logoUrl: string | null } }) {
+type ShownTeam = { name: string; tag: string; color: string | null; logoUrl: string | null; logoMode: TeamLogoMode }
+
+// Fondo y color de texto de las tarjetas de cada tema (app/styles/theme.css): la vista previa
+// enseña los dos a la vez, sea cual sea el tema de quien edita. El modo mono pinta con
+// --color-text-primary, así que basta con redefinirla en cada panel.
+const PREVIEW_THEMES = [
+  { key: 'light', bg: '#fffdf9', text: '#1c1917' },
+  { key: 'dark', bg: '#0b1526', text: '#e8eef8' },
+] as const
+
+/** Logo en los tres tamaños de la interfaz, en tema claro y oscuro. */
+function LogoSizes({ team, t }: { team: ShownTeam; t: T }) {
   return (
     <>
-      {(['lg', 'md', 'sm'] as const).map(size => (
-        <span key={size} className="flex flex-col items-center gap-1">
-          <span className="rounded-lg bg-bg-elevated p-1.5 ring-1 ring-inset ring-border">
-            <TeamLogo team={team} size={size} />
-          </span>
-          <span className="text-[10px] uppercase text-text-muted">{size}</span>
+      {PREVIEW_THEMES.map(theme => (
+        <span
+          key={theme.key}
+          className="flex items-end gap-3 rounded-lg p-2 ring-1 ring-inset ring-border"
+          style={{ backgroundColor: theme.bg, color: theme.text, ['--color-text-primary' as string]: theme.text }}
+        >
+          {(['lg', 'md', 'sm'] as const).map(size => (
+            <span key={size} className="flex flex-col items-center gap-1">
+              <TeamLogo team={team} size={size} />
+              <span className="text-[10px] uppercase opacity-60">{size}</span>
+            </span>
+          ))}
+          <span className="self-start text-[10px] uppercase opacity-60">{t(`adminTeams.theme.${theme.key}`)}</span>
         </span>
       ))}
     </>
+  )
+}
+
+/** Cómo se pinta el logo: color, mono o placa, marcando el que propone la detección. */
+function ModePicker({ value, onChange, suggested, disabled, t }: {
+  value: TeamLogoMode
+  onChange: (m: TeamLogoMode) => void
+  suggested: TeamLogoMode | null
+  disabled: boolean
+  t: T
+}) {
+  const name = useId()
+  return (
+    <fieldset className="flex flex-col gap-1.5" disabled={disabled}>
+      <legend className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.logoMode')}</legend>
+      <div className="flex flex-wrap gap-2">
+        {TEAM_LOGO_MODES.map(m => (
+          <label
+            key={m}
+            className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
+              value === m ? 'border-accent bg-accent/10 text-text-primary' : 'border-border text-text-muted hover:border-accent/50'
+            }`}
+          >
+            <input type="radio" name={name} className="sr-only" checked={value === m} onChange={() => onChange(m)} />
+            <span className="font-semibold">{t(`adminTeams.logoModes.${m}`)}</span>
+            {suggested === m && <span className="rounded bg-accent/15 px-1 text-[10px] text-accent">{t('adminTeams.suggested')}</span>}
+          </label>
+        ))}
+      </div>
+      <p className="text-[11px] text-text-muted">{t(`adminTeams.logoModeHelp.${value}`)}</p>
+    </fieldset>
   )
 }
 
@@ -246,8 +322,10 @@ function DetailsForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string
 
 /** Logo: elegir archivo, avisar de errores, previsualizar, subir o quitar. */
 function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string }) {
-  const { file, preview, dims, problem, setProblem, inputKey, pick, reset } = useLogoPick(t, lang)
+  const { file, preview, dims, problem, setProblem, inputKey, pick, reset, mode, setMode, suggested } = useLogoPick(t, lang)
   const [confirmRemove, setConfirmRemove] = useState(false)
+  // Modo del logo que ya tiene (sin archivo nuevo elegido).
+  const [currentMode, setCurrentMode] = useState<TeamLogoMode>(team.logoMode)
   const [isPending, startTransition] = useTransition()
 
   const upload = () => {
@@ -255,6 +333,7 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
     const fd = new FormData()
     fd.set('teamId', String(team.id))
     fd.set('file', file)
+    fd.set('mode', mode)
     startTransition(async () => {
       try {
         const res = await uploadLolTeamLogoAction(fd)
@@ -283,7 +362,19 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
     })
   }
 
-  const shown = { name: team.name, tag: team.tag, color: team.color, logoUrl: preview ?? team.logoUrl }
+  const saveMode = () => {
+    startTransition(async () => {
+      try {
+        const res = await setLolTeamLogoModeAction(team.id, currentMode)
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else toast.success(t('adminTeams.logoModeSaved'))
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+
+  const shown = { name: team.name, tag: team.tag, color: team.color, logoUrl: preview ?? team.logoUrl, logoMode: preview ? mode : currentMode }
 
   return (
     <div className="flex flex-col gap-2">
@@ -313,13 +404,29 @@ function LogoForm({ team, t, lang }: { team: AdminTeamRow; t: T; lang: string })
         <p role="alert" className="rounded-md bg-danger/10 px-3 py-2 text-xs text-danger ring-1 ring-inset ring-danger/30">{problem}</p>
       )}
 
+      {team.logoUrl && !preview && (
+        <div className="flex flex-col gap-2 rounded-lg bg-bg-muted/60 p-3">
+          <ModePicker value={currentMode} onChange={setCurrentMode} suggested={null} disabled={isPending} t={t} />
+          <div className="flex flex-wrap items-end gap-3">
+            <LogoSizes team={shown} t={t} />
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={saveMode} disabled={isPending || currentMode === team.logoMode} className={btnPrimary}>
+              {isPending ? t('adminTeams.saving') : t('adminTeams.saveLogoMode')}
+            </button>
+            {currentMode === team.logoMode && <span className="text-[11px] text-text-muted">{t('adminTeams.unchanged')}</span>}
+          </div>
+        </div>
+      )}
+
       {preview && (
         <div className="flex flex-col gap-2 rounded-lg bg-bg-muted/60 p-3">
           <p className="text-xs font-semibold text-text-primary">
             {t('adminTeams.preview')} <span className="font-normal text-text-muted">· {dims}</span>
           </p>
-          <div className="flex flex-wrap items-end gap-4">
-            <LogoSizes team={shown} />
+          <ModePicker value={mode} onChange={setMode} suggested={suggested} disabled={isPending} t={t} />
+          <div className="flex flex-wrap items-end gap-3">
+            <LogoSizes team={shown} t={t} />
             {team.logoUrl && (
               <span className="flex flex-col items-center gap-1">
                 <span className="rounded-lg bg-bg-elevated p-1.5 ring-1 ring-inset ring-border opacity-70">
@@ -378,7 +485,7 @@ function CreateTeamForm({ teams, onDone, t, lang }: { teams: AdminTeamRow[]; onD
 
   const input = cleanNewTeam({ name, tag, region, country, color: useColor ? color : '' })
   const problems = newTeamProblems(input, teams)
-  const shown = { name: input.name || '?', tag: input.tag || '?', color: input.color || null, logoUrl: logo.preview }
+  const shown = { name: input.name || '?', tag: input.tag || '?', color: input.color || null, logoUrl: logo.preview, logoMode: logo.mode }
 
   const create = () => {
     setTouched(true)
@@ -394,6 +501,7 @@ function CreateTeamForm({ teams, onDone, t, lang }: { teams: AdminTeamRow[]; onD
           const fd = new FormData()
           fd.set('teamId', String(res.teamId))
           fd.set('file', logo.file)
+          fd.set('mode', logo.mode)
           const up = await uploadLolTeamLogoAction(fd)
           if ('error' in up) {
             toast.warning(t('adminTeams.createdNoLogo', { tag: input.tag, error: errorText(t, lang, up, logo.file.size) }))
@@ -470,7 +578,8 @@ function CreateTeamForm({ teams, onDone, t, lang }: { teams: AdminTeamRow[]; onD
           <p className="text-xs font-semibold text-text-primary">
             {t('adminTeams.preview')}{logo.dims && <span className="font-normal text-text-muted"> · {logo.dims}</span>}
           </p>
-          <div className="flex flex-wrap items-end gap-4"><LogoSizes team={shown} /></div>
+          {logo.file && <ModePicker value={logo.mode} onChange={logo.setMode} suggested={logo.suggested} disabled={isPending} t={t} />}
+          <div className="flex flex-wrap items-end gap-3"><LogoSizes team={shown} t={t} /></div>
         </div>
       </div>
 
@@ -928,7 +1037,7 @@ function TeamCard({ team, open, onToggle, editions, champions, t, lang }: {
           </div>
           <div className="border-t border-border pt-3">
             <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.logo')}</p>
-            <LogoForm key={team.logoUrl ?? 'none'} team={team} t={t} lang={lang} />
+            <LogoForm key={`${team.logoUrl ?? 'none'}:${team.logoMode}`} team={team} t={t} lang={lang} />
           </div>
         </div>
       )}
@@ -957,6 +1066,7 @@ export default function AdminLolTeams({ teams, audit, editions, champions }: {
     tag: t('adminTeams.tag'),
     color: t('adminTeams.color'),
     logo: t('adminTeams.logo'),
+    logoMode: t('adminTeams.logoMode'),
     region: t('adminTeams.region'),
     country: t('adminTeams.country'),
     league: t('adminTeams.seedLeague'),
@@ -964,7 +1074,7 @@ export default function AdminLolTeams({ teams, audit, editions, champions }: {
   }
   const fmt = timeFmt(lang)
   const value = (field: string, v: string | null) =>
-    v === null ? '—' : field === 'logo' ? v.slice(v.lastIndexOf('/') + 1) : v
+    v === null ? '—' : field === 'logo' ? v.slice(v.lastIndexOf('/') + 1) : field === 'logoMode' ? t(`adminTeams.logoModes.${v}`) : v
 
   return (
     <div className="flex flex-col gap-6">

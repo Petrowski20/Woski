@@ -446,6 +446,24 @@
     "confirmRemove": "Sí, quitar logo",
     "removing": "Quitando…",
     "logoRemoved": "Logo quitado",
+    "logoMode": "Cómo se pinta",
+    "logoModes": {
+      "color": "Color",
+      "mono": "Monocromo",
+      "plate": "Placa oscura"
+    },
+    "logoModeHelp": {
+      "color": "La imagen tal cual. Para logos con color propio.",
+      "mono": "Logo de una sola tinta sobre fondo transparente: se pinta negro en modo claro y blanco en oscuro.",
+      "plate": "Sobre una placa oscura en los dos temas. Para logos blancos con algún detalle de color."
+    },
+    "suggested": "sugerido",
+    "saveLogoMode": "Guardar modo",
+    "logoModeSaved": "Modo del logo guardado",
+    "theme": {
+      "light": "Claro",
+      "dark": "Oscuro"
+    },
     "cancel": "Cancelar",
     "notLol": "Por ahora los equipos solo se gestionan en LoL.",
     "roster": "Plantilla",
@@ -543,6 +561,7 @@
       "remove_roster_entry": "Baja en la plantilla",
       "update_team": "Datos",
       "set_team_logo": "Logo nuevo",
+      "set_team_logo_mode": "Modo del logo",
       "remove_team_logo": "Logo quitado",
       "footer": "Últimos 50 cambios de equipos. El registro no se puede borrar ni editar."
     }

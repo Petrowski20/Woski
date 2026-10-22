@@ -4,6 +4,7 @@ import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type Ma
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
 import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
 import { roleOrder, type LolRole } from '@/utils/lol/roster'
+import type { TeamLogoMode } from '@/utils/lol/teamLogo'
 import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
@@ -112,7 +113,7 @@ export function pickLolEdition(editions: LolEditionOption[], edicion: unknown): 
 
 // ── Partidos de una edición ────────────────────────────────────────────────
 
-interface TeamRow { id: number; name: string; iso_code: string; logo_url: string | null; color: string | null }
+interface TeamRow { id: number; name: string; iso_code: string; logo_url: string | null; logo_mode: TeamLogoMode; color: string | null }
 interface MatchRow {
   id: number
   match_date: string
@@ -238,8 +239,8 @@ export async function getEditionMatches(
     .from('matches')
     .select(`
       id, match_date, prediction_locks_at, status, home_goals, away_goals, metadata, phase_id,
-      home_team:teams!home_team_id (id, name, iso_code, logo_url, color),
-      away_team:teams!away_team_id (id, name, iso_code, logo_url, color)
+      home_team:teams!home_team_id (id, name, iso_code, logo_url, logo_mode, color),
+      away_team:teams!away_team_id (id, name, iso_code, logo_url, logo_mode, color)
     `)
     .in('phase_id', [...phaseById.keys()])
     .order('match_date', { ascending: true })
@@ -328,6 +329,7 @@ export async function getEditionMatches(
         name: m.home_team.name,
         tag: m.home_team.iso_code,
         logoUrl: m.home_team.logo_url,
+        logoMode: m.home_team.logo_mode,
         color: m.home_team.color,
         record: { ...recordOf(m.phase_id, m.home_team.id) },
         seed: seeds.get(m.home_team.id) ?? null,
@@ -337,6 +339,7 @@ export async function getEditionMatches(
         name: m.away_team.name,
         tag: m.away_team.iso_code,
         logoUrl: m.away_team.logo_url,
+        logoMode: m.away_team.logo_mode,
         color: m.away_team.color,
         record: { ...recordOf(m.phase_id, m.away_team.id) },
         seed: seeds.get(m.away_team.id) ?? null,
@@ -613,7 +616,7 @@ export async function getEditionTeams(supabase: SupabaseClient, editionId: numbe
   }
   if (ids.size === 0) return []
 
-  const teamsRes = await supabase.from('teams').select('id, name, iso_code, logo_url, color, metadata').in('id', [...ids])
+  const teamsRes = await supabase.from('teams').select('id, name, iso_code, logo_url, logo_mode, color, metadata').in('id', [...ids])
   if (teamsRes.error) throw new LolDataError('teams', teamsRes.error)
 
   const teams = ((teamsRes.data ?? []) as (TeamRow & { metadata: Record<string, unknown> | null })[]).map((t): EditionTeam => {
@@ -624,6 +627,7 @@ export async function getEditionTeams(supabase: SupabaseClient, editionId: numbe
       name: t.name,
       tag: t.iso_code,
       logoUrl: t.logo_url,
+      logoMode: t.logo_mode,
       color: t.color,
       region: typeof meta.region === 'string' ? meta.region : null,
       country: typeof meta.country === 'string' ? meta.country : null,

@@ -2,6 +2,7 @@ import type { BestOf, MatchStatus, SeriesScore } from './series'
 import type { LolEditionStatus } from './editionStatus'
 import type { SwissInfo } from './swiss'
 import type { LolRole } from './roster'
+import type { TeamLogoMode } from './teamLogo'
 
 export interface LolEditionOption {
   id: number
@@ -24,6 +25,8 @@ export interface LolTeamView {
   tag: string
   /** URL pública del bucket team-logos; null → insignia con las siglas. */
   logoUrl: string | null
+  /** teams.logo_mode: color, mono (máscara con el color del tema) o plate (placa oscura). */
+  logoMode: TeamLogoMode
   /** teams.color ('#rrggbb') o null. */
   color: string | null
   /** Récord en la fase del partido (solo partidos ya resueltos). */
@@ -180,6 +183,8 @@ export interface EditionTeam {
   name: string
   tag: string
   logoUrl: string | null
+  /** teams.logo_mode: color, mono (máscara con el color del tema) o plate (placa oscura). */
+  logoMode: TeamLogoMode
   color: string | null
   /** teams.metadata.region / country. */
   region: string | null

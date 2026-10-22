@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { checkTeamLogo, teamLogoObjectName, teamTextColor, TEAM_LOGO_MAX_BYTES, TEAM_LOGO_URL_RE } from './teamLogo'
+import { checkTeamLogo, isTeamLogoMode, suggestTeamLogoMode, teamLogoObjectName, teamTextColor, TEAM_LOGO_MAX_BYTES, TEAM_LOGO_URL_RE } from './teamLogo'
 
 const b64 = (s: string) => new Uint8Array(Buffer.from(s, 'base64'))
 
@@ -96,4 +96,50 @@ test('logo: texto de las siglas legible sobre el color del equipo', () => {
   assert.equal(teamTextColor('#ffffff'), '#000000')
   assert.equal(teamTextColor('#facc15'), '#000000')
   assert.equal(teamTextColor('rojo'), '#ffffff')
+})
+
+/** Imagen RGBA de prueba: cada tramo es [píxeles, r, g, b, a]. */
+function rgba(...runs: [number, number, number, number, number][]): Uint8ClampedArray {
+  const out: number[] = []
+  for (const [count, r, g, b, a] of runs) for (let i = 0; i < count; i++) out.push(r, g, b, a)
+  return new Uint8ClampedArray(out)
+}
+
+test('suggestTeamLogoMode: logo blanco de una tinta (KC) → mono', () => {
+  assert.equal(suggestTeamLogoMode(rgba([600, 255, 255, 255, 255], [400, 0, 0, 0, 0])), 'mono')
+})
+
+test('suggestTeamLogoMode: logo negro de una tinta → mono', () => {
+  assert.equal(suggestTeamLogoMode(rgba([600, 10, 10, 10, 255], [400, 255, 255, 255, 0])), 'mono')
+})
+
+test('suggestTeamLogoMode: los bordes semitransparentes no cuentan', () => {
+  assert.equal(suggestTeamLogoMode(rgba([600, 255, 255, 255, 255], [100, 255, 0, 0, 120], [300, 0, 0, 0, 0])), 'mono')
+})
+
+test('suggestTeamLogoMode: blanco y negro (letras blancas sobre escudo negro) → color', () => {
+  assert.equal(suggestTeamLogoMode(rgba([500, 255, 255, 255, 255], [500, 0, 0, 0, 255])), 'color')
+})
+
+test('suggestTeamLogoMode: blanco con un detalle de color y sin contorno → plate', () => {
+  assert.equal(suggestTeamLogoMode(rgba([800, 250, 250, 250, 255], [200, 220, 30, 60, 255])), 'plate')
+})
+
+test('suggestTeamLogoMode: blanco con contorno oscuro → color', () => {
+  assert.equal(suggestTeamLogoMode(rgba([600, 250, 250, 250, 255], [200, 220, 30, 60, 255], [200, 20, 20, 20, 255])), 'color')
+})
+
+test('suggestTeamLogoMode: logo de color → color', () => {
+  assert.equal(suggestTeamLogoMode(rgba([700, 220, 30, 60, 255], [300, 30, 60, 220, 255])), 'color')
+})
+
+test('suggestTeamLogoMode: imagen vacía o transparente → color', () => {
+  assert.equal(suggestTeamLogoMode(new Uint8ClampedArray()), 'color')
+  assert.equal(suggestTeamLogoMode(rgba([100, 0, 0, 0, 0])), 'color')
+})
+
+test('isTeamLogoMode', () => {
+  assert.ok(isTeamLogoMode('mono'))
+  assert.ok(!isTeamLogoMode('neon'))
+  assert.ok(!isTeamLogoMode(null))
 })

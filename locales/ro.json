@@ -446,6 +446,24 @@
     "confirmRemove": "Da, elimină logoul",
     "removing": "Se elimină…",
     "logoRemoved": "Logo eliminat",
+    "logoMode": "Cum se afișează",
+    "logoModes": {
+      "color": "Color",
+      "mono": "Monocrom",
+      "plate": "Fundal închis"
+    },
+    "logoModeHelp": {
+      "color": "Imaginea așa cum este. Pentru logo-uri cu culori proprii.",
+      "mono": "Logo dintr-o singură culoare pe fundal transparent: negru în modul luminos și alb în modul întunecat.",
+      "plate": "Pe un fundal închis în ambele teme. Pentru logo-uri albe cu un detaliu colorat."
+    },
+    "suggested": "sugerat",
+    "saveLogoMode": "Salvează modul",
+    "logoModeSaved": "Modul logo-ului a fost salvat",
+    "theme": {
+      "light": "Luminos",
+      "dark": "Întunecat"
+    },
     "cancel": "Anulează",
     "notLol": "Deocamdată echipele se gestionează doar pentru LoL.",
     "roster": "Lot",
@@ -543,6 +561,7 @@
       "remove_roster_entry": "Eliminat din lot",
       "update_team": "Date",
       "set_team_logo": "Logo nou",
+      "set_team_logo_mode": "Modul logo-ului",
       "remove_team_logo": "Logo eliminat",
       "footer": "Ultimele 50 de modificări ale echipelor. Istoricul nu poate fi șters sau editat."
     }

@@ -3,6 +3,7 @@ import { getServerLang, tServer } from '@/utils/i18n-server'
 import AdminLolTeams from '@/components/lol/AdminLolTeams'
 import type { AdminRosterEntry, AdminTeamRow, SeedEditionOption, TeamAuditRow } from '@/components/lol/adminTeamsTypes'
 import { getChampionCatalog } from '@/utils/lol/champions'
+import type { TeamLogoMode } from '@/utils/lol/teamLogo'
 import { roleOrder } from '@/utils/lol/roster'
 import { getLolEditions, lolToday, LOL_SPORT_SLUG } from '../../../lol/data'
 
@@ -11,7 +12,7 @@ import { getLolEditions, lolToday, LOL_SPORT_SLUG } from '../../../lol/data'
 // team-logos); aquí solo se lee: equipos, cuántas series juegan y el
 // registro de cambios de lol_admin_audit (filas con team_id).
 
-interface RawTeam { id: number; name: string; iso_code: string; slug: string | null; color: string | null; logo_url: string | null }
+interface RawTeam { id: number; name: string; iso_code: string; slug: string | null; color: string | null; logo_url: string | null; logo_mode: TeamLogoMode }
 interface RawAudit {
   id: number
   created_at: string
@@ -29,6 +30,7 @@ const FIELDS: { field: TeamAuditRow['changes'][number]['field']; key: string }[]
   { field: 'tag', key: 'tag' },
   { field: 'color', key: 'color' },
   { field: 'logo', key: 'logo_url' },
+  { field: 'logoMode', key: 'logo_mode' },
   { field: 'region', key: 'region' },
   { field: 'country', key: 'country' },
   { field: 'league', key: 'league' },
@@ -42,14 +44,14 @@ export default async function LolEquiposTab() {
 
   const teamsRes = await supabase
     .from('teams')
-    .select('id, name, iso_code, slug, color, logo_url, sports!inner(slug)')
+    .select('id, name, iso_code, slug, color, logo_url, logo_mode, sports!inner(slug)')
     .eq('sports.slug', LOL_SPORT_SLUG)
     .order('name')
   if (teamsRes.error) {
     console.error('[admin equipos] teams', teamsRes.error)
     return (
       <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-sm text-text-primary">
-        {t('errors.SERVER')} ¿Está aplicada la migración 20261019100001_team_logos?
+        {t('errors.SERVER')} ¿Está aplicada la migración 20261027100001_team_logo_mode?
       </p>
     )
   }
@@ -116,6 +118,7 @@ export default async function LolEquiposTab() {
     slug: r.slug,
     color: r.color,
     logoUrl: r.logo_url,
+    logoMode: r.logo_mode,
     matches: played.get(r.id) ?? 0,
     seeds: seedsByTeam.get(r.id) ?? [],
     roster: rosterByTeam.get(r.id) ?? [],

@@ -446,6 +446,24 @@
     "confirmRemove": "Yes, remove logo",
     "removing": "Removing…",
     "logoRemoved": "Logo removed",
+    "logoMode": "How it is drawn",
+    "logoModes": {
+      "color": "Colour",
+      "mono": "Monochrome",
+      "plate": "Dark plate"
+    },
+    "logoModeHelp": {
+      "color": "The image as it is. For logos with their own colours.",
+      "mono": "Single-ink logo on a transparent background: drawn black in light mode and white in dark mode.",
+      "plate": "On a dark plate in both themes. For white logos with a coloured detail."
+    },
+    "suggested": "suggested",
+    "saveLogoMode": "Save mode",
+    "logoModeSaved": "Logo mode saved",
+    "theme": {
+      "light": "Light",
+      "dark": "Dark"
+    },
     "cancel": "Cancel",
     "notLol": "For now, teams can only be managed for LoL.",
     "roster": "Roster",
@@ -543,6 +561,7 @@
       "remove_roster_entry": "Removed from roster",
       "update_team": "Details",
       "set_team_logo": "New logo",
+      "set_team_logo_mode": "Logo mode",
       "remove_team_logo": "Logo removed",
       "footer": "Last 50 team changes. The log cannot be deleted or edited."
     }
