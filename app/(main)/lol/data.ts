@@ -694,7 +694,8 @@ interface PlayerHistoryRow {
 /**
  * Historial de LoL de un jugador en una edición tal como lo ve otro:
  * get_lol_player_history (solo series con la votación cerrada, desglose del
- * motor) y get_lol_player_days (plenos por jornada). Aquí no se puntúa nada.
+ * motor) y get_lol_player_days (plenos y posición en la clasificación por
+ * jornada). Aquí no se puntúa nada.
  */
 export async function getPlayerLolHistory(
   supabase: SupabaseClient,
@@ -741,8 +742,23 @@ export async function getPlayerLolHistory(
       : null,
   }))
 
-  const days = ((daysRes.data ?? []) as { day: string; perfect: boolean; negative: boolean; pleno_points: number }[])
-    .map(d => ({ day: d.day, perfect: d.perfect, negative: d.negative, points: d.pleno_points }))
+  const days = ((daysRes.data ?? []) as {
+    day: string
+    perfect: boolean
+    negative: boolean
+    pleno_points: number
+    rank_position?: number | null
+    total_points?: number | null
+    players?: number | null
+  }[]).map(d => ({
+    day: d.day,
+    perfect: d.perfect,
+    negative: d.negative,
+    points: d.pleno_points,
+    rank: d.rank_position ?? null,
+    totalPoints: d.total_points ?? null,
+    players: d.players ?? null,
+  }))
 
   return { series, days }
 }

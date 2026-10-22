@@ -1,9 +1,11 @@
 -- Perfil de LoL de un jugador visto por otros (20261024100001):
 -- get_lol_player_history y get_lol_player_days. Solo series con la
 -- votación cerrada, misma visibilidad que la RLS de predictions.
+-- get_lol_player_days devuelve también la evolución en la
+-- clasificación (20261028100001).
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(29);
+SELECT plan(33);
 
 -- S1 (día 1) 1-0 · S2 (día 1) 1-0 · S3 (día 2) 0-1 · S4 día 3 cerrada sin resultado · S5 abierta (futuro)
 DO $$
@@ -102,7 +104,7 @@ SELECT is((SELECT count(*) FILTER (WHERE perfect) || '/' || count(*) FILTER (WHE
            FROM get_lol_player_days(t.uid('ph-p4'), (SELECT e FROM ph_ids))),
           (SELECT perfect_days || '/' || negative_days FROM t.standing((SELECT e FROM ph_ids), t.uid('ph-p4'))),
           'ph-p4: plenos positivos/negativos = lol_standings_at');
-SELECT is((SELECT string_agg(day || ':' || negative || ':' || pleno_points, ',') FROM get_lol_player_days(t.uid('ph-p4'), (SELECT e FROM ph_ids))),
+SELECT is((SELECT string_agg(day || ':' || negative || ':' || pleno_points, ',') FROM get_lol_player_days(t.uid('ph-p4'), (SELECT e FROM ph_ids)) WHERE perfect OR negative),
           '2026-10-01:true:-2,2026-10-02:true:-2', 'ph-p4: S2 fallada (día 1 solo cuenta S2) y S3 sin voto: dos plenos negativos de −2');
 SELECT is((SELECT SUM(pleno_points)::bigint FROM get_lol_player_days(t.uid('ph-p1'), (SELECT e FROM ph_ids)))
           + (SELECT SUM(points_earned)::bigint FROM predictions WHERE profile_id = t.uid('ph-p1')),
@@ -112,6 +114,20 @@ SELECT is((SELECT SUM(pleno_points)::bigint FROM get_lol_player_days(t.uid('ph-p
           + (SELECT COALESCE(SUM(points_earned), 0)::bigint FROM predictions WHERE profile_id = t.uid('ph-p4')),
           (SELECT total_points FROM t.standing((SELECT e FROM ph_ids), t.uid('ph-p4'))),
           'ph-p4: puntos de series + plenos = total de la clasificación');
+
+-- ---------------- Evolución en la clasificación ----------------
+SELECT is((SELECT string_agg(day::text, ',' ORDER BY day) FROM get_lol_player_days(t.uid('ph-p1'), (SELECT e FROM ph_ids))),
+          '2026-10-01,2026-10-02', 'ph-p1: todas las jornadas con series terminadas, haya pleno o no');
+SELECT is((SELECT count(*) FROM get_lol_player_days(t.uid('ph-p1'), (SELECT e FROM ph_ids)) d
+           JOIN LATERAL t.standing((SELECT e FROM ph_ids), t.uid('ph-p1'), NULL, d.day) s ON true
+           WHERE s.rank_position = d.rank_position AND s.total_points = d.total_points), 2::bigint,
+          'ph-p1: posición y puntos de cada jornada = lol_standings_at a esa fecha');
+SELECT is((SELECT string_agg(d.players::text, ',' ORDER BY d.day) FROM get_lol_player_days(t.uid('ph-p4'), (SELECT e FROM ph_ids)) d),
+          (SELECT string_agg(n::text, ',' ORDER BY dd) FROM (VALUES (DATE '2026-10-01'), (DATE '2026-10-02')) v(dd)
+           CROSS JOIN LATERAL (SELECT count(*) AS n FROM lol_standings_at((SELECT e FROM ph_ids), NULL, v.dd)) c),
+          'players = jugadores de la clasificación global de cada jornada');
+SELECT is((SELECT count(*) FROM get_lol_player_days(t.uid('ph-p1'), (SELECT e FROM ph_ids)) WHERE NOT perfect AND NOT negative AND pleno_points <> 0),
+          0::bigint, 'jornada sin pleno: pleno_points = 0');
 
 -- ---------------- Fuera de LoL ----------------
 SELECT is(t.run_as('authenticated', t.uid('ph-viewer'), format('SELECT count(*) FROM get_lol_player_history(%L, %s)', t.uid('ph-p1'),
