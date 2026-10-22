@@ -196,3 +196,38 @@ export interface EditionTeam {
   /** De Top a Coach. */
   roster: RosterMember[]
 }
+
+/** Equipo de una serie en el historial de un jugador (lo que pinta TeamLogo). */
+export type PlayerTeam = Pick<LolTeamView, 'id' | 'name' | 'tag' | 'logoUrl' | 'color'>
+
+/**
+ * Serie del historial de LoL de otro jugador (get_lol_player_history): solo
+ * series con la votación cerrada. vote null = no votó; breakdown null = aún
+ * sin resultado.
+ */
+export interface PlayerSeries {
+  matchId: number
+  date: string
+  /** YYYY-MM-DD en la zona horaria de la edición (la de las jornadas). */
+  day: string
+  phaseId: number
+  phaseName: string
+  phaseOrder: number
+  status: MatchStatus
+  bestOf: BestOf
+  featured: boolean
+  home: PlayerTeam
+  away: PlayerTeam
+  result: SeriesScore | null
+  vote: SeriesScore | null
+  points: number | null
+  breakdown: ScoreBreakdown | null
+}
+
+/** Jornada con pleno (get_lol_player_days); points = lo que sumó el pleno. */
+export interface PlayerDay {
+  day: string
+  perfect: boolean
+  negative: boolean
+  points: number
+}

@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/server'
 import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
 import { formatStreak, signedPoints, streakLegend } from '@/utils/lol/rules'
+import { profileHref } from '@/utils/profileContext'
 import { getActiveLolEditions, pickLolEdition, getEditionStandings, getEditionRules, getUserEditionPools } from '../data'
 
 export const metadata = { title: 'Clasificación · LoL · Woski' }
@@ -146,7 +147,7 @@ export default async function LolClasificacionPage({
                     </td>
                     <td className="px-3 sm:px-4 py-3 w-full max-w-0">
                       <Link
-                        href={`/jugador/${row.profileId}`}
+                        href={profileHref(row.profileId, 'lol-clasificacion', selected.id)}
                         className="flex items-center gap-2 min-w-0 group"
                       >
                         <Avatar url={row.avatarUrl} initial={row.nickname.charAt(0).toUpperCase()} />

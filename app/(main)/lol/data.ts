@@ -5,7 +5,7 @@ import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
 import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
 import { roleOrder, type LolRole } from '@/utils/lol/roster'
 import type { TeamLogoMode } from '@/utils/lol/teamLogo'
-import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
+import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, PlayerDay, PlayerSeries, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -184,6 +184,26 @@ interface BreakdownRow {
   } | null
 }
 
+/** Fila del desglose (lol_score_breakdown) a lo que pinta PointsBreakdown; no calcula nada. */
+function toScoreBreakdown(r: Omit<BreakdownRow, 'match_id'>): ScoreBreakdown {
+  return {
+    rulesVersion: r.rules_version,
+    correctWinner: r.correct_winner,
+    correctScore: r.correct_score,
+    baseWinner: r.base_winner,
+    baseExact: r.base_exact,
+    streakLength: r.streak_length,
+    streakBonus: r.streak_bonus,
+    featuredBonus: r.featured_bonus,
+    total: r.total,
+    winnerShare: r.explanation?.winner?.share ?? null,
+    exactShare: r.explanation?.exact?.share ?? null,
+    winnerTier: r.explanation?.winner?.tier ?? null,
+    exactTier: r.explanation?.exact?.tier ?? null,
+    streakSteps: Array.isArray(r.explanation?.streak?.steps) ? r.explanation.streak.steps : null,
+  }
+}
+
 /** Desglose de puntos de mis predicciones en series terminadas (lo calcula la BD). */
 export async function getMyBreakdowns(
   supabase: SupabaseClient,
@@ -195,24 +215,7 @@ export async function getMyBreakdowns(
   const { data, error } = await supabase.rpc('get_my_lol_breakdowns', { p_match_ids: matchIds })
   if (error) throw new LolDataError('score breakdowns', error)
 
-  for (const r of (data ?? []) as BreakdownRow[]) {
-    byMatch.set(r.match_id, {
-      rulesVersion: r.rules_version,
-      correctWinner: r.correct_winner,
-      correctScore: r.correct_score,
-      baseWinner: r.base_winner,
-      baseExact: r.base_exact,
-      streakLength: r.streak_length,
-      streakBonus: r.streak_bonus,
-      featuredBonus: r.featured_bonus,
-      total: r.total,
-      winnerShare: r.explanation?.winner?.share ?? null,
-      exactShare: r.explanation?.exact?.share ?? null,
-      winnerTier: r.explanation?.winner?.tier ?? null,
-      exactTier: r.explanation?.exact?.tier ?? null,
-      streakSteps: Array.isArray(r.explanation?.streak?.steps) ? r.explanation.streak.steps : null,
-    })
-  }
+  for (const r of (data ?? []) as BreakdownRow[]) byMatch.set(r.match_id, toScoreBreakdown(r))
   return byMatch
 }
 
@@ -654,4 +657,92 @@ export async function getEditionTeams(supabase: SupabaseClient, editionId: numbe
     || (a.seedLeague ?? '').localeCompare(b.seedLeague ?? '')
     || (a.seedNumber ?? 0) - (b.seedNumber ?? 0)
     || a.name.localeCompare(b.name, 'es'))
+}
+
+// ── Perfil de otro jugador ─────────────────────────────────────────────────
+
+interface PlayerHistoryRow {
+  match_id: number
+  match_date: string
+  day: string
+  phase_id: number
+  phase_name: string
+  phase_order: number
+  status: MatchStatus
+  best_of: number
+  featured: boolean
+  home_team_id: number
+  away_team_id: number
+  home_goals: number | null
+  away_goals: number | null
+  voted: boolean
+  pred_home: number | null
+  pred_away: number | null
+  points_earned: number | null
+  rules_version: number | null
+  correct_winner: boolean | null
+  correct_score: boolean | null
+  base_winner: number | null
+  base_exact: number | null
+  streak_length: number | null
+  streak_bonus: number | null
+  featured_bonus: number | null
+  total: number | null
+  explanation: BreakdownRow['explanation']
+}
+
+/**
+ * Historial de LoL de un jugador en una edición tal como lo ve otro:
+ * get_lol_player_history (solo series con la votación cerrada, desglose del
+ * motor) y get_lol_player_days (plenos por jornada). Aquí no se puntúa nada.
+ */
+export async function getPlayerLolHistory(
+  supabase: SupabaseClient,
+  profileId: string,
+  editionId: number,
+): Promise<{ series: PlayerSeries[]; days: PlayerDay[] }> {
+  const [histRes, daysRes] = await Promise.all([
+    supabase.rpc('get_lol_player_history', { p_profile_id: profileId, p_edition_id: editionId }),
+    supabase.rpc('get_lol_player_days', { p_profile_id: profileId, p_edition_id: editionId }),
+  ])
+  if (histRes.error) throw new LolDataError('player history', histRes.error)
+  if (daysRes.error) throw new LolDataError('player days', daysRes.error)
+
+  const rows = (histRes.data ?? []) as PlayerHistoryRow[]
+  const teamIds = [...new Set(rows.flatMap(r => [r.home_team_id, r.away_team_id]))]
+  const teamsRes = teamIds.length
+    ? await supabase.from('teams').select('id, name, iso_code, logo_url, color').in('id', teamIds)
+    : { data: [], error: null }
+  if (teamsRes.error) throw new LolDataError('player history teams', teamsRes.error)
+  const teams = new Map(((teamsRes.data ?? []) as TeamRow[]).map(t => [t.id, {
+    id: t.id, name: t.name, tag: t.iso_code, logoUrl: t.logo_url, color: t.color,
+  }]))
+  const unknown = (id: number) => ({ id, name: `#${id}`, tag: '?', logoUrl: null, color: null })
+
+  const series = rows.map((r): PlayerSeries => ({
+    matchId: r.match_id,
+    date: r.match_date,
+    day: r.day,
+    phaseId: r.phase_id,
+    phaseName: r.phase_name,
+    phaseOrder: r.phase_order,
+    status: r.status,
+    bestOf: r.best_of as BestOf,
+    featured: r.featured,
+    home: teams.get(r.home_team_id) ?? unknown(r.home_team_id),
+    away: teams.get(r.away_team_id) ?? unknown(r.away_team_id),
+    result: r.status === 'FINISHED' && r.home_goals !== null && r.away_goals !== null
+      ? { home: r.home_goals, away: r.away_goals }
+      : null,
+    vote: r.voted && r.pred_home !== null && r.pred_away !== null ? { home: r.pred_home, away: r.pred_away } : null,
+    points: r.status === 'FINISHED' ? r.points_earned ?? r.total ?? 0 : null,
+    breakdown: r.total !== null && r.rules_version !== null
+      ? toScoreBreakdown(r as Omit<BreakdownRow, 'match_id'>)
+      : null,
+  }))
+
+  const days = ((daysRes.data ?? []) as { day: string; perfect: boolean; negative: boolean; pleno_points: number }[])
+    .map(d => ({ day: d.day, perfect: d.perfect, negative: d.negative, points: d.pleno_points }))
+
+  return { series, days }
 }
