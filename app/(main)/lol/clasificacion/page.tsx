@@ -81,20 +81,31 @@ export default async function LolClasificacionPage({
     getEditionPhaseStatus(supabase, selected.id).catch(() => ({ phases: [], editionFinished: false })),
   ])
 
-  // Fases con clasificación (alguna serie terminada). Con una sola, su tabla
-  // es la general: no hace falta elegir.
-  const startedPhases = phaseStatus.phases.filter(p => p.started)
-  const showPhases = startedPhases.length > 1
-  const activePhase = showPhases ? startedPhases.find(p => String(p.id) === fase) ?? null : null
+  // Píldoras: cada fase en su orden y Total (la suma) al final; una fase
+  // nueva entra sola entre la última y Total. Con una sola fase, su tabla es
+  // el Total: no hay nada que elegir.
+  // Sin elegir (?fase), la fase actual: la última con series terminadas (la
+  // misma de la racha). Sin ninguna, o con la edición terminada, Total.
+  const phases = phaseStatus.phases
+  const showPhases = phases.length > 1
+  const currentPhase = phaseStatus.editionFinished ? null : phases.findLast(p => p.started) ?? null
+  const activePhase = !showPhases || fase === 'total'
+    ? null
+    : phases.find(p => String(p.id) === fase) ?? currentPhase
   const phaseHref = (phaseId: number | null) =>
-    `/lol/clasificacion?edicion=${selected.id}${phaseId !== null ? `&fase=${phaseId}` : ''}`
+    `/lol/clasificacion?edicion=${selected.id}&fase=${phaseId ?? 'total'}`
 
   // El ámbito guardado solo vale si es un pool tuyo de esta edición; si no, Global.
   const lastViewed = profileRes.data?.last_viewed_league_id as number | null | undefined
   const activePool = pools.find(p => p.id === lastViewed) ?? null
 
+  // Una fase sin series terminadas aún no tiene clasificación (la BD
+  // listaría a todos con 0 puntos): no se pide.
+  const phaseNotStarted = activePhase !== null && !activePhase.started
   const [ranking, rules] = await Promise.all([
-    getEditionStandings(supabase, selected.id, activePool?.id ?? null, activePhase?.id ?? null),
+    phaseNotStarted
+      ? Promise.resolve([])
+      : getEditionStandings(supabase, selected.id, activePool?.id ?? null, activePhase?.id ?? null),
     getEditionRules(supabase, selected.id),
   ])
   // Valor del pleno negativo según el ruleset de la fase en curso.
@@ -112,7 +123,7 @@ export default async function LolClasificacionPage({
       <div className="mb-6">
         <h1 className="heading-display text-2xl font-bold text-text-primary">Clasificación</h1>
         <p className="text-sm text-text-muted mt-1">
-          {selected.fullName} · {activePool?.name ?? 'Global'}{activePhase && ` · ${activePhase.name}`}
+          {selected.fullName} · {activePool?.name ?? 'Global'}{showPhases && ` · ${activePhase?.name ?? 'Total'}`}
         </p>
       </div>
 
@@ -124,13 +135,16 @@ export default async function LolClasificacionPage({
 
       {showPhases && (
         <nav aria-label="Fase" className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5 -mt-3 mb-5">
-          <PhasePill href={phaseHref(null)} active={activePhase === null}>General</PhasePill>
-          {startedPhases.map(p => (
+          {phases.map(p => (
             <PhasePill key={p.id} href={phaseHref(p.id)} active={activePhase?.id === p.id}>
               {p.name}
               {p.finished && <span aria-label="terminada">🏆</span>}
             </PhasePill>
           ))}
+          <PhasePill href={phaseHref(null)} active={activePhase === null}>
+            Total
+            {phaseStatus.editionFinished && <span aria-label="terminada">🏆</span>}
+          </PhasePill>
         </nav>
       )}
 
@@ -171,8 +185,10 @@ export default async function LolClasificacionPage({
         {/* Scroll interno de la tabla (nunca de la página) por si un dato no cabe */}
         <div className="overflow-x-auto">
         {ranking.length === 0 ? (
-          <p className="text-center text-text-muted text-sm py-12">
-            Todavía no hay clasificación: se formará cuando se jueguen los primeros partidos.
+          <p className="text-center text-text-muted text-sm py-12 px-4">
+            {phaseNotStarted
+              ? `${activePhase!.name} aún no ha empezado: su clasificación saldrá con la primera serie terminada.`
+              : 'Todavía no hay clasificación: se formará cuando se jueguen los primeros partidos.'}
           </p>
         ) : (
           <table className="w-full text-sm">
