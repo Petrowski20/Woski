@@ -3,9 +3,10 @@ import { lolEditionStatus } from '@/utils/lol/editionStatus'
 import { resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
 import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
+import { editionChampionDecided, phaseStatuses } from '@/utils/lol/phases'
 import { roleOrder, type LolRole } from '@/utils/lol/roster'
 import type { TeamLogoMode } from '@/utils/lol/teamLogo'
-import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, PlayerDay, PlayerSeries, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
+import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, LolPhaseStatus, PlayerDay, PlayerSeries, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -443,15 +444,51 @@ export async function getUserEditionPools(
     .map(r => ({ id: r.pools.id, name: r.pools.name }))
 }
 
-/** Clasificación de una edición: global (poolId null) o de un pool de esa edición. */
+/**
+ * Fases de una edición (por orden) con su estado y si ya hay campeón de la
+ * edición. Sale de las series; no se guarda nada.
+ */
+export async function getEditionPhaseStatus(
+  supabase: SupabaseClient,
+  editionId: number,
+): Promise<{ phases: LolPhaseStatus[]; editionFinished: boolean }> {
+  const [phasesRes, editionRes] = await Promise.all([
+    supabase.from('phases').select('id, name, order').eq('edition_id', editionId),
+    supabase.from('editions').select('end_date').eq('id', editionId).maybeSingle(),
+  ])
+  if (phasesRes.error) throw new LolDataError('edition phases', phasesRes.error)
+  if (editionRes.error) throw new LolDataError('edition end date', editionRes.error)
+  const rows = (phasesRes.data ?? []) as { id: number; name: string; order: number | null }[]
+  if (rows.length === 0) return { phases: [], editionFinished: false }
+
+  const { data: matches, error } = await supabase
+    .from('matches')
+    .select('phase_id, status')
+    .in('phase_id', rows.map(p => p.id))
+  if (error) throw new LolDataError('edition phase matches', error)
+
+  const phases = phaseStatuses(
+    rows.map(p => ({ id: p.id, name: p.name, order: p.order ?? 0 })),
+    ((matches ?? []) as { phase_id: number; status: MatchStatus }[]).map(m => ({ phaseId: m.phase_id, status: m.status })),
+  )
+  const endDate = (editionRes.data?.end_date as string | null | undefined) ?? null
+  return { phases, editionFinished: editionChampionDecided(phases, endDate, todayMadrid()) }
+}
+
+/**
+ * Clasificación de una edición: global (poolId null) o de un pool de esa
+ * edición; general (phaseId null) o solo de una fase.
+ */
 export async function getEditionStandings(
   supabase: SupabaseClient,
   editionId: number,
   poolId: number | null,
+  phaseId: number | null = null,
 ): Promise<StandingRow[]> {
   const { data, error } = await supabase.rpc('get_lol_standings', {
     p_edition_id: editionId,
     p_pool_id: poolId,
+    ...(phaseId !== null && { p_phase_id: phaseId }),
   })
   if (error) throw new LolDataError('standings', error)
 

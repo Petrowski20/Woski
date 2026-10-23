@@ -134,6 +134,17 @@ export interface PoolOption {
   name: string
 }
 
+/** Fase de una edición para la clasificación por fase. */
+export interface LolPhaseStatus {
+  id: number
+  name: string
+  order: number
+  /** Tiene alguna serie terminada (ya hay clasificación de la fase). */
+  started: boolean
+  /** Todas sus series terminadas o canceladas, con alguna terminada: hay campeón. */
+  finished: boolean
+}
+
 /** Fila de la clasificación completa de una edición (get_lol_standings). */
 export interface StandingRow extends RankingRow {
   correctWinners: number

@@ -6,7 +6,7 @@ import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
 import { formatStreak, signedPoints, streakLegend } from '@/utils/lol/rules'
 import { profileHref } from '@/utils/profileContext'
-import { getActiveLolEditions, pickLolEdition, getEditionStandings, getEditionRules, getUserEditionPools } from '../data'
+import { getActiveLolEditions, pickLolEdition, getEditionStandings, getEditionRules, getUserEditionPools, getEditionPhaseStatus } from '../data'
 
 export const metadata = { title: 'Clasificación · LoL · Woski' }
 
@@ -31,12 +31,29 @@ function Avatar({ url, initial }: { url: string | null; initial: string }) {
 
 const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
+function PhasePill({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      scroll={false}
+      aria-current={active ? 'page' : undefined}
+      className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+        active
+          ? 'bg-accent bg-accent-gradient text-on-accent shadow-glow-accent'
+          : 'bg-bg-muted/60 text-text-muted ring-1 ring-inset ring-border hover:text-text-primary hover:ring-accent/40'
+      }`}
+    >
+      {children}
+    </Link>
+  )
+}
+
 export default async function LolClasificacionPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const { edicion } = await searchParams
+  const { edicion, fase } = await searchParams
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -57,28 +74,45 @@ export default async function LolClasificacionPage({
 
   const selected = pickLolEdition(editions, edicion)
 
-  const [pools, profileRes] = await Promise.all([
+  const [pools, profileRes, phaseStatus] = await Promise.all([
     getUserEditionPools(supabase, selected.id, user.id),
     supabase.from('profiles').select('last_viewed_league_id').eq('id', user.id).maybeSingle(),
+    // Sin fases (error ya registrado) la página sigue con la general.
+    getEditionPhaseStatus(supabase, selected.id).catch(() => ({ phases: [], editionFinished: false })),
   ])
+
+  // Fases con clasificación (alguna serie terminada). Con una sola, su tabla
+  // es la general: no hace falta elegir.
+  const startedPhases = phaseStatus.phases.filter(p => p.started)
+  const showPhases = startedPhases.length > 1
+  const activePhase = showPhases ? startedPhases.find(p => String(p.id) === fase) ?? null : null
+  const phaseHref = (phaseId: number | null) =>
+    `/lol/clasificacion?edicion=${selected.id}${phaseId !== null ? `&fase=${phaseId}` : ''}`
 
   // El ámbito guardado solo vale si es un pool tuyo de esta edición; si no, Global.
   const lastViewed = profileRes.data?.last_viewed_league_id as number | null | undefined
   const activePool = pools.find(p => p.id === lastViewed) ?? null
 
   const [ranking, rules] = await Promise.all([
-    getEditionStandings(supabase, selected.id, activePool?.id ?? null),
+    getEditionStandings(supabase, selected.id, activePool?.id ?? null, activePhase?.id ?? null),
     getEditionRules(supabase, selected.id),
   ])
   // Valor del pleno negativo según el ruleset de la fase en curso.
   const negativePts = rules?.perfectDay.negative ?? 0
+
+  // Campeón (solo en Global): el primero de una fase terminada o, en la
+  // general, de la edición terminada. No se guarda: es esta misma tabla.
+  const championDecided = activePool === null
+    && ranking.length > 0
+    && (activePhase ? activePhase.finished : phaseStatus.editionFinished)
+  const champion = championDecided ? ranking[0] : null
 
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div className="mb-6">
         <h1 className="heading-display text-2xl font-bold text-text-primary">Clasificación</h1>
         <p className="text-sm text-text-muted mt-1">
-          {selected.fullName} · {activePool?.name ?? 'Global'}
+          {selected.fullName} · {activePool?.name ?? 'Global'}{activePhase && ` · ${activePhase.name}`}
         </p>
       </div>
 
@@ -87,6 +121,33 @@ export default async function LolClasificacionPage({
       </div>
 
       <PoolSelector key={selected.id} editionId={selected.id} pools={pools} activePoolId={activePool?.id ?? null} />
+
+      {showPhases && (
+        <nav aria-label="Fase" className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5 -mt-3 mb-5">
+          <PhasePill href={phaseHref(null)} active={activePhase === null}>General</PhasePill>
+          {startedPhases.map(p => (
+            <PhasePill key={p.id} href={phaseHref(p.id)} active={activePhase?.id === p.id}>
+              {p.name}
+              {p.finished && <span aria-label="terminada">🏆</span>}
+            </PhasePill>
+          ))}
+        </nav>
+      )}
+
+      {champion && (
+        <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-card border border-secondary/40 bg-secondary/10">
+          <span className="text-3xl" aria-hidden>🏆</span>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-display text-text-muted">
+              {activePhase ? `Campeón de ${activePhase.name}` : `Campeón de ${selected.fullName}`}
+            </p>
+            <p className="font-display text-lg font-bold text-text-primary truncate">
+              {champion.nickname}
+              <span className="ml-2 text-sm font-normal text-text-muted tabular-nums">{champion.points} pts</span>
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Leyenda */}
       <div className="bg-bg-muted/60 p-4 rounded-card mb-4 border border-border">
@@ -140,7 +201,7 @@ export default async function LolClasificacionPage({
                     <td className="px-3 sm:px-4 py-3 text-center w-12">
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="font-bold text-text-muted leading-none tabular-nums">
-                          {medals[row.position] ?? row.position}
+                          {champion?.profileId === row.profileId ? '🏆' : medals[row.position] ?? row.position}
                         </span>
                         <MovementBadge m={row.movement} />
                       </div>
