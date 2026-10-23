@@ -5,7 +5,7 @@
 -- ven votos de series abiertas.
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(14);
+SELECT plan(16);
 
 DO $$
 DECLARE
@@ -69,8 +69,14 @@ SELECT is(t.run_as('authenticated', t.uid('su-user'), format('SELECT count(*) FR
 SELECT is(t.run_as('authenticated', t.uid('su-user'),
           format('SELECT count(*) FROM predictions WHERE match_id = %s AND profile_id <> %L', (SELECT s3 FROM ids), t.uid('su-user'))),
           '0', 'serie abierta: ningún voto ajeno');
-SELECT is(t.run_as('authenticated', t.uid('su-user'), format('SELECT count(*) FROM get_my_vote_distribution(ARRAY[%s])', (SELECT s3 FROM ids))),
-          '0', 'serie abierta: sin % de votos');
+-- % de una serie abierta: solo para quien ya la ha votado (20261029100001)
+SELECT is(t.run_as('authenticated', t.uid('su-user'), format('SELECT sum(votes) FROM get_my_vote_distribution(ARRAY[%s])', (SELECT s3 FROM ids))),
+          '3', 'serie abierta votada: ve el % sobre los 3 votantes');
+SELECT is(t.run_as('authenticated', t.uid('su-user'),
+          format('SELECT string_agg(pred_home_goals || ''-'' || pred_away_goals || '':'' || votes, '','' ORDER BY pred_home_goals DESC) FROM get_my_vote_distribution(ARRAY[%s])', (SELECT s3 FROM ids))),
+          '1-0:1,0-1:2', 'serie abierta votada: reparto por marcador');
+SELECT is(t.run_as('authenticated', t.player('su-novote'), format('SELECT count(*) FROM get_my_vote_distribution(ARRAY[%s])', (SELECT s3 FROM ids))),
+          '0', 'serie abierta sin votar: sin % de votos');
 SELECT is(t.run_as('authenticated', t.uid('su-user'), format('SELECT sum(votes) FROM get_my_vote_distribution(ARRAY[%s])', (SELECT s1 FROM ids))),
           '3', 'serie cerrada: % sobre 3 votantes (sin el oculto)');
 SELECT is(t.run_as('authenticated', t.uid('su-user'), format('SELECT count(*) FROM get_my_lol_breakdowns(ARRAY[%s, %s])', (SELECT s1 FROM ids), (SELECT s3 FROM ids))),
