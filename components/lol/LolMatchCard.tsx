@@ -210,13 +210,15 @@ function LolMatchCard({ match, locked, draft, saving, error, onDraftChange, onSa
           </div>
         )}
 
-        {/* Desglose: solo con la votación cerrada (el servidor no lo envía antes) */}
-        {locked && match.distribution && (
+        {/* Desglose: con la votación cerrada o, si sigue abierta, en cuanto has
+            votado (el servidor no lo envía antes) */}
+        {match.distribution && (locked || savedScore) && (
           <VoteBreakdown
             distribution={match.distribution}
             mine={savedScore}
             homeName={match.home.tag}
             awayName={match.away.tag}
+            live={!locked}
           />
         )}
       </div>

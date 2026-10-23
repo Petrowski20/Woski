@@ -93,7 +93,7 @@ export interface LolMatchView {
   /** Solo en fases suizas (utils/lol/swiss): ronda, balance previo y qué se juega. */
   swiss: SwissInfo | null
   myPrediction: (SeriesScore & { points: number | null; breakdown: ScoreBreakdown | null }) | null
-  /** Solo presente cuando la votación del partido ya está cerrada. */
+  /** Solo presente con la votación cerrada o si el usuario ya ha votado la serie. */
   distribution: { total: number; shares: VoteShare[] } | null
 }
 

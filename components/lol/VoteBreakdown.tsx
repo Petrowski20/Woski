@@ -8,10 +8,13 @@ interface Props {
   mine: SeriesScore | null
   homeName: string
   awayName: string
+  /** Votación aún abierta: el reparto puede cambiar hasta el cierre. */
+  live?: boolean
 }
 
-// Desglose de votos por resultado. Solo se renderiza con la votación cerrada.
-export default function VoteBreakdown({ distribution, mine, homeName, awayName }: Props) {
+// Desglose de votos por resultado. Se renderiza con la votación cerrada o,
+// mientras sigue abierta, a quien ya ha votado.
+export default function VoteBreakdown({ distribution, mine, homeName, awayName, live = false }: Props) {
   // De más a menos votado; a igual porcentaje se mantiene el orden del
   // marcador (3-0 … 0-3), porque sort es estable.
   const shares = [...distribution.shares].sort((a, b) => b.pct - a.pct)
@@ -19,7 +22,8 @@ export default function VoteBreakdown({ distribution, mine, homeName, awayName }
   return (
     <div className="flex flex-col gap-1.5">
       <p className="text-xs font-semibold text-text-muted">
-        Qué ha votado la gente · {distribution.total} voto{distribution.total !== 1 ? 's' : ''}
+        {live ? 'Qué está votando la gente' : 'Qué ha votado la gente'} · {distribution.total} voto{distribution.total !== 1 ? 's' : ''}
+        {live && <span className="font-normal"> · puede cambiar hasta el cierre</span>}
       </p>
       <ul className="flex flex-col gap-1">
         {shares.map((share) => {

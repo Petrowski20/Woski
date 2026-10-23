@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { lolEditionStatus } from '@/utils/lol/editionStatus'
-import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
+import { resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
 import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
 import { roleOrder, type LolRole } from '@/utils/lol/roster'
@@ -251,12 +251,9 @@ export async function getEditionMatches(
 
   const matches = (data ?? []) as unknown as MatchRow[]
   const matchIds = matches.map(m => m.id)
-  // Los % solo se piden de partidos con la votación cerrada (la BD tampoco
-  // los devuelve antes del corte).
-  const now = Date.now()
-  const closedIds = matches
-    .filter(m => m.status !== 'CANCELLED' && isPredictionLocked(m.status, m.prediction_locks_at, now))
-    .map(m => m.id)
+  // Los % se piden de todos los partidos no cancelados: la BD solo los
+  // devuelve con la votación cerrada o si el usuario ya ha votado la serie.
+  const distributionIds = matches.filter(m => m.status !== 'CANCELLED').map(m => m.id)
 
   const [predsRes, distributions, seedsRes] = await Promise.all([
     matchIds.length
@@ -266,7 +263,7 @@ export async function getEditionMatches(
           .eq('profile_id', userId)
           .in('match_id', matchIds)
       : Promise.resolve({ data: [], error: null }),
-    getMyDistributions(supabase, closedIds),
+    getMyDistributions(supabase, distributionIds),
     supabase.from('team_edition_stats').select('team_id, league, seed').eq('edition_id', editionId).not('seed', 'is', null),
   ])
   if (predsRes.error) throw new LolDataError('my predictions', predsRes.error)
