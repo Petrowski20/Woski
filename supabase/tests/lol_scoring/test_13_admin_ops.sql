@@ -3,7 +3,7 @@
 -- autorización y auditoría (lol_admin_audit).
 BEGIN;
 SET search_path = public, extensions, t;
-SELECT plan(62);
+SELECT plan(67);
 
 DO $$
 DECLARE
@@ -163,6 +163,21 @@ SELECT is(t.run_as('authenticated', t.uid('ops-admin'),
           'ops-user=true', 'participación: votó sí/no, sin ocultos');
 SELECT is(pg_get_function_result('admin_lol_match_participation(integer)'::regprocedure),
           'TABLE(profile_id uuid, nickname text, has_voted boolean)', 'participación: nunca devuelve el voto');
+
+-- ---------------- Crear una serie ya jugada (votada fuera de la app) ----------------
+CREATE TEMP TABLE played AS
+  SELECT (admin_create_lol_match((SELECT ph FROM ctx), 'AAA', 'CCC', now() - interval '2 days', 3, false, 'whatsapp', true)
+          ->> 'match_id')::integer AS id;
+SELECT results_eq($$ SELECT status::text, metadata ->> 'best_of' FROM matches WHERE id = (SELECT id FROM played) $$,
+                  $$ VALUES ('PENDING', '3') $$, 'ya jugada: se crea PENDING aunque la votación esté cerrada');
+SELECT is((SELECT action FROM lol_admin_audit WHERE match_id = (SELECT id FROM played)), 'create_played_match',
+          'ya jugada: auditada como create_played_match');
+SELECT throws_like($$ SELECT admin_create_lol_match((SELECT ph FROM ctx), 'BBB', 'DDD', (SELECT d FROM ctx) + interval '3 days', 3, false, NULL, true) $$,
+                   '%la votación aún estaría abierta%', 'ya jugada con la votación abierta: se rechaza');
+SELECT throws_like($$ SELECT admin_create_lol_match((SELECT ph FROM ctx), 'BBB', 'DDD', now() - interval '2 days', 3, true, NULL, true) $$,
+                   '%no puede ser partido de la jornada%', 'ya jugada y partido de la jornada: se rechaza');
+SELECT lives_ok(format('SELECT admin_set_lol_prediction(%L, %s, NULL, 2, 1, %L)', t.uid('ops-user'), (SELECT id FROM played), 'whatsapp'),
+                'ya jugada: admite votos cargados por el admin');
 
 SELECT * FROM finish();
 ROLLBACK;

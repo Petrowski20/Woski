@@ -14,8 +14,9 @@ const fieldClass = 'text-sm bg-bg-muted border border-border rounded-md px-2 py-
 
 /**
  * Alta de una serie. Todas las validaciones (siglas, equipos distintos,
- * formato, votación todavía abierta, duplicados, partido de la jornada) las
- * hace admin_create_lol_match; aquí solo se recogen los datos.
+ * formato, votación abierta (o cerrada si es una serie ya jugada), duplicados,
+ * partido de la jornada) las hace admin_create_lol_match; aquí solo se recogen
+ * los datos.
  */
 export default function AdminLolMatchForm({
   editions,
@@ -36,6 +37,7 @@ export default function AdminLolMatchForm({
   const [localDateTime, setLocalDateTime] = useState('')
   const [bestOf, setBestOf] = useState<number>(currentPhase(initialEdition)?.default_best_of ?? 3)
   const [featured, setFeatured] = useState(false)
+  const [played, setPlayed] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const edition = editions.find(e => e.id === editionId) ?? null
@@ -59,16 +61,20 @@ export default function AdminLolMatchForm({
     if (!phaseId) return
     startTransition(async () => {
       try {
-        const res = await createLolMatchAction({ phaseId, homeTag, awayTag, localDateTime, bestOf, featured })
+        const res = await createLolMatchAction({ phaseId, homeTag, awayTag, localDateTime, bestOf, featured, played })
         if ('error' in res) {
           toast.error(res.error)
           return
         }
         toast.success(`Serie ${homeTag} vs ${awayTag} creada`)
+        if (played) {
+          toast.info('Carga los votos en Predicciones y pon el resultado en la lista de series.', { duration: 10_000 })
+        }
         res.warnings.forEach(w => toast.warning(w, { duration: 10_000 }))
         setHomeTag('')
         setAwayTag('')
         setFeatured(false)
+        setPlayed(false)
       } catch {
         toast.error('No hemos podido conectar con el servidor. Inténtalo de nuevo.')
       }
@@ -79,7 +85,9 @@ export default function AdminLolMatchForm({
     <section className="bg-bg-elevated border border-border rounded-card shadow-card p-4 flex flex-col gap-3">
       <div>
         <h2 className="heading-display font-bold text-text-primary">Añadir serie</h2>
-        <p className="text-xs text-text-muted">Fecha y hora en horario de Madrid. La votación debe seguir abierta con esa hora.</p>
+        <p className="text-xs text-text-muted">
+          Fecha y hora en horario de Madrid. La votación debe seguir abierta con esa hora, salvo que marques la serie como ya jugada.
+        </p>
       </div>
 
       <datalist id="lol-team-tags">
@@ -123,8 +131,26 @@ export default function AdminLolMatchForm({
           </select>
         </label>
         <label className="flex items-center gap-2 text-sm text-text-primary col-span-2 sm:col-span-4">
-          <input type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} disabled={isPending} />
+          <input type="checkbox" checked={featured} onChange={e => setFeatured(e.target.checked)} disabled={isPending || played} />
           ⭐ Partido de la jornada
+        </label>
+        <label className="flex items-start gap-2 text-sm text-text-primary col-span-2 sm:col-span-4">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={played}
+            onChange={e => {
+              setPlayed(e.target.checked)
+              if (e.target.checked) setFeatured(false)
+            }}
+            disabled={isPending}
+          />
+          <span>
+            Ya jugada (se votó fuera de la app)
+            <span className="block text-xs text-text-muted">
+              Se crea con la votación cerrada. Después carga los votos en Predicciones y pon el resultado.
+            </span>
+          </span>
         </label>
       </div>
 

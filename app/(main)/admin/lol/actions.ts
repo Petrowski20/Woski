@@ -107,6 +107,8 @@ export interface CreateMatchInput {
   localDateTime: string
   bestOf: number
   featured: boolean
+  /** Serie que ya se jugó (votada fuera de la app): la votación tiene que estar cerrada. */
+  played: boolean
 }
 
 export async function createLolMatchAction(
@@ -126,6 +128,7 @@ export async function createLolMatchAction(
     p_match_date: matchDate,
     p_best_of: input.bestOf,
     p_featured: input.featured,
+    p_played: input.played,
   })
   if (error) return _rpcError('admin_create_lol_match', error, 'No se ha podido crear la serie. Inténtalo de nuevo.')
   _revalidate()
