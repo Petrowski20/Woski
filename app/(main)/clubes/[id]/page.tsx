@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getActiveEditions } from '@/utils/editions'
+import { profileHref } from '@/utils/profileContext'
 import ClubLogo from '@/components/clubes/ClubLogo'
 import { MemberRoleButton, OpenPoolForm, PoolMembershipButton } from '@/components/clubes/ClubControls'
 import { ROLE_LABEL, type ClubRole } from '../types'
@@ -134,7 +135,7 @@ export default async function ClubPage({ params }: { params: Promise<{ id: strin
             const nickname = m.profiles?.nickname ?? 'Usuario'
             return (
               <li key={m.profile_id} className="flex items-center justify-between gap-3 py-2">
-                <Link href={`/jugador/${m.profile_id}`} className="text-sm text-text-primary hover:underline truncate">
+                <Link href={profileHref(m.profile_id, `club-${id}`)} className="text-sm text-text-primary hover:underline truncate">
                   {nickname}{m.profile_id === user.id && <span className="text-text-muted"> (tú)</span>}
                 </Link>
                 <div className="flex items-center gap-2 shrink-0">

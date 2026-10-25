@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { parseLolRules, signedPoints, streakBonusFor } from './rules'
+import { formatStreak, parseLolRules, signedPoints, streakBonusFor, streakLegend } from './rules'
 
 // Config del Play-In de Worlds (supabase/seeds/worlds_2026_playin_v2.sql, bloque 1A).
 const block = {
@@ -35,6 +35,38 @@ test('count_exact_score: por defecto false, true solo si el config lo dice', () 
   assert.equal(parseLolRules(on).countExactScore, true)
   const str = { ...PLAYIN, streak_bonus: { ...PLAYIN.streak_bonus, count_exact_score: 'true' } }
   assert.equal(parseLolRules(str).countExactScore, false)
+})
+
+test('exact_as_prediction: solo true con count_exact_score = true (como validate_ruleset_config)', () => {
+  const sb = PLAYIN.streak_bonus
+  assert.equal(parseLolRules(PLAYIN).exactAsPrediction, false)
+  const on = { ...PLAYIN, streak_bonus: { ...sb, count_exact_score: true, exact_as_prediction: true } }
+  assert.equal(parseLolRules(on).exactAsPrediction, true)
+  const sinExacto = { ...PLAYIN, streak_bonus: { ...sb, exact_as_prediction: true } }
+  assert.equal(parseLolRules(sinExacto).exactAsPrediction, false)
+  const str = { ...PLAYIN, streak_bonus: { ...sb, count_exact_score: true, exact_as_prediction: 'true' } }
+  assert.equal(parseLolRules(str).exactAsPrediction, false)
+  assert.equal(parseLolRules({ ...on, version: 1 }).exactAsPrediction, false)
+})
+
+test('streakLegend: texto según la variante activa', () => {
+  const strict = parseLolRules({ ...PLAYIN, streak_bonus: { ...PLAYIN.streak_bonus, count_exact_score: true, exact_as_prediction: true } })
+  assert.equal(
+    streakLegend(strict),
+    'Cada serie son dos predicciones, ganador y marcador exacto. Cada acierto suma +1 a la racha y paga su bonus; ' +
+      'cada fallo (o no votar) la corta. Entre paréntesis, la mejor racha de la fase.',
+  )
+  const exact = parseLolRules({ ...PLAYIN, streak_bonus: { ...PLAYIN.streak_bonus, count_exact_score: true } })
+  assert.match(streakLegend(exact), /marcador exacto \+1 más; fallar el ganador/)
+  assert.match(streakLegend(parseLolRules(PLAYIN)), /^Cada ganador acertado suma \+1 a la racha; fallarlo/)
+  assert.match(streakLegend(null), /mejor racha de la fase/)
+})
+
+test('formatStreak: "N (máx. M)" y solo "0" si ambas son 0', () => {
+  assert.deepEqual(formatStreak(0, 0), { current: '0', best: null })
+  assert.deepEqual(formatStreak(0, 3), { current: '0', best: '(máx. 3)' })
+  assert.deepEqual(formatStreak(2, 3), { current: '2', best: '(máx. 3)' })
+  assert.deepEqual(formatStreak(4, 4), { current: '4', best: '(máx. 4)' })
 })
 
 test('v1 (sin version): pleno negativo −1 como lol_standings_at', () => {

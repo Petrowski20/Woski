@@ -22,7 +22,7 @@ const STATUS_TONE: Record<LolEditionStatus, string> = {
 
 const DATE_LOCALE: Record<Lang, string> = { es: 'es-ES', en: 'en-GB', ro: 'ro-RO' }
 
-function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
+export function Stat({ label, value, sub }: { label: string; value: React.ReactNode; sub?: React.ReactNode }) {
   return (
     <div className="bg-bg-elevated px-4 py-3 min-w-0">
       <p className="text-xs text-text-muted">{label}</p>
@@ -32,7 +32,7 @@ function Stat({ label, value, sub }: { label: string; value: React.ReactNode; su
   )
 }
 
-function PointsPill({ points }: { points: number }) {
+export function PointsPill({ points }: { points: number }) {
   const tone = points === 0
     ? 'bg-danger/10 text-danger ring-danger/30'
     : 'bg-success/10 text-success ring-success/30'

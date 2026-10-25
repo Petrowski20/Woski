@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { saveLolPredictionsAction } from '@/app/(main)/lol/actions'
 import { isPredictionLocked, sameScore, type SeriesScore } from '@/utils/lol/series'
+import { pickScrollTarget } from '@/utils/scrollTarget'
+import { useInitialScroll } from '@/utils/useInitialScroll'
 import type { LolEditionOption, LolMatchView, SaveErrorCode, SaveMatchResult } from '@/utils/lol/types'
 import SearchInput from '@/components/shared/SearchInput'
 import NoResults from '@/components/shared/NoResults'
@@ -43,6 +45,15 @@ export default function LolCalendar({ editions, selectedEditionId, matches, side
     setPrevMatches(matches)
     setConfirmed({})
   }
+
+  // Al abrir, una sola vez: hasta la primera serie sin terminar (todas las
+  // fases, por fecha). Se fija con los datos iniciales para que guardar o
+  // revalidar no cambie el destino ni vuelva a desplazar.
+  const [scrollTarget] = useState(() => {
+    const id = pickScrollTarget(matches.map(m => ({ id: m.id, date: m.date, status: m.status })))
+    return id === null ? null : `serie-${id}`
+  })
+  useInitialScroll(scrollTarget)
 
   // Re-evaluar bloqueos cada 30 s (mismo criterio que el Mundial)
   useEffect(() => {
@@ -185,16 +196,18 @@ export default function LolCalendar({ editions, selectedEditionId, matches, side
             <NoResults onClear={() => setSearch('')} clearLabel="Limpiar búsqueda" />
           ) : (
             filtered.map(m => (
-              <LolMatchCard
-                key={m.id}
-                match={m}
-                locked={lockedIds.has(m.id)}
-                draft={drafts[m.id] ?? null}
-                saving={saving.has(m.id)}
-                error={errors[m.id] ?? null}
-                onDraftChange={onDraftChange}
-                onSave={onSave}
-              />
+              // scroll-mt-36: deja la serie bajo la barra de navegación y el buscador fijos.
+              <div key={m.id} id={`serie-${m.id}`} className="scroll-mt-36">
+                <LolMatchCard
+                  match={m}
+                  locked={lockedIds.has(m.id)}
+                  draft={drafts[m.id] ?? null}
+                  saving={saving.has(m.id)}
+                  error={errors[m.id] ?? null}
+                  onDraftChange={onDraftChange}
+                  onSave={onSave}
+                />
+              </div>
             ))
           )}
         </section>

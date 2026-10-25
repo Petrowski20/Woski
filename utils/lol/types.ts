@@ -1,5 +1,8 @@
 import type { BestOf, MatchStatus, SeriesScore } from './series'
 import type { LolEditionStatus } from './editionStatus'
+import type { SwissInfo } from './swiss'
+import type { LolRole } from './roster'
+import type { TeamLogoMode } from './teamLogo'
 
 export interface LolEditionOption {
   id: number
@@ -22,10 +25,14 @@ export interface LolTeamView {
   tag: string
   /** URL pública del bucket team-logos; null → insignia con las siglas. */
   logoUrl: string | null
+  /** teams.logo_mode: color, mono (máscara con el color del tema) o plate (placa oscura). */
+  logoMode: TeamLogoMode
   /** teams.color ('#rrggbb') o null. */
   color: string | null
   /** Récord en la fase del partido (solo partidos ya resueltos). */
   record: { wins: number; losses: number }
+  /** Seed en la edición ("LCK #1", team_edition_stats); null si no hay. */
+  seed: string | null
 }
 
 export interface VoteShare extends SeriesScore {
@@ -53,6 +60,20 @@ export interface ScoreBreakdown {
   /** 'sole' (único), 'fallback' (único sin votantes suficientes) o 'min_share:N'. */
   winnerTier: string | null
   exactTier: string | null
+  /**
+   * Solo con streak_bonus.exact_as_prediction: racha y bonus tras cada
+   * predicción de la serie (ganador y, en Bo3/Bo5, marcador). Si no, null.
+   */
+  streakSteps: StreakStep[] | null
+}
+
+export interface StreakStep {
+  prediction: 'winner' | 'exact'
+  hit: boolean
+  /** Racha tras esta predicción. */
+  length: number
+  /** Bonus pagado por esta predicción. */
+  bonus: number
 }
 
 export interface LolMatchView {
@@ -69,8 +90,10 @@ export interface LolMatchView {
   result: SeriesScore | null
   /** Partido de la jornada (matches.metadata.featured_match). */
   featured: boolean
+  /** Solo en fases suizas (utils/lol/swiss): ronda, balance previo y qué se juega. */
+  swiss: SwissInfo | null
   myPrediction: (SeriesScore & { points: number | null; breakdown: ScoreBreakdown | null }) | null
-  /** Solo presente cuando la votación del partido ya está cerrada. */
+  /** Solo presente con la votación cerrada o si el usuario ya ha votado la serie. */
   distribution: { total: number; shares: VoteShare[] } | null
 }
 
@@ -111,6 +134,17 @@ export interface PoolOption {
   name: string
 }
 
+/** Fase de una edición para la clasificación por fase. */
+export interface LolPhaseStatus {
+  id: number
+  name: string
+  order: number
+  /** Tiene alguna serie terminada (ya hay clasificación de la fase). */
+  started: boolean
+  /** Todas sus series terminadas o canceladas, con alguna terminada: hay campeón. */
+  finished: boolean
+}
+
 /** Fila de la clasificación completa de una edición (get_lol_standings). */
 export interface StandingRow extends RankingRow {
   correctWinners: number
@@ -139,4 +173,80 @@ export interface ProfileLolEdition {
   exactHits: number
   /** Series Bo3/Bo5 terminadas que voté (las únicas con marcador exacto). */
   exactPlayed: number
+}
+
+/** Alguien de la plantilla de un equipo en una edición (lol_roster + lol_players). */
+export interface RosterMember {
+  rosterId: number
+  playerId: number
+  nickname: string
+  realName: string | null
+  /** ISO 3166-1 alfa-2 o null. */
+  country: string | null
+  role: LolRole
+  /** Hasta 3 ids de campeón de Data Dragon. */
+  picks: string[]
+}
+
+/** Equipo de una edición para la pestaña Equipos. */
+export interface EditionTeam {
+  id: number
+  name: string
+  tag: string
+  logoUrl: string | null
+  /** teams.logo_mode: color, mono (máscara con el color del tema) o plate (placa oscura). */
+  logoMode: TeamLogoMode
+  color: string | null
+  /** teams.metadata.region / country. */
+  region: string | null
+  country: string | null
+  /** "LCK #1" o null. */
+  seed: string | null
+  seedLeague: string | null
+  seedNumber: number | null
+  /** De Top a Coach. */
+  roster: RosterMember[]
+}
+
+/** Equipo de una serie en el historial de un jugador (lo que pinta TeamLogo). */
+export type PlayerTeam = Pick<LolTeamView, 'id' | 'name' | 'tag' | 'logoUrl' | 'color'>
+
+/**
+ * Serie del historial de LoL de otro jugador (get_lol_player_history): solo
+ * series con la votación cerrada. vote null = no votó; breakdown null = aún
+ * sin resultado.
+ */
+export interface PlayerSeries {
+  matchId: number
+  date: string
+  /** YYYY-MM-DD en la zona horaria de la edición (la de las jornadas). */
+  day: string
+  phaseId: number
+  phaseName: string
+  phaseOrder: number
+  status: MatchStatus
+  bestOf: BestOf
+  featured: boolean
+  home: PlayerTeam
+  away: PlayerTeam
+  result: SeriesScore | null
+  vote: SeriesScore | null
+  points: number | null
+  breakdown: ScoreBreakdown | null
+}
+
+/**
+ * Jornada con series terminadas (get_lol_player_days): pleno (points = lo que
+ * sumó; 0 si no hubo) y foto de la clasificación global al cierre del día.
+ * rank/totalPoints/players son null si la BD aún no tiene la migración que
+ * los devuelve.
+ */
+export interface PlayerDay {
+  day: string
+  perfect: boolean
+  negative: boolean
+  points: number
+  rank: number | null
+  totalPoints: number | null
+  players: number | null
 }

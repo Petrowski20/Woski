@@ -1,26 +1,170 @@
 import { createClient } from '@/utils/supabase/server'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import Image from 'next/image'
-import Link from 'next/link'
 import MatchCard from '@/components/MatchCard'
+import ProfileBackLink from '@/components/ProfileBackLink'
+import PlayerLolProfile from '@/components/lol/PlayerLolProfile'
+import { getEditionStandings, getLolEditions, getPlayerLolHistory, lolToday } from '../../lol/data'
+import {
+  originHref,
+  parseId,
+  parseProfileFrom,
+  pickProfileEdition,
+  pickProfilePhase,
+  resolveProfileSport,
+  type ProfileOrigin,
+  type ProfileSport,
+} from '@/utils/profileContext'
+
+type SearchParams = Record<string, string | string[] | undefined>
+type Supabase = Awaited<ReturnType<typeof createClient>>
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data } = await supabase.from('profiles').select('nickname').eq('id', id).single()
+  const { data } = await supabase.from('profiles').select('nickname').eq('id', id).maybeSingle()
   return { title: data ? `${data.nickname} · Woski` : 'Jugador · Woski' }
 }
 
-export default async function JugadorPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const supabase = await createClient()
+interface Profile { id: string; nickname: string; role: string | null; total_points: number | null; avatar_url: string | null }
 
-  const [{ data: profile }, { data: rawPredictions }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, nickname, role, total_points, avatar_url')
-      .eq('id', id)
-      .single(),
+/** Volver: el origen validado (?from) o, sin él, atrás / la clasificación del deporte. */
+function backTarget(origin: ProfileOrigin | null, sport: ProfileSport, editionId: number | null) {
+  if (origin) return { href: originHref(origin, editionId), label: origin.label, explicit: true }
+  return sport === 'lol'
+    ? { href: '/lol/clasificacion', label: 'Clasificación', explicit: false }
+    : { href: '/clasificacion', label: 'Clasificación', explicit: false }
+}
+
+function ProfileHeader({ profile, points }: { profile: Profile; points: number }) {
+  return (
+    <div className="bg-bg-elevated border border-border rounded-panel shadow-card px-5 py-5 flex items-center gap-4 min-w-0">
+      <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full overflow-hidden bg-bg-muted shrink-0 flex items-center justify-center border border-border">
+        {profile.avatar_url ? (
+          <Image src={profile.avatar_url} alt={profile.nickname} fill sizes="80px" className="object-cover" />
+        ) : (
+          <span className="text-2xl font-bold text-accent">{profile.nickname.charAt(0).toUpperCase()}</span>
+        )}
+      </div>
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap min-w-0">
+          <h1 className="heading-display text-xl sm:text-2xl font-bold text-text-primary truncate max-w-full">{profile.nickname}</h1>
+          {profile.role === 'ADMIN' && (
+            <span className="px-2 py-0.5 rounded-full bg-warning/15 text-warning ring-1 ring-inset ring-warning/30 text-xs font-bold uppercase tracking-wide shrink-0">
+              Admin
+            </span>
+          )}
+        </div>
+        <p className="font-display text-2xl font-bold text-accent tabular-nums mt-0.5">
+          {points}
+          <span className="text-sm font-medium text-text-muted ml-1">pts</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
+/** Perfil de LoL: ediciones que ha jugado, su fila de la clasificación y su historial (todo de la BD). */
+async function LolProfile({ supabase, profile, sp, origin }: {
+  supabase: Supabase
+  profile: Profile
+  sp: SearchParams
+  origin: ProfileOrigin | null
+}) {
+  const editions = await getLolEditions(supabase)
+  const standings = await Promise.all(editions.map(e => getEditionStandings(supabase, e.id, null)))
+  const today = lolToday()
+  const played = editions
+    .map((e, i) => ({ edition: e, rows: standings[i], mine: standings[i].find(r => r.profileId === profile.id) ?? null }))
+    .filter(x => x.mine !== null)
+
+  const editionId = pickProfileEdition(
+    played.map(x => ({
+      id: x.edition.id,
+      startDate: x.edition.startDate,
+      active: !!x.edition.startDate && x.edition.startDate <= today && (!x.edition.endDate || x.edition.endDate >= today),
+    })),
+    parseId(sp.edicion),
+  )
+  const back = backTarget(origin, 'lol', parseId(sp.edicion) ?? editionId)
+  const selected = played.find(x => x.edition.id === editionId) ?? null
+
+  if (!selected) {
+    return (
+      <div className="w-full max-w-2xl mx-auto space-y-6">
+        <ProfileBackLink {...back} />
+        <ProfileHeader profile={profile} points={0} />
+        <p className="bg-bg-elevated border border-border rounded-panel shadow-card px-5 py-8 text-center text-sm text-text-muted">
+          Este jugador aún no ha votado en ninguna competición de League of Legends.
+        </p>
+      </div>
+    )
+  }
+
+  const { series, days } = await getPlayerLolHistory(supabase, profile.id, selected.edition.id)
+  const phases = [...new Map(series.map(s => [s.phaseId, { id: s.phaseId, name: s.phaseName, order: s.phaseOrder }])).values()]
+    .sort((a, b) => a.order - b.order)
+  const phaseId = pickProfilePhase(phases.map(p => p.id), parseId(sp.fase))
+
+  const hrefFor = (e: number, p: number | null) => {
+    const q = new URLSearchParams()
+    if (origin) q.set('from', origin.key)
+    if (sp.deporte === 'lol') q.set('deporte', 'lol')
+    q.set('edicion', String(e))
+    if (p !== null) q.set('fase', String(p))
+    return `/jugador/${encodeURIComponent(profile.id)}?${q.toString()}`
+  }
+
+  return (
+    <div className="w-full max-w-2xl mx-auto space-y-6">
+      <ProfileBackLink {...back} />
+      <ProfileHeader profile={profile} points={selected.mine!.points} />
+      <PlayerLolProfile
+        standing={selected.mine}
+        participants={selected.rows.length}
+        series={series}
+        days={days}
+        editions={played.map(x => ({ id: x.edition.id, label: x.edition.label }))}
+        selectedEditionId={selected.edition.id}
+        phases={phases}
+        selectedPhaseId={phaseId}
+        hrefFor={hrefFor}
+      />
+    </div>
+  )
+}
+
+export default async function JugadorPage({ params, searchParams }: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<SearchParams>
+}) {
+  const [{ id }, sp] = await Promise.all([params, searchParams])
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/login')
+
+  const origin = parseProfileFrom(sp.from)
+  const sport = resolveProfileSport(sp.deporte, origin)
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, nickname, role, total_points, avatar_url')
+    .eq('id', id)
+    .maybeSingle()
+  if (!profile) notFound()
+
+  if (sport === 'lol') return <LolProfile supabase={supabase} profile={profile as Profile} sp={sp} origin={origin} />
+  return <FootballProfile supabase={supabase} profile={profile as Profile} back={backTarget(origin, 'futbol', null)} />
+}
+
+// Fútbol (archivo): como antes, salvo el enlace de volver.
+async function FootballProfile({ supabase, profile, back }: {
+  supabase: Supabase
+  profile: Profile
+  back: ReturnType<typeof backTarget>
+}) {
+  const id = profile.id
+  const [{ data: rawPredictions }] = await Promise.all([
     // SECURITY: !inner + .eq on status ensures predictions for unplayed matches never reach the client
     supabase
       .from('predictions')
@@ -41,8 +185,6 @@ export default async function JugadorPage({ params }: { params: Promise<{ id: st
       .eq('matches.status', 'FINISHED'),
   ])
 
-  if (!profile) notFound()
-
   const predictions = [...(rawPredictions ?? [])].sort((a, b) => {
     const ma = a.matches as any
     const mb = b.matches as any
@@ -56,16 +198,7 @@ export default async function JugadorPage({ params }: { params: Promise<{ id: st
   return (
     <div className="w-full max-w-2xl mx-auto space-y-6">
 
-      {/* Back */}
-      <Link
-        href="/clasificacion"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-        </svg>
-        Clasificación
-      </Link>
+      <ProfileBackLink {...back} />
 
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-[#FFD6D1] dark:border-slate-800 shadow-sm overflow-hidden">

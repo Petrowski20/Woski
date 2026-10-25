@@ -1,8 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { lolEditionStatus } from '@/utils/lol/editionStatus'
-import { isPredictionLocked, resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
+import { resolveBestOf, seriesOutcomes, type BestOf, type MatchStatus } from '@/utils/lol/series'
 import { parseLolRules, type LolRulesSummary } from '@/utils/lol/rules'
-import type { LolEditionInfo, LolEditionOption, LolMatchView, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, VoteShare } from '@/utils/lol/types'
+import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol/swiss'
+import { editionChampionDecided, phaseStatuses } from '@/utils/lol/phases'
+import { roleOrder, type LolRole } from '@/utils/lol/roster'
+import type { TeamLogoMode } from '@/utils/lol/teamLogo'
+import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, LolPhaseStatus, PlayerDay, PlayerSeries, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -110,7 +114,7 @@ export function pickLolEdition(editions: LolEditionOption[], edicion: unknown): 
 
 // ── Partidos de una edición ────────────────────────────────────────────────
 
-interface TeamRow { id: number; name: string; iso_code: string; logo_url: string | null; color: string | null }
+interface TeamRow { id: number; name: string; iso_code: string; logo_url: string | null; logo_mode: TeamLogoMode; color: string | null }
 interface MatchRow {
   id: number
   match_date: string
@@ -177,7 +181,28 @@ interface BreakdownRow {
   explanation: {
     winner?: { share?: number | null; tier?: string | null }
     exact?: { share?: number | null; tier?: string | null }
+    streak?: { steps?: StreakStep[] }
   } | null
+}
+
+/** Fila del desglose (lol_score_breakdown) a lo que pinta PointsBreakdown; no calcula nada. */
+function toScoreBreakdown(r: Omit<BreakdownRow, 'match_id'>): ScoreBreakdown {
+  return {
+    rulesVersion: r.rules_version,
+    correctWinner: r.correct_winner,
+    correctScore: r.correct_score,
+    baseWinner: r.base_winner,
+    baseExact: r.base_exact,
+    streakLength: r.streak_length,
+    streakBonus: r.streak_bonus,
+    featuredBonus: r.featured_bonus,
+    total: r.total,
+    winnerShare: r.explanation?.winner?.share ?? null,
+    exactShare: r.explanation?.exact?.share ?? null,
+    winnerTier: r.explanation?.winner?.tier ?? null,
+    exactTier: r.explanation?.exact?.tier ?? null,
+    streakSteps: Array.isArray(r.explanation?.streak?.steps) ? r.explanation.streak.steps : null,
+  }
 }
 
 /** Desglose de puntos de mis predicciones en series terminadas (lo calcula la BD). */
@@ -191,23 +216,7 @@ export async function getMyBreakdowns(
   const { data, error } = await supabase.rpc('get_my_lol_breakdowns', { p_match_ids: matchIds })
   if (error) throw new LolDataError('score breakdowns', error)
 
-  for (const r of (data ?? []) as BreakdownRow[]) {
-    byMatch.set(r.match_id, {
-      rulesVersion: r.rules_version,
-      correctWinner: r.correct_winner,
-      correctScore: r.correct_score,
-      baseWinner: r.base_winner,
-      baseExact: r.base_exact,
-      streakLength: r.streak_length,
-      streakBonus: r.streak_bonus,
-      featuredBonus: r.featured_bonus,
-      total: r.total,
-      winnerShare: r.explanation?.winner?.share ?? null,
-      exactShare: r.explanation?.exact?.share ?? null,
-      winnerTier: r.explanation?.winner?.tier ?? null,
-      exactTier: r.explanation?.exact?.tier ?? null,
-    })
-  }
+  for (const r of (data ?? []) as BreakdownRow[]) byMatch.set(r.match_id, toScoreBreakdown(r))
   return byMatch
 }
 
@@ -234,8 +243,8 @@ export async function getEditionMatches(
     .from('matches')
     .select(`
       id, match_date, prediction_locks_at, status, home_goals, away_goals, metadata, phase_id,
-      home_team:teams!home_team_id (id, name, iso_code, logo_url, color),
-      away_team:teams!away_team_id (id, name, iso_code, logo_url, color)
+      home_team:teams!home_team_id (id, name, iso_code, logo_url, logo_mode, color),
+      away_team:teams!away_team_id (id, name, iso_code, logo_url, logo_mode, color)
     `)
     .in('phase_id', [...phaseById.keys()])
     .order('match_date', { ascending: true })
@@ -243,14 +252,11 @@ export async function getEditionMatches(
 
   const matches = (data ?? []) as unknown as MatchRow[]
   const matchIds = matches.map(m => m.id)
-  // Los % solo se piden de partidos con la votación cerrada (la BD tampoco
-  // los devuelve antes del corte).
-  const now = Date.now()
-  const closedIds = matches
-    .filter(m => m.status !== 'CANCELLED' && isPredictionLocked(m.status, m.prediction_locks_at, now))
-    .map(m => m.id)
+  // Los % se piden de todos los partidos no cancelados: la BD solo los
+  // devuelve con la votación cerrada o si el usuario ya ha votado la serie.
+  const distributionIds = matches.filter(m => m.status !== 'CANCELLED').map(m => m.id)
 
-  const [predsRes, distributions] = await Promise.all([
+  const [predsRes, distributions, seedsRes] = await Promise.all([
     matchIds.length
       ? supabase
           .from('predictions')
@@ -258,9 +264,29 @@ export async function getEditionMatches(
           .eq('profile_id', userId)
           .in('match_id', matchIds)
       : Promise.resolve({ data: [], error: null }),
-    getMyDistributions(supabase, closedIds),
+    getMyDistributions(supabase, distributionIds),
+    supabase.from('team_edition_stats').select('team_id, league, seed').eq('edition_id', editionId).not('seed', 'is', null),
   ])
   if (predsRes.error) throw new LolDataError('my predictions', predsRes.error)
+  // Sin el seed la tarjeta sigue funcionando (p. ej. antes de aplicar la migración).
+  if (seedsRes.error) console.error('[lol] team seeds:', seedsRes.error)
+  const seeds = new Map(((seedsRes.data ?? []) as { team_id: number; league: string | null; seed: number | null }[])
+    .map(r => [r.team_id, formatSeed(r.league, r.seed)]))
+
+  // Swiss Stage: ronda y balance previo de cada serie (fases cuyo nombre lo dice).
+  const swiss = new Map<number, SwissInfo>()
+  for (const [phaseId, phase] of phaseById) {
+    if (!isSwissPhase(phase.name)) continue
+    const info = swissInfo(matches.filter(m => m.phase_id === phaseId).map(m => ({
+      id: m.id,
+      date: m.match_date,
+      status: m.status,
+      homeId: m.home_team.id,
+      awayId: m.away_team.id,
+      result: m.home_goals !== null && m.away_goals !== null ? { home: m.home_goals, away: m.away_goals } : null,
+    })))
+    for (const [id, v] of info) swiss.set(id, v)
+  }
 
   const myPreds = new Map(
     (predsRes.data ?? []).map((p: { match_id: number; pred_home_goals: number; pred_away_goals: number; points_earned: number | null }) => [p.match_id, p]),
@@ -304,22 +330,27 @@ export async function getEditionMatches(
         name: m.home_team.name,
         tag: m.home_team.iso_code,
         logoUrl: m.home_team.logo_url,
+        logoMode: m.home_team.logo_mode,
         color: m.home_team.color,
         record: { ...recordOf(m.phase_id, m.home_team.id) },
+        seed: seeds.get(m.home_team.id) ?? null,
       },
       away: {
         id: m.away_team.id,
         name: m.away_team.name,
         tag: m.away_team.iso_code,
         logoUrl: m.away_team.logo_url,
+        logoMode: m.away_team.logo_mode,
         color: m.away_team.color,
         record: { ...recordOf(m.phase_id, m.away_team.id) },
+        seed: seeds.get(m.away_team.id) ?? null,
       },
       result:
         m.status === 'FINISHED' && m.home_goals !== null && m.away_goals !== null
           ? { home: m.home_goals, away: m.away_goals }
           : null,
       featured: (m.metadata as { featured_match?: unknown } | null)?.featured_match === true,
+      swiss: swiss.get(m.id) ?? null,
       myPrediction: mine
         ? {
             home: mine.pred_home_goals,
@@ -413,15 +444,51 @@ export async function getUserEditionPools(
     .map(r => ({ id: r.pools.id, name: r.pools.name }))
 }
 
-/** Clasificación de una edición: global (poolId null) o de un pool de esa edición. */
+/**
+ * Fases de una edición (por orden) con su estado y si ya hay campeón de la
+ * edición. Sale de las series; no se guarda nada.
+ */
+export async function getEditionPhaseStatus(
+  supabase: SupabaseClient,
+  editionId: number,
+): Promise<{ phases: LolPhaseStatus[]; editionFinished: boolean }> {
+  const [phasesRes, editionRes] = await Promise.all([
+    supabase.from('phases').select('id, name, order').eq('edition_id', editionId),
+    supabase.from('editions').select('end_date').eq('id', editionId).maybeSingle(),
+  ])
+  if (phasesRes.error) throw new LolDataError('edition phases', phasesRes.error)
+  if (editionRes.error) throw new LolDataError('edition end date', editionRes.error)
+  const rows = (phasesRes.data ?? []) as { id: number; name: string; order: number | null }[]
+  if (rows.length === 0) return { phases: [], editionFinished: false }
+
+  const { data: matches, error } = await supabase
+    .from('matches')
+    .select('phase_id, status')
+    .in('phase_id', rows.map(p => p.id))
+  if (error) throw new LolDataError('edition phase matches', error)
+
+  const phases = phaseStatuses(
+    rows.map(p => ({ id: p.id, name: p.name, order: p.order ?? 0 })),
+    ((matches ?? []) as { phase_id: number; status: MatchStatus }[]).map(m => ({ phaseId: m.phase_id, status: m.status })),
+  )
+  const endDate = (editionRes.data?.end_date as string | null | undefined) ?? null
+  return { phases, editionFinished: editionChampionDecided(phases, endDate, todayMadrid()) }
+}
+
+/**
+ * Clasificación de una edición: global (poolId null) o de un pool de esa
+ * edición; general (phaseId null) o solo de una fase.
+ */
 export async function getEditionStandings(
   supabase: SupabaseClient,
   editionId: number,
   poolId: number | null,
+  phaseId: number | null = null,
 ): Promise<StandingRow[]> {
   const { data, error } = await supabase.rpc('get_lol_standings', {
     p_edition_id: editionId,
     p_pool_id: poolId,
+    ...(phaseId !== null && { p_phase_id: phaseId }),
   })
   if (error) throw new LolDataError('standings', error)
 
@@ -546,4 +613,186 @@ export async function getProfileLolSummary(
   return all
     .filter(e => e.status !== 'finished' || e.standing !== null || e.scored.length > 0)
     .sort((a, b) => ORDER[a.status] - ORDER[b.status])
+}
+
+// ── Equipos de una edición ─────────────────────────────────────────────────
+
+/**
+ * Equipos de una edición (los que juegan alguna serie, tienen seed o tienen
+ * plantilla), con su seed y su plantilla. Ordenados por liga y seed; los que
+ * no tienen seed, al final por nombre.
+ */
+export async function getEditionTeams(supabase: SupabaseClient, editionId: number): Promise<EditionTeam[]> {
+  const [phasesRes, seedsRes, rosterRes] = await Promise.all([
+    supabase.from('phases').select('id').eq('edition_id', editionId),
+    supabase.from('team_edition_stats').select('team_id, league, seed').eq('edition_id', editionId),
+    supabase.from('lol_roster')
+      .select('id, team_id, role, picks, lol_players(id, nickname, real_name, country)')
+      .eq('edition_id', editionId),
+  ])
+  if (phasesRes.error) throw new LolDataError('teams phases', phasesRes.error)
+  if (seedsRes.error) throw new LolDataError('teams seeds', seedsRes.error)
+  if (rosterRes.error) throw new LolDataError('teams roster', rosterRes.error)
+
+  const phaseIds = (phasesRes.data ?? []).map(p => p.id as number)
+  const matchesRes = phaseIds.length
+    ? await supabase.from('matches').select('home_team_id, away_team_id').in('phase_id', phaseIds).neq('status', 'CANCELLED')
+    : { data: [], error: null }
+  if (matchesRes.error) throw new LolDataError('teams matches', matchesRes.error)
+
+  type Seed = { team_id: number; league: string | null; seed: number | null }
+  type Roster = { id: number; team_id: number; role: LolRole; picks: string[] | null;
+                  lol_players: { id: number; nickname: string; real_name: string | null; country: string | null } | null }
+  const seeds = new Map(((seedsRes.data ?? []) as Seed[]).filter(r => r.seed !== null).map(r => [r.team_id, r]))
+  const rosters = (rosterRes.data ?? []) as unknown as Roster[]
+
+  const ids = new Set<number>([...seeds.keys(), ...rosters.map(r => r.team_id)])
+  for (const m of (matchesRes.data ?? []) as { home_team_id: number; away_team_id: number }[]) {
+    ids.add(m.home_team_id)
+    ids.add(m.away_team_id)
+  }
+  if (ids.size === 0) return []
+
+  const teamsRes = await supabase.from('teams').select('id, name, iso_code, logo_url, logo_mode, color, metadata').in('id', [...ids])
+  if (teamsRes.error) throw new LolDataError('teams', teamsRes.error)
+
+  const teams = ((teamsRes.data ?? []) as (TeamRow & { metadata: Record<string, unknown> | null })[]).map((t): EditionTeam => {
+    const sd = seeds.get(t.id)
+    const meta = t.metadata ?? {}
+    return {
+      id: t.id,
+      name: t.name,
+      tag: t.iso_code,
+      logoUrl: t.logo_url,
+      logoMode: t.logo_mode,
+      color: t.color,
+      region: typeof meta.region === 'string' ? meta.region : null,
+      country: typeof meta.country === 'string' ? meta.country : null,
+      seed: formatSeed(sd?.league, sd?.seed),
+      seedLeague: sd?.league ?? null,
+      seedNumber: sd?.seed ?? null,
+      roster: rosters
+        .filter(r => r.team_id === t.id && r.lol_players)
+        .sort((a, b) => roleOrder(a.role) - roleOrder(b.role) || a.id - b.id)
+        .map(r => ({
+          rosterId: r.id,
+          playerId: r.lol_players!.id,
+          nickname: r.lol_players!.nickname,
+          realName: r.lol_players!.real_name,
+          country: r.lol_players!.country,
+          role: r.role,
+          picks: r.picks ?? [],
+        })),
+    }
+  })
+
+  return teams.sort((a, b) =>
+    (a.seedLeague === null ? 1 : 0) - (b.seedLeague === null ? 1 : 0)
+    || (a.seedLeague ?? '').localeCompare(b.seedLeague ?? '')
+    || (a.seedNumber ?? 0) - (b.seedNumber ?? 0)
+    || a.name.localeCompare(b.name, 'es'))
+}
+
+// ── Perfil de otro jugador ─────────────────────────────────────────────────
+
+interface PlayerHistoryRow {
+  match_id: number
+  match_date: string
+  day: string
+  phase_id: number
+  phase_name: string
+  phase_order: number
+  status: MatchStatus
+  best_of: number
+  featured: boolean
+  home_team_id: number
+  away_team_id: number
+  home_goals: number | null
+  away_goals: number | null
+  voted: boolean
+  pred_home: number | null
+  pred_away: number | null
+  points_earned: number | null
+  rules_version: number | null
+  correct_winner: boolean | null
+  correct_score: boolean | null
+  base_winner: number | null
+  base_exact: number | null
+  streak_length: number | null
+  streak_bonus: number | null
+  featured_bonus: number | null
+  total: number | null
+  explanation: BreakdownRow['explanation']
+}
+
+/**
+ * Historial de LoL de un jugador en una edición tal como lo ve otro:
+ * get_lol_player_history (solo series con la votación cerrada, desglose del
+ * motor) y get_lol_player_days (plenos y posición en la clasificación por
+ * jornada). Aquí no se puntúa nada.
+ */
+export async function getPlayerLolHistory(
+  supabase: SupabaseClient,
+  profileId: string,
+  editionId: number,
+): Promise<{ series: PlayerSeries[]; days: PlayerDay[] }> {
+  const [histRes, daysRes] = await Promise.all([
+    supabase.rpc('get_lol_player_history', { p_profile_id: profileId, p_edition_id: editionId }),
+    supabase.rpc('get_lol_player_days', { p_profile_id: profileId, p_edition_id: editionId }),
+  ])
+  if (histRes.error) throw new LolDataError('player history', histRes.error)
+  if (daysRes.error) throw new LolDataError('player days', daysRes.error)
+
+  const rows = (histRes.data ?? []) as PlayerHistoryRow[]
+  const teamIds = [...new Set(rows.flatMap(r => [r.home_team_id, r.away_team_id]))]
+  const teamsRes = teamIds.length
+    ? await supabase.from('teams').select('id, name, iso_code, logo_url, color').in('id', teamIds)
+    : { data: [], error: null }
+  if (teamsRes.error) throw new LolDataError('player history teams', teamsRes.error)
+  const teams = new Map(((teamsRes.data ?? []) as TeamRow[]).map(t => [t.id, {
+    id: t.id, name: t.name, tag: t.iso_code, logoUrl: t.logo_url, color: t.color,
+  }]))
+  const unknown = (id: number) => ({ id, name: `#${id}`, tag: '?', logoUrl: null, color: null })
+
+  const series = rows.map((r): PlayerSeries => ({
+    matchId: r.match_id,
+    date: r.match_date,
+    day: r.day,
+    phaseId: r.phase_id,
+    phaseName: r.phase_name,
+    phaseOrder: r.phase_order,
+    status: r.status,
+    bestOf: r.best_of as BestOf,
+    featured: r.featured,
+    home: teams.get(r.home_team_id) ?? unknown(r.home_team_id),
+    away: teams.get(r.away_team_id) ?? unknown(r.away_team_id),
+    result: r.status === 'FINISHED' && r.home_goals !== null && r.away_goals !== null
+      ? { home: r.home_goals, away: r.away_goals }
+      : null,
+    vote: r.voted && r.pred_home !== null && r.pred_away !== null ? { home: r.pred_home, away: r.pred_away } : null,
+    points: r.status === 'FINISHED' ? r.points_earned ?? r.total ?? 0 : null,
+    breakdown: r.total !== null && r.rules_version !== null
+      ? toScoreBreakdown(r as Omit<BreakdownRow, 'match_id'>)
+      : null,
+  }))
+
+  const days = ((daysRes.data ?? []) as {
+    day: string
+    perfect: boolean
+    negative: boolean
+    pleno_points: number
+    rank_position?: number | null
+    total_points?: number | null
+    players?: number | null
+  }[]).map(d => ({
+    day: d.day,
+    perfect: d.perfect,
+    negative: d.negative,
+    points: d.pleno_points,
+    rank: d.rank_position ?? null,
+    totalPoints: d.total_points ?? null,
+    players: d.players ?? null,
+  }))
+
+  return { series, days }
 }

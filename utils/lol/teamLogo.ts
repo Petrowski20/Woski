@@ -97,3 +97,49 @@ export function teamTextColor(hex: string): '#000000' | '#ffffff' {
   // Contraste con blanco (1.05 / (L + 0.05)) frente a con negro ((L + 0.05) / 0.05).
   return 1.05 / (lum + 0.05) >= (lum + 0.05) / 0.05 ? '#ffffff' : '#000000'
 }
+
+/**
+ * Cómo se pinta el logo (teams.logo_mode):
+ * - color: la imagen tal cual.
+ * - mono: una sola tinta sobre transparente; se usa su alfa como máscara y
+ *   se pinta con el color de texto del tema.
+ * - plate: sobre una placa oscura fija (logos blancos con algún detalle de
+ *   color, que en modo claro no se verían).
+ */
+export type TeamLogoMode = 'color' | 'mono' | 'plate'
+export const TEAM_LOGO_MODES: readonly TeamLogoMode[] = ['color', 'mono', 'plate']
+
+export const isTeamLogoMode = (v: unknown): v is TeamLogoMode =>
+  typeof v === 'string' && (TEAM_LOGO_MODES as readonly string[]).includes(v)
+
+/**
+ * Propone el modo a partir de los píxeles RGBA (getImageData). Solo cuentan
+ * los casi opacos (alfa ≥ 200); los bordes suavizados no deciden nada.
+ * - mono: < 3 % de píxeles con color (max−min de RGB > 40) y luminancia
+ *   casi uniforme (desviación < 30). Así un logo blanco y negro (G2, EDG)
+ *   no pasa por monocromo: con máscara quedaría como una mancha.
+ * - plate: al menos la mitad de píxeles blancos y < 10 % oscuros: sin un
+ *   contorno oscuro, en modo claro se pierde.
+ * Umbrales ajustados con 251 logos de equipos y ligas.
+ */
+export function suggestTeamLogoMode(rgba: ArrayLike<number>): TeamLogoMode {
+  let n = 0, chroma = 0, white = 0, dark = 0, sum = 0, sum2 = 0
+  for (let i = 0; i + 3 < rgba.length; i += 4) {
+    if (rgba[i + 3] < 200) continue
+    const r = rgba[i], g = rgba[i + 1], b = rgba[i + 2]
+    const c = Math.max(r, g, b) - Math.min(r, g, b)
+    const l = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    n++
+    sum += l
+    sum2 += l * l
+    if (c > 40) chroma++
+    else if (l >= 215) white++
+    if (l < 60) dark++
+  }
+  if (n === 0) return 'color'
+  const mean = sum / n
+  const sd = Math.sqrt(Math.max(0, sum2 / n - mean * mean))
+  if (chroma / n < 0.03 && sd < 30) return 'mono'
+  if (white / n >= 0.5 && dark / n < 0.1) return 'plate'
+  return 'color'
+}
