@@ -134,6 +134,22 @@ export interface PoolOption {
   name: string
 }
 
+/** Clave de un premio (get_lol_awards). */
+export type LolAwardKey =
+  | 'streak' | 'hits' | 'accuracy' | 'exact' | 'perfect' | 'contrarian' | 'golden_day' | 'leader' | 'rocket'
+  | 'jinx' | 'negative' | 'sleeper' | 'sheep' | 'uyyy' | 'rollercoaster' | 'fan'
+
+/** Ganador de un premio; con empate hay varios del mismo premio. */
+export interface LolAwardWinner {
+  award: LolAwardKey
+  profileId: string
+  nickname: string
+  avatarUrl: string | null
+  value: number
+  /** Día (YYYY-MM-DD) o tag del equipo, según el premio. */
+  detail: string | null
+}
+
 /** Fase de una edición para la clasificación por fase. */
 export interface LolPhaseStatus {
   id: number

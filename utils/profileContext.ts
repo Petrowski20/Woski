@@ -17,6 +17,7 @@ const FIXED: Record<string, Omit<ProfileOrigin, 'key'>> = {
   'lol-clasificacion': { href: '/lol/clasificacion', label: 'Clasificación', sport: 'lol' },
   'lol-inicio':        { href: '/',                  label: 'Partidos',      sport: 'lol' },
   'lol-historial':     { href: '/lol/historial',     label: 'Historial',     sport: 'lol' },
+  'lol-premios':       { href: '/lol/premios',       label: 'Premios',       sport: 'lol' },
   'clasificacion':     { href: '/clasificacion',     label: 'Clasificación', sport: 'futbol' },
   'premios':           { href: '/premios',           label: 'Premios',       sport: 'futbol' },
 }
@@ -42,9 +43,11 @@ export function parseId(raw: unknown): number | null {
   return typeof v === 'string' && /^[1-9][0-9]{0,8}$/.test(v) ? Number(v) : null
 }
 
-/** Enlace de vuelta: la clasificación de LoL conserva la edición que se miraba. */
+/** Enlace de vuelta: la clasificación y los premios de LoL conservan la edición que se miraba. */
 export function originHref(origin: ProfileOrigin, editionId: number | null): string {
-  return origin.key === 'lol-clasificacion' && editionId !== null ? `${origin.href}?edicion=${editionId}` : origin.href
+  return (origin.key === 'lol-clasificacion' || origin.key === 'lol-premios') && editionId !== null
+    ? `${origin.href}?edicion=${editionId}`
+    : origin.href
 }
 
 /**

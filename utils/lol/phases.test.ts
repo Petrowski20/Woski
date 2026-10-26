@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { editionChampionDecided, phaseStatuses } from './phases'
+import { editionChampionDecided, phaseStatuses, pickActivePhase } from './phases'
 
 const phases = [
   { id: 2, name: 'Swiss Stage', order: 1 },
@@ -34,4 +34,20 @@ test('editionChampionDecided: todas las fases terminadas y end_date alcanzada', 
   const open = phaseStatuses(phases, [{ phaseId: 1, status: 'FINISHED' }, { phaseId: 2, status: 'FINISHED' }])
   assert.equal(editionChampionDecided(open, null, '2026-12-31'), false, 'una fase sin terminar')
   assert.equal(editionChampionDecided([], null, '2026-12-31'), false, 'sin fases')
+})
+
+test('pickActivePhase: la elegida, Total o la fase actual', () => {
+  const st = phaseStatuses(phases, [
+    { phaseId: 1, status: 'FINISHED' },
+    { phaseId: 2, status: 'FINISHED' }, { phaseId: 2, status: 'PENDING' },
+    { phaseId: 3, status: 'PENDING' },
+  ])
+  assert.equal(pickActivePhase(st, false, undefined)?.name, 'Swiss Stage', 'sin elegir: la última con series terminadas')
+  assert.equal(pickActivePhase(st, false, '1')?.name, 'Play-In', 'la elegida')
+  assert.equal(pickActivePhase(st, false, '3')?.name, 'Play-offs', 'también una sin empezar')
+  assert.equal(pickActivePhase(st, false, 'total'), null, 'Total')
+  assert.equal(pickActivePhase(st, false, '99')?.name, 'Swiss Stage', 'id de otra edición: la actual')
+  assert.equal(pickActivePhase(st, true, undefined), null, 'edición terminada: Total')
+  assert.equal(pickActivePhase(st.slice(0, 1), false, '1'), null, 'una sola fase: Total')
+  assert.equal(pickActivePhase(phaseStatuses(phases, []), false, undefined), null, 'sin resultados: Total')
 })

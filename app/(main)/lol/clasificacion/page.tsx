@@ -4,6 +4,8 @@ import Image from 'next/image'
 import { createClient } from '@/utils/supabase/server'
 import EditionSelector from '@/components/lol/EditionSelector'
 import PoolSelector from '@/components/lol/PoolSelector'
+import PhasePills from '@/components/lol/PhasePills'
+import { pickActivePhase } from '@/utils/lol/phases'
 import { formatStreak, signedPoints, streakLegend } from '@/utils/lol/rules'
 import { profileHref } from '@/utils/profileContext'
 import { getActiveLolEditions, pickLolEdition, getEditionStandings, getEditionRules, getUserEditionPools, getEditionPhaseStatus } from '../data'
@@ -30,23 +32,6 @@ function Avatar({ url, initial }: { url: string | null; initial: string }) {
 }
 
 const medals: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
-
-function PhasePill({ href, active, children }: { href: string; active: boolean; children: React.ReactNode }) {
-  return (
-    <Link
-      href={href}
-      scroll={false}
-      aria-current={active ? 'page' : undefined}
-      className={`shrink-0 inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-        active
-          ? 'bg-accent bg-accent-gradient text-on-accent shadow-glow-accent'
-          : 'bg-bg-muted/60 text-text-muted ring-1 ring-inset ring-border hover:text-text-primary hover:ring-accent/40'
-      }`}
-    >
-      {children}
-    </Link>
-  )
-}
 
 export default async function LolClasificacionPage({
   searchParams,
@@ -81,17 +66,10 @@ export default async function LolClasificacionPage({
     getEditionPhaseStatus(supabase, selected.id).catch(() => ({ phases: [], editionFinished: false })),
   ])
 
-  // Píldoras: cada fase en su orden y Total (la suma) al final; una fase
-  // nueva entra sola entre la última y Total. Con una sola fase, su tabla es
-  // el Total: no hay nada que elegir.
-  // Sin elegir (?fase), la fase actual: la última con series terminadas (la
-  // misma de la racha). Sin ninguna, o con la edición terminada, Total.
+  // Fase activa: la elegida (?fase=ID o total) o la fase actual.
   const phases = phaseStatus.phases
   const showPhases = phases.length > 1
-  const currentPhase = phaseStatus.editionFinished ? null : phases.findLast(p => p.started) ?? null
-  const activePhase = !showPhases || fase === 'total'
-    ? null
-    : phases.find(p => String(p.id) === fase) ?? currentPhase
+  const activePhase = pickActivePhase(phases, phaseStatus.editionFinished, fase)
   const phaseHref = (phaseId: number | null) =>
     `/lol/clasificacion?edicion=${selected.id}&fase=${phaseId ?? 'total'}`
 
@@ -133,20 +111,12 @@ export default async function LolClasificacionPage({
 
       <PoolSelector key={selected.id} editionId={selected.id} pools={pools} activePoolId={activePool?.id ?? null} />
 
-      {showPhases && (
-        <nav aria-label="Fase" className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5 -mt-3 mb-5">
-          {phases.map(p => (
-            <PhasePill key={p.id} href={phaseHref(p.id)} active={activePhase?.id === p.id}>
-              {p.name}
-              {p.finished && <span aria-label="terminada">🏆</span>}
-            </PhasePill>
-          ))}
-          <PhasePill href={phaseHref(null)} active={activePhase === null}>
-            Total
-            {phaseStatus.editionFinished && <span aria-label="terminada">🏆</span>}
-          </PhasePill>
-        </nav>
-      )}
+      <PhasePills
+        phases={phases}
+        editionFinished={phaseStatus.editionFinished}
+        activePhaseId={activePhase?.id ?? null}
+        hrefFor={phaseHref}
+      />
 
       {champion && (
         <div className="flex items-center gap-3 mb-4 px-4 py-3 rounded-card border border-secondary/40 bg-secondary/10">

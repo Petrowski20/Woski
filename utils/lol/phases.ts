@@ -31,6 +31,24 @@ export function phaseStatuses(
 }
 
 /**
+ * Fase activa en una vista por fases (clasificación, premios). null = Total.
+ * - Con una sola fase no hay nada que elegir: Total.
+ * - ?fase=total → Total; ?fase=ID de una fase de la edición → esa fase.
+ * - Sin elegir: la fase actual, la última con series terminadas (la misma de
+ *   la racha). Sin ninguna, o con la edición terminada, Total.
+ */
+export function pickActivePhase(
+  phases: LolPhaseStatus[],
+  editionFinished: boolean,
+  fase: unknown,
+): LolPhaseStatus | null {
+  if (phases.length < 2 || fase === 'total') return null
+  const chosen = phases.find(p => String(p.id) === fase)
+  if (chosen) return chosen
+  return editionFinished ? null : phases.findLast(p => p.started) ?? null
+}
+
+/**
  * Campeón de la edición: todas sus fases terminadas y, si tiene end_date,
  * a partir de ese día (las fases siguientes pueden no estar creadas aún,
  * así que acabar las que hay no basta). `today` en YYYY-MM-DD (Madrid).
