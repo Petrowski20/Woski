@@ -47,3 +47,8 @@ test('flagUrl', () => {
   assert.equal(flagUrl(null), null)
   assert.equal(flagUrl('KOR'), null)
 })
+
+test('parseRosterPaste: liga opcional en la sexta columna', () => {
+  const rows = parseRosterPaste('G2\tMID\tCaps\tDK\tRasmus Winther\tlec\nG2\tTOP\tBrokenBlade\tDE\t\tL!', TAGS)
+  assert.deepEqual(rows.map(r => [r.league, r.problems.map(p => p.code)]), [['LEC', []], ['L!', ['league']]])
+})

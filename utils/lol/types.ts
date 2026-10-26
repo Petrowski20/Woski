@@ -222,6 +222,11 @@ export interface EditionTeam {
   seedNumber: number | null
   /** De Top a Coach. */
   roster: RosterMember[]
+  /**
+   * Vista por liga: de dónde sale la plantilla ("Plantilla actual" o
+   * "Plantilla de Worlds 2026"). null en la vista de una competición.
+   */
+  rosterSource: string | null
 }
 
 /** Equipo de una serie en el historial de un jugador (lo que pinta TeamLogo). */

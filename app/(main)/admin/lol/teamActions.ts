@@ -147,24 +147,43 @@ export interface RosterRowInput {
   nickname: string
   country: string
   realName: string
+  /** Liga del equipo (opcional): cambia teams.league. */
+  league: string
 }
 
-/** Carga de plantillas desde el Excel (todo o nada). Con replace, la plantilla de cada equipo del lote se sustituye. */
+/** Liga del equipo (teams.league); '' la quita (Resto del mundo). La BD valida y registra. */
+export async function setLolTeamLeagueAction(teamId: number, league: string): Promise<TeamActionResult> {
+  const denied = await _requireAdmin()
+  if (denied) return denied
+  if (!Number.isInteger(teamId) || typeof league !== 'string' || league.length > 8) return { error: 'INVALID' }
+
+  const supabase = await createClient()
+  const { error } = await supabase.rpc('admin_set_lol_team_league', { p_team_id: teamId, p_league: league || null })
+  if (error) return _rpcError('admin_set_lol_team_league', error)
+  _revalidate()
+  revalidatePath('/lol/equipos', 'layout')
+  return { success: true }
+}
+
+/**
+ * Carga de plantillas desde el Excel (todo o nada). Con replace, la plantilla de cada equipo del lote se sustituye.
+ * editionId null = plantilla actual (sin competición).
+ */
 export async function importLolRosterAction(
-  editionId: number,
+  editionId: number | null,
   rows: RosterRowInput[],
   replace: boolean,
 ): Promise<TeamActionResult & { loaded?: number }> {
   const denied = await _requireAdmin()
   if (denied) return denied
-  if (!Number.isInteger(editionId) || !Array.isArray(rows) || rows.length === 0 || rows.length > 400) return { error: 'INVALID' }
+  if ((editionId !== null && !Number.isInteger(editionId)) || !Array.isArray(rows) || rows.length === 0 || rows.length > 400) return { error: 'INVALID' }
 
   const supabase = await createClient()
   const { data, error } = await supabase.rpc('admin_import_lol_roster', {
     p_edition_id: editionId,
     p_rows: rows.map(r => ({
       team: String(r.team), role: String(r.role), nickname: String(r.nickname),
-      country: String(r.country ?? ''), real_name: String(r.realName ?? ''),
+      country: String(r.country ?? ''), real_name: String(r.realName ?? ''), league: String(r.league ?? ''),
     })),
     p_replace: replace === true,
   })

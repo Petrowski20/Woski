@@ -88,6 +88,9 @@ export default function TeamRosterCard({ team, href, version, names }: {
           {team.roster.map(m => <MemberRow key={m.rosterId} m={m} version={version} names={names} />)}
         </ul>
       )}
+      {team.rosterSource && (
+        <p className="px-3 py-1.5 border-t border-border/60 text-[11px] text-text-muted">{team.rosterSource}</p>
+      )}
     </article>
   )
 }

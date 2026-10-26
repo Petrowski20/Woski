@@ -704,6 +704,7 @@ export async function getEditionTeams(supabase: SupabaseClient, editionId: numbe
       seed: formatSeed(sd?.league, sd?.seed),
       seedLeague: sd?.league ?? null,
       seedNumber: sd?.seed ?? null,
+      rosterSource: null,
       roster: rosters
         .filter(r => r.team_id === t.id && r.lol_players)
         .sort((a, b) => roleOrder(a.role) - roleOrder(b.role) || a.id - b.id)
@@ -724,6 +725,102 @@ export async function getEditionTeams(supabase: SupabaseClient, editionId: numbe
     || (a.seedLeague ?? '').localeCompare(b.seedLeague ?? '')
     || (a.seedNumber ?? 0) - (b.seedNumber ?? 0)
     || a.name.localeCompare(b.name, 'es'))
+}
+
+// ── Equipos por liga ───────────────────────────────────────────────────────
+
+/** Orden de las píldoras de liga; las que no están aquí van detrás, por orden alfabético. */
+const LEAGUE_ORDER = ['LCK', 'LPL', 'LEC', 'LCS', 'LTA', 'LCP', 'CBLOL', 'VCS', 'PCS', 'LJL']
+
+/** ?liga= de "Resto del mundo" (equipos sin liga). */
+export const REST_OF_WORLD = 'resto'
+
+/** Ligas con algún equipo de LoL (en orden de píldoras) y si hay equipos sin liga. */
+export async function getLolLeagues(supabase: SupabaseClient): Promise<{ leagues: string[]; hasRest: boolean }> {
+  const { data, error } = await supabase
+    .from('teams')
+    .select('league, sports!inner(slug)')
+    .eq('sports.slug', LOL_SPORT_SLUG)
+  if (error) throw new LolDataError('team leagues', error)
+  const rows = (data ?? []) as unknown as { league: string | null }[]
+  const leagues = [...new Set(rows.map(r => r.league).filter((l): l is string => !!l))]
+  const rank = (l: string) => {
+    const i = LEAGUE_ORDER.indexOf(l)
+    return i === -1 ? LEAGUE_ORDER.length : i
+  }
+  leagues.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b))
+  return { leagues, hasRest: rows.some(r => !r.league) }
+}
+
+/**
+ * Equipos de una liga (null = Resto del mundo) con su plantilla: la actual
+ * (lol_roster sin edición) o, si no tiene, la de su competición más reciente.
+ */
+export async function getLeagueTeams(supabase: SupabaseClient, league: string | null): Promise<EditionTeam[]> {
+  let q = supabase
+    .from('teams')
+    .select('id, name, iso_code, logo_url, logo_mode, color, metadata, sports!inner(slug)')
+    .eq('sports.slug', LOL_SPORT_SLUG)
+  q = league === null ? q.is('league', null) : q.eq('league', league)
+  const { data: teamRows, error } = await q
+  if (error) throw new LolDataError('league teams', error)
+  const raw = (teamRows ?? []) as unknown as (TeamRow & { metadata: Record<string, unknown> | null })[]
+  if (raw.length === 0) return []
+
+  const [rosterRes, editions] = await Promise.all([
+    supabase.from('lol_roster')
+      .select('id, team_id, edition_id, role, picks, lol_players(id, nickname, real_name, country)')
+      .in('team_id', raw.map(t => t.id)),
+    getLolEditions(supabase),
+  ])
+  if (rosterRes.error) throw new LolDataError('league roster', rosterRes.error)
+
+  type Roster = { id: number; team_id: number; edition_id: number | null; role: LolRole; picks: string[] | null
+                  lol_players: { id: number; nickname: string; real_name: string | null; country: string | null } | null }
+  const rosters = (rosterRes.data ?? []) as unknown as Roster[]
+  // getLolEditions viene de la más reciente a la más antigua.
+  const editionRank = new Map(editions.map((e, i) => [e.id, i]))
+  const editionName = new Map(editions.map(e => [e.id, e.fullName]))
+
+  return raw.map((t): EditionTeam => {
+    const own = rosters.filter(r => r.team_id === t.id && r.lol_players)
+    const current = own.filter(r => r.edition_id === null)
+    let chosen = current
+    let source: string | null = current.length ? 'Plantilla actual' : null
+    if (!current.length && own.length) {
+      const latest = own
+        .map(r => r.edition_id!)
+        .sort((a, b) => (editionRank.get(a) ?? 1e9) - (editionRank.get(b) ?? 1e9))[0]
+      chosen = own.filter(r => r.edition_id === latest)
+      source = editionName.has(latest) ? `Plantilla de ${editionName.get(latest)}` : null
+    }
+    const meta = t.metadata ?? {}
+    return {
+      id: t.id,
+      name: t.name,
+      tag: t.iso_code,
+      logoUrl: t.logo_url,
+      logoMode: t.logo_mode,
+      color: t.color,
+      region: typeof meta.region === 'string' ? meta.region : null,
+      country: typeof meta.country === 'string' ? meta.country : null,
+      seed: null,
+      seedLeague: null,
+      seedNumber: null,
+      rosterSource: source,
+      roster: chosen
+        .sort((a, b) => roleOrder(a.role) - roleOrder(b.role) || a.id - b.id)
+        .map(r => ({
+          rosterId: r.id,
+          playerId: r.lol_players!.id,
+          nickname: r.lol_players!.nickname,
+          realName: r.lol_players!.real_name,
+          country: r.lol_players!.country,
+          role: r.role,
+          picks: r.picks ?? [],
+        })),
+    }
+  }).sort((a, b) => a.name.localeCompare(b.name, 'es'))
 }
 
 // ── Perfil de otro jugador ─────────────────────────────────────────────────

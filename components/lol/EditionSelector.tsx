@@ -8,10 +8,20 @@ import type { LolEditionOption } from '@/utils/lol/types'
 
 interface Props {
   editions: LolEditionOption[]
+  /** null = ninguna edición marcada (p. ej. se mira una liga). */
   selectedId: number | null
   /** Ruta a la que se navega con ?edicion=ID (calendario por defecto). */
   basePath?: string
+  /** Píldoras extra detrás de las ediciones (ligas en Equipos). */
+  extraLinks?: { key: string; label: string; href: string; active: boolean }[]
 }
+
+const pillClass = (active: boolean) =>
+  `inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide transition-colors ${
+    active
+      ? 'bg-accent bg-accent-gradient text-on-accent shadow-glow-accent'
+      : 'bg-bg-muted/60 text-text-muted ring-1 ring-inset ring-border hover:text-text-primary hover:ring-accent/40'
+  }`
 
 export function HistoryLink() {
   return (
@@ -28,7 +38,7 @@ export function HistoryLink() {
 // Píldoras excluyentes, una por edición activa. Cambiar de edición navega a
 // ?edicion=ID (la página es Server Component); mientras carga se marca la
 // píldora destino.
-export default function EditionSelector({ editions, selectedId, basePath = '/' }: Props) {
+export default function EditionSelector({ editions, selectedId, basePath = '/', extraLinks = [] }: Props) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [targetId, setTargetId] = useState<number | null>(null)
@@ -45,7 +55,7 @@ export default function EditionSelector({ editions, selectedId, basePath = '/' }
     <div className="flex items-center justify-between gap-3">
       <div role="group" aria-label="Competición" className="flex flex-wrap gap-2">
         {editions.map((e) => {
-          const active = isPending ? e.id === targetId : e.id === selectedId
+          const active = isPending ? e.id === targetId : e.id === selectedId && !extraLinks.some(l => l.active)
           const loading = isPending && e.id === targetId
           return (
             <button
@@ -55,17 +65,24 @@ export default function EditionSelector({ editions, selectedId, basePath = '/' }
               aria-pressed={active}
               aria-busy={loading || undefined}
               title={e.fullName}
-              className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wide transition-colors ${
-                active
-                  ? 'bg-accent bg-accent-gradient text-on-accent shadow-glow-accent'
-                  : 'bg-bg-muted/60 text-text-muted ring-1 ring-inset ring-border hover:text-text-primary hover:ring-accent/40'
-              }`}
+              className={pillClass(active)}
             >
               {loading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
               {e.label}
             </button>
           )
         })}
+        {extraLinks.map(l => (
+          <Link
+            key={l.key}
+            href={l.href}
+            scroll={false}
+            aria-current={l.active && !isPending ? 'page' : undefined}
+            className={pillClass(l.active && !isPending)}
+          >
+            {l.label}
+          </Link>
+        ))}
       </div>
       <HistoryLink />
     </div>
