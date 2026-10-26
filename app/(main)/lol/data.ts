@@ -6,7 +6,7 @@ import { formatSeed, isSwissPhase, swissInfo, type SwissInfo } from '@/utils/lol
 import { editionChampionDecided, phaseStatuses } from '@/utils/lol/phases'
 import { roleOrder, type LolRole } from '@/utils/lol/roster'
 import type { TeamLogoMode } from '@/utils/lol/teamLogo'
-import type { EditionTeam, LolEditionInfo, LolEditionOption, LolMatchView, LolPhaseStatus, PlayerDay, PlayerSeries, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
+import type { EditionTeam, LolEditionInfo, LolEditionOption, LolAwardWinner, LolMatchView, LolPhaseStatus, PlayerDay, PlayerSeries, PoolOption, ProfileLolEdition, RankingRow, ScoreBreakdown, StandingRow, StreakStep, VoteShare } from '@/utils/lol/types'
 
 export const LOL_SPORT_SLUG = 'lol'
 
@@ -473,6 +473,39 @@ export async function getEditionPhaseStatus(
   )
   const endDate = (editionRes.data?.end_date as string | null | undefined) ?? null
   return { phases, editionFinished: editionChampionDecided(phases, endDate, todayMadrid()) }
+}
+
+/**
+ * Premios de una edición (get_lol_awards): global o de un pool, total o de
+ * una fase. Una fila por ganador; con empate, varias del mismo premio.
+ */
+export async function getEditionAwards(
+  supabase: SupabaseClient,
+  editionId: number,
+  poolId: number | null,
+  phaseId: number | null,
+): Promise<LolAwardWinner[]> {
+  const { data, error } = await supabase.rpc('get_lol_awards', {
+    p_edition_id: editionId,
+    p_pool_id: poolId,
+    p_phase_id: phaseId,
+  })
+  if (error) throw new LolDataError('awards', error)
+  return ((data ?? []) as {
+    award: LolAwardWinner['award']
+    profile_id: string
+    nickname: string
+    avatar_url: string | null
+    value: number | string
+    detail: string | null
+  }[]).map(r => ({
+    award: r.award,
+    profileId: r.profile_id,
+    nickname: r.nickname,
+    avatarUrl: r.avatar_url,
+    value: Number(r.value),
+    detail: r.detail,
+  }))
 }
 
 /**
