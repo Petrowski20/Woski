@@ -26,17 +26,20 @@ export interface AdminTeamRow {
   color: string | null
   logoUrl: string | null
   logoMode: TeamLogoMode
+  /** teams.league: liga del equipo (LCK, LEC…); null = Resto del mundo. */
+  league: string | null
   /** Series de LoL en las que juega (para saber si está en uso). */
   matches: number
   /** Seed por edición (team_edition_stats.league/seed). */
   seeds: { editionId: number; league: string; seed: number }[]
-  /** Plantilla por edición (lol_roster), de Top a Coach. */
+  /** Plantilla por edición (lol_roster), de Top a Coach; editionId null = plantilla actual. */
   roster: AdminRosterEntry[]
 }
 
 export interface AdminRosterEntry {
   rosterId: number
-  editionId: number
+  /** null = plantilla actual (sin competición). */
+  editionId: number | null
   nickname: string
   country: string | null
   role: string
@@ -56,7 +59,7 @@ export interface TeamAuditRow {
   team: string
   actor: string
   action: 'create_team' | 'update_team' | 'set_team_logo' | 'set_team_logo_mode' | 'remove_team_logo' | 'set_team_seed'
-    | 'import_roster' | 'set_roster_picks' | 'remove_roster_entry'
+    | 'import_roster' | 'set_roster_picks' | 'remove_roster_entry' | 'set_team_league'
   /** Campos que cambiaron, antes y después (logo: URL; en un alta, antes = null). */
   changes: { field: 'name' | 'tag' | 'color' | 'logo' | 'logoMode' | 'region' | 'country' | 'league' | 'seed'; before: string | null; after: string | null }[]
   /** Edición del cambio (solo seed). */

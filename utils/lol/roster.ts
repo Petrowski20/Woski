@@ -40,6 +40,7 @@ export type RosterProblem =
   | { code: 'role'; role: string }
   | { code: 'nickname' }
   | { code: 'country'; country: string }
+  | { code: 'league'; league: string }
   | { code: 'duplicate'; line: number }
 
 export interface RosterLine {
@@ -50,12 +51,14 @@ export interface RosterLine {
   nickname: string
   country: string
   realName: string
+  /** Liga del equipo (opcional), en mayúsculas. */
+  league: string
   problems: RosterProblem[]
 }
 
 /**
  * Lee lo pegado: una línea por persona, columnas EQUIPO, ROL, NICK, PAÍS
- * y, opcional, NOMBRE REAL, separadas por tabulador (copiar del Excel),
+ * y, opcionales, NOMBRE REAL y LIGA, separadas por tabulador (copiar del Excel),
  * "|" o ";". Se ignoran las líneas vacías y una cabecera ("Equipo…").
  * knownTags: siglas de los equipos de LoL (en mayúsculas).
  */
@@ -66,23 +69,25 @@ export function parseRosterPaste(text: string, knownTags: Set<string>): RosterLi
     if (raw.trim() === '') return
     const cols = raw.split(/\t|\||;/).map(c => c.trim())
     if (i === 0 && /^(equipo|team)$/i.test(cols[0] ?? '')) return
-    const [team = '', role = '', nickname = '', country = '', realName = ''] = cols
+    const [team = '', role = '', nickname = '', country = '', realName = '', league = ''] = cols
     const problems: RosterProblem[] = []
     const tag = team.toUpperCase()
     const r = parseRole(role)
     const cc = country.toUpperCase()
+    const lg = league.toUpperCase()
     if (cols.length < 3) problems.push({ code: 'columns' })
     else {
       if (!knownTags.has(tag)) problems.push({ code: 'team', tag: team })
       if (!r) problems.push({ code: 'role', role })
       if (nickname.length < 1 || nickname.length > 30) problems.push({ code: 'nickname' })
       if (cc !== '' && !/^[A-Z]{2}$/.test(cc)) problems.push({ code: 'country', country })
+      if (lg !== '' && !/^[A-Z0-9]{2,8}$/.test(lg)) problems.push({ code: 'league', league })
       const key = nickname.toLowerCase()
       const first = seen.get(key)
       if (key && first !== undefined) problems.push({ code: 'duplicate', line: first })
       else if (key) seen.set(key, i + 1)
     }
-    out.push({ line: i + 1, team: tag, role: r, nickname, country: cc, realName, problems })
+    out.push({ line: i + 1, team: tag, role: r, nickname, country: cc, realName, league: lg, problems })
   })
   return out
 }

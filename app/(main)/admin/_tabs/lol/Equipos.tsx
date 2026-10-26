@@ -12,7 +12,7 @@ import { getLolEditions, lolToday, LOL_SPORT_SLUG } from '../../../lol/data'
 // team-logos); aquí solo se lee: equipos, cuántas series juegan y el
 // registro de cambios de lol_admin_audit (filas con team_id).
 
-interface RawTeam { id: number; name: string; iso_code: string; slug: string | null; color: string | null; logo_url: string | null; logo_mode: TeamLogoMode }
+interface RawTeam { id: number; name: string; iso_code: string; slug: string | null; color: string | null; logo_url: string | null; logo_mode: TeamLogoMode; league: string | null }
 interface RawAudit {
   id: number
   created_at: string
@@ -44,14 +44,14 @@ export default async function LolEquiposTab() {
 
   const teamsRes = await supabase
     .from('teams')
-    .select('id, name, iso_code, slug, color, logo_url, logo_mode, sports!inner(slug)')
+    .select('id, name, iso_code, slug, color, logo_url, logo_mode, league, sports!inner(slug)')
     .eq('sports.slug', LOL_SPORT_SLUG)
     .order('name')
   if (teamsRes.error) {
     console.error('[admin equipos] teams', teamsRes.error)
     return (
       <p role="alert" className="rounded-lg bg-danger/10 px-4 py-3 text-sm text-text-primary">
-        {t('errors.SERVER')} ¿Está aplicada la migración 20261027100001_team_logo_mode?
+        {t('errors.SERVER')} ¿Está aplicada la migración 20261102100001_lol_team_leagues?
       </p>
     )
   }
@@ -79,16 +79,15 @@ export default async function LolEquiposTab() {
       ? supabase.from('team_edition_stats').select('edition_id, team_id, league, seed')
           .in('edition_id', editions.map(e => e.id)).not('seed', 'is', null)
       : Promise.resolve({ data: [], error: null }),
-    editions.length
-      ? supabase.from('lol_roster').select('id, edition_id, team_id, role, picks, lol_players(nickname, country)')
-          .in('edition_id', editions.map(e => e.id))
-      : Promise.resolve({ data: [], error: null }),
+    // Plantillas de cada edición y la actual (edition_id NULL).
+    supabase.from('lol_roster').select('id, edition_id, team_id, role, picks, lol_players(nickname, country)')
+      .or(editions.length ? `edition_id.is.null,edition_id.in.(${editions.map(e => e.id).join(',')})` : 'edition_id.is.null'),
     getChampionCatalog(),
   ])
   if (rosterRes.error) console.error('[admin equipos] roster', rosterRes.error)
   const rosterByTeam = new Map<number, AdminRosterEntry[]>()
   for (const r of (rosterRes.data ?? []) as unknown as {
-    id: number; edition_id: number; team_id: number; role: string; picks: string[] | null
+    id: number; edition_id: number | null; team_id: number; role: string; picks: string[] | null
     lol_players: { nickname: string; country: string | null } | null
   }[]) {
     const list = rosterByTeam.get(r.team_id) ?? []
@@ -119,6 +118,7 @@ export default async function LolEquiposTab() {
     color: r.color,
     logoUrl: r.logo_url,
     logoMode: r.logo_mode,
+    league: r.league,
     matches: played.get(r.id) ?? 0,
     seeds: seedsByTeam.get(r.id) ?? [],
     roster: rosterByTeam.get(r.id) ?? [],

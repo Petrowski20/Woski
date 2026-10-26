@@ -11,6 +11,7 @@ import {
   removeLolTeamLogoAction,
   setLolRosterPicksAction,
   setLolTeamLogoModeAction,
+  setLolTeamLeagueAction,
   setLolTeamSeedAction,
   updateLolTeamAction,
   uploadLolTeamLogoAction,
@@ -779,11 +780,92 @@ function SeedForm({ team, editions, t, lang }: { team: AdminTeamRow; editions: S
   )
 }
 
+/** Liga del equipo (teams.league): decide su píldora en Equipos; vacía = Resto del mundo. */
+function LeagueForm({ team, leagues, t, lang }: { team: AdminTeamRow; leagues: string[]; t: T; lang: string }) {
+  const [league, setLeague] = useState(team.league ?? '')
+  const [isPending, startTransition] = useTransition()
+  const clean = league.trim().toUpperCase()
+  const problem = clean !== '' && !LEAGUE_RE.test(clean) ? t('adminTeams.errors.leagueFormat') : null
+  const unchanged = clean === (team.league ?? '')
+
+  const save = (value: string) => {
+    startTransition(async () => {
+      try {
+        const res = await setLolTeamLeagueAction(team.id, value)
+        if ('error' in res) toast.error(errorText(t, lang, res))
+        else {
+          toast.success(value ? t('adminTeams.leagueSaved') : t('adminTeams.leagueRemoved'))
+          if (!value) setLeague('')
+        }
+      } catch {
+        toast.error(t('adminTeams.errors.NETWORK'))
+      }
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-xs text-text-muted">{t('adminTeams.leagueHelp')}</p>
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="flex flex-col gap-1 text-xs text-text-muted w-28">
+          {t('adminTeams.league')}
+          <input
+            className={`${fieldClass} uppercase font-semibold`}
+            value={league}
+            onChange={e => setLeague(e.target.value.toUpperCase())}
+            maxLength={8}
+            placeholder="LEC"
+            list="lol-leagues"
+            disabled={isPending}
+            autoCapitalize="characters"
+            spellCheck={false}
+          />
+        </label>
+        <button type="button" onClick={() => save(clean)} disabled={isPending || unchanged || problem !== null || clean === ''} className={btnPrimary}>
+          {isPending ? t('adminTeams.saving') : t('adminTeams.leagueSave')}
+        </button>
+        {team.league && (
+          <button type="button" onClick={() => save('')} disabled={isPending} className={btnDanger}>
+            {t('adminTeams.leagueRemove')}
+          </button>
+        )}
+      </div>
+      {problem && <p role="alert" className="text-xs text-danger">{problem}</p>}
+      <datalist id="lol-leagues">{leagues.map(l => <option key={l} value={l} />)}</datalist>
+    </div>
+  )
+}
+
+/** Valor del selector de plantilla: id de la edición o 'current' (plantilla actual). */
+const CURRENT = 'current'
+const rosterTarget = (v: string): number | null => (v === CURRENT ? null : Number(v))
+const defaultTarget = (editions: SeedEditionOption[]) =>
+  String(editions.find(e => e.active)?.id ?? editions[0]?.id ?? CURRENT)
+
+function RosterTargetSelect({ value, onChange, editions, disabled, t }: {
+  value: string
+  onChange: (v: string) => void
+  editions: SeedEditionOption[]
+  disabled?: boolean
+  t: T
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs text-text-muted max-w-xs">
+      {t('adminTeams.seedEdition')}
+      <select className={fieldClass} value={value} onChange={e => onChange(e.target.value)} disabled={disabled}>
+        {editions.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
+        <option value={CURRENT}>{t('adminTeams.currentRoster')}</option>
+      </select>
+    </label>
+  )
+}
+
 function rosterProblemText(t: T, p: RosterProblem): string {
   switch (p.code) {
     case 'team': return t('adminTeams.errors.rosterTeam', { tag: p.tag })
     case 'role': return t('adminTeams.errors.rosterRole', { role: p.role })
     case 'country': return t('adminTeams.errors.rosterCountry', { country: p.country })
+    case 'league': return t('adminTeams.errors.rosterLeague', { league: p.league })
     case 'duplicate': return t('adminTeams.errors.rosterDuplicate', { line: p.line })
     case 'nickname': return t('adminTeams.errors.rosterNick')
     default: return t('adminTeams.errors.rosterColumns')
@@ -798,7 +880,7 @@ function RosterImportForm({ teams, editions, onDone, t, lang }: {
   t: T
   lang: string
 }) {
-  const [editionId, setEditionId] = useState<number | null>(editions.find(e => e.active)?.id ?? editions[0]?.id ?? null)
+  const [target, setTarget] = useState(() => defaultTarget(editions))
   const [text, setText] = useState('')
   const [replace, setReplace] = useState(true)
   const [isPending, startTransition] = useTransition()
@@ -806,14 +888,13 @@ function RosterImportForm({ teams, editions, onDone, t, lang }: {
   const tags = useMemo(() => new Set(teams.map(tm => tm.tag.toUpperCase())), [teams])
   const rows = useMemo(() => parseRosterPaste(text, tags), [text, tags])
   const ready = rows.filter(r => r.problems.length === 0).length
-  const canLoad = editionId !== null && rows.length > 0 && ready === rows.length
+  const canLoad = rows.length > 0 && ready === rows.length
 
   const confirm = () => {
-    if (editionId === null) return
     startTransition(async () => {
       try {
-        const res = await importLolRosterAction(editionId, rows.map(r => ({
-          team: r.team, role: r.role ?? '', nickname: r.nickname, country: r.country, realName: r.realName,
+        const res = await importLolRosterAction(rosterTarget(target), rows.map(r => ({
+          team: r.team, role: r.role ?? '', nickname: r.nickname, country: r.country, realName: r.realName, league: r.league,
         })), replace)
         if ('error' in res) toast.error(errorText(t, lang, res))
         else {
@@ -826,17 +907,10 @@ function RosterImportForm({ teams, editions, onDone, t, lang }: {
     })
   }
 
-  if (editions.length === 0) return <p className="text-sm text-text-muted">{t('adminTeams.seedNoEditions')}</p>
-
   return (
     <div className="flex flex-col gap-3">
       <p className="text-xs text-text-muted">{t('adminTeams.rosterImportHelp')}</p>
-      <label className="flex flex-col gap-1 text-xs text-text-muted max-w-xs">
-        {t('adminTeams.seedEdition')}
-        <select className={fieldClass} value={editionId ?? ''} onChange={e => setEditionId(Number(e.target.value))} disabled={isPending}>
-          {editions.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-        </select>
-      </label>
+      <RosterTargetSelect value={target} onChange={setTarget} editions={editions} disabled={isPending} t={t} />
       <textarea
         className={`${fieldClass} min-h-36 font-mono text-xs`}
         value={text}
@@ -864,7 +938,10 @@ function RosterImportForm({ teams, editions, onDone, t, lang }: {
                 <span className="font-bold text-text-primary truncate">{r.team}</span>
                 <span className="text-xs text-text-muted pt-0.5">{r.role ? ROLE_LABEL[r.role as LolRole] : '—'}</span>
                 <span className="min-w-0">
-                  <span className="block truncate text-text-primary">{r.nickname}{r.country && <span className="text-text-muted"> · {r.country}</span>}</span>
+                  <span className="block truncate text-text-primary">
+                    {r.nickname}{r.country && <span className="text-text-muted"> · {r.country}</span>}
+                    {r.league && <span className="text-text-muted"> · {r.league}</span>}
+                  </span>
                   {r.problems.map(p => <span key={p.code} className="block text-xs text-danger">{rosterProblemText(t, p)}</span>)}
                 </span>
                 <span aria-hidden className={r.problems.length === 0 ? 'text-success' : 'text-danger'}>{r.problems.length === 0 ? '✓' : '✗'}</span>
@@ -969,17 +1046,11 @@ function RosterEditor({ team, editions, champions, t, lang }: {
   t: T
   lang: string
 }) {
-  const [editionId, setEditionId] = useState<number | null>(editions.find(e => e.active)?.id ?? editions[0]?.id ?? null)
-  const entries = team.roster.filter(r => r.editionId === editionId)
-  if (editions.length === 0) return null
+  const [target, setTarget] = useState(() => defaultTarget(editions))
+  const entries = team.roster.filter(r => r.editionId === rosterTarget(target))
   return (
     <div className="flex flex-col gap-2">
-      <label className="flex flex-col gap-1 text-xs text-text-muted max-w-xs">
-        {t('adminTeams.seedEdition')}
-        <select className={fieldClass} value={editionId ?? ''} onChange={e => setEditionId(Number(e.target.value))}>
-          {editions.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
-        </select>
-      </label>
+      <RosterTargetSelect value={target} onChange={setTarget} editions={editions} t={t} />
       {entries.length === 0 ? (
         <p className="text-xs text-text-muted">{t('adminTeams.rosterNone')}</p>
       ) : (
@@ -993,11 +1064,12 @@ function RosterEditor({ team, editions, champions, t, lang }: {
   )
 }
 
-function TeamCard({ team, open, onToggle, editions, champions, t, lang }: {
+function TeamCard({ team, open, onToggle, editions, leagues, champions, t, lang }: {
   team: AdminTeamRow
   open: boolean
   onToggle: () => void
   editions: SeedEditionOption[]
+  leagues: string[]
   champions: Champion[]
   t: T
   lang: string
@@ -1010,6 +1082,7 @@ function TeamCard({ team, open, onToggle, editions, champions, t, lang }: {
           <p className="font-semibold text-text-primary truncate">{team.name}</p>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-text-muted">
             <span className="font-bold text-text-primary tracking-wide">{team.tag}</span>
+            {team.league && <span className="font-semibold">{team.league}</span>}
             {team.color && (
               <span className="inline-flex items-center gap-1 font-mono">
                 <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-sm ring-1 ring-inset ring-border" style={{ backgroundColor: team.color }} />
@@ -1027,6 +1100,10 @@ function TeamCard({ team, open, onToggle, editions, champions, t, lang }: {
       {open && (
         <div className="flex flex-col gap-4 border-t border-border pt-3">
           <DetailsForm team={team} t={t} lang={lang} />
+          <div className="border-t border-border pt-3">
+            <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.league')}</p>
+            <LeagueForm key={team.league ?? ''} team={team} leagues={leagues} t={t} lang={lang} />
+          </div>
           <div className="border-t border-border pt-3">
             <p className="mb-1 text-xs font-semibold text-text-primary">{t('adminTeams.seed')}</p>
             <SeedForm key={team.seeds.map(x => `${x.editionId}:${x.league}${x.seed}`).join(',')} team={team} editions={editions} t={t} lang={lang} />
@@ -1055,6 +1132,8 @@ export default function AdminLolTeams({ teams, audit, editions, champions }: {
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState<number | null>(null)
   const [adding, setAdding] = useState<'one' | 'batch' | 'roster' | null>(null)
+  // Ligas ya usadas, para sugerirlas al escribir la de un equipo.
+  const leagues = useMemo(() => [...new Set(teams.map(tm => tm.league).filter((l): l is string => !!l))].sort(), [teams])
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -1137,6 +1216,7 @@ export default function AdminLolTeams({ teams, audit, editions, champions }: {
               open={open === team.id}
               onToggle={() => setOpen(open === team.id ? null : team.id)}
               editions={editions}
+              leagues={leagues}
               champions={champions}
               t={t}
               lang={lang}
